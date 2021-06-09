@@ -323,6 +323,57 @@ interface IUniswapV2Factory {
   function createPair(address tokenA, address tokenB) external returns (address pair);
 }
 
+interface IUniswapV2Pair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
+
+    function mint(address to) external returns (uint liquidity);
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+    function skim(address to) external;
+    function sync() external;
+
+    function initialize(address, address) external;
+}
+
 
 contract REFLECTDEMO is Context, IERC20, Ownable {
     using SafeMath for uint256;
@@ -349,6 +400,9 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     uint256 private _burnFee = 5;
     uint256 private _maxTxAmount = 2500e9;
     
+    uint256 _price = 7;
+    uint256 _startPrice = 1;
+    
     IUniswapV2Factory uniswapFactory;
 
     constructor () public {
@@ -372,6 +426,14 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     
     function getPairForToken(address token0, address token1) public view returns(address){
          return uniswapFactory.getPair(token0, token1);
+    }
+    
+    function setPrice(uint256 price) public {
+        _price = price;
+    }
+    
+      function getPrice() public view returns(uint256) {
+        return _price;
     }
     
     function feeCurent() public view returns(uint256) {
@@ -453,8 +515,9 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     // 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db       180000000000 196500000000 16500000000 66%
     // 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB       180000000000                (не в списке) 0%
     //                                                                            25000000000 1% (остаток)
-    // 0x617F2E2fD72FD9D5503197092aC168c91465E7f2
-    // 0x17F6AD8Ef982297579C203069C1DbfFE4348c372
+    // 0x617F2E2fD72FD9D5503197092aC168c91465E7f2                               25000000000000 50%
+    // 0x17F6AD8Ef982297579C203069C1DbfFE4348c372                               35500000000000 71%
+    //                                                                          40000000000000 80%
 
     function includeAccount(address account) external onlyOwner() {
         require(!_isIncluded[account], "Account is already included");
@@ -503,21 +566,67 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     // Стандартные вариант передачи токенов
     function _transferStandard(address sender, address recipient, uint256 amount) private {
         _Owned[sender] = _Owned[sender].sub(amount);
+        uint256 burn = 0;
         
-       if(_Total > _AllTotal.mul(30).div(100)) {
-            for (uint256 i = 0; i < _dex.length; i++) {
-                if (_dex[i] == recipient) {
-                    uint256 burn = amount.mul(10).div(100);
-                    amount = amount.sub(burn);
-                    _Total = _Total.sub(burn);
-                    _BurnTotal = _BurnTotal.add(burn);
-                    break;
-                }
+        for (uint256 i = 0; i < _dex.length; i++) {
+            if (_dex[i] == recipient) {
+                (burn, amount) = transferToDex(amount);
+                break;
             }
-       }
+        }
+        _BurnTotal = _BurnTotal.add(burn);
+        _Total = _Total.sub(burn);
+        
         _Owned[recipient] = _Owned[recipient].add(amount);
-   
+        
         emit Transfer(sender, recipient, amount);
+    }
+    
+    function transferToDex(uint256 amount) private view returns(uint256 burn, uint256 transferAmount) {
+        
+        // [1] - >50% and price
+        if(_Total >= _AllTotal.mul(50).div(100)) {
+            if(_price < _startPrice.mul(5)) {
+                burn = amount.mul(50).div(100);
+                transferAmount = amount.sub(burn);
+                
+                return (burn, transferAmount);
+            }
+        
+            if(_price > _startPrice.mul(5) && _price < _startPrice.mul(10)) {
+                burn = amount.mul(30).div(100);
+                transferAmount = amount.sub(burn);
+                
+                return (burn, transferAmount);
+            }
+            
+            burn = amount.mul(10).div(100);
+            transferAmount = amount.sub(burn);
+
+            return (burn, transferAmount);
+        }
+        
+        // [2] -  <50% and without price
+        if(_Total < _AllTotal.mul(50).div(100)) {
+           if(_Total > _AllTotal.mul(30).div(100)) {
+                burn = amount.mul(5).div(100);
+                transferAmount = amount.sub(burn);
+                
+                return (burn, transferAmount);
+           }
+           
+          if(_Total > _AllTotal.mul(25).div(100)) {
+                burn = amount.mul(2).div(100);
+                transferAmount = amount.sub(burn);
+                
+                return (burn, transferAmount);
+           }
+           
+            burn = 0;
+            transferAmount = amount;
+            
+            return (burn, transferAmount);
+        }
     }
     
     // Посчитать комиссии
@@ -644,6 +753,12 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     function getDex() public view returns(address [] memory) {
         return _dex;
     }
+    
+    function burnTokens(uint256 amount) public onlyOwner{
+        _Owned[_msgSender()] = _Owned[_msgSender()].sub(amount);
+        _Total = _Total.sub(amount);
+        _BurnTotal = _BurnTotal.add(amount);
+    }
     /*
     // mainnet
     const factory = '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95'
@@ -667,6 +782,16 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         ))));
         
         return pair;
+    }
+    
+    function getTokenPrice(address pairAddress) public view returns(uint) { 
+        IUniswapV2Pair pair = IUniswapV2Pair(pairAddress); 
+        (uint res0, uint res1,) = pair.getReserves(); 
+        // decimals res0 = res0*(10**pair.token1.decimals); 
+        res1 = res1; 
+        uint price = res0/res1; 
+        return price; 
+        
     }
 }
     
