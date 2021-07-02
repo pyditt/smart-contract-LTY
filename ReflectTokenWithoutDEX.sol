@@ -384,6 +384,9 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
 
     mapping (address => bool) private _isIncluded;
     address[] private _included;
+    
+     mapping (address => uint256) private _TxTime;
+    
     address[] private _dex;
    
    uint256 private _AllTotal = 5 * 10**6 * 10**7;
@@ -510,15 +513,6 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         return _BurnTotal;
     }
 
-    // 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4        
-    // 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2        90000000000 98250000000  8250000000 33%
-    // 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db       180000000000 196500000000 16500000000 66%
-    // 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB       180000000000                (не в списке) 0%
-    //                                                                            25000000000 1% (остаток)
-    // 0x617F2E2fD72FD9D5503197092aC168c91465E7f2                               25000000000000 50%
-    // 0x17F6AD8Ef982297579C203069C1DbfFE4348c372                               35500000000000 71%
-    //                                                                          40000000000000 80%
-
     function includeAccount(address account) external onlyOwner() {
         require(!_isIncluded[account], "Account is already included");
         _isIncluded[account] = true;
@@ -553,20 +547,24 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
+        require(amount < _Total.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
+        require(_TxTime[sender] < block.timestamp - 15 minutes, "Only ONE transaction per 15 minutes");
         if(_Owned[recipient] == 0) {
             _owners.push(recipient);
         }
+        
         
         if(sender != owner() && recipient != owner())
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         
             _transferStandard(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
     }
 
-    // Стандартные вариант передачи токенов
+    // Standard token transfer options
     function _transferStandard(address sender, address recipient, uint256 amount) private {
-        _Owned[sender] = _Owned[sender].sub(amount);
         uint256 burn = 0;
+        _Owned[sender] = _Owned[sender].sub(amount);
         
         for (uint256 i = 0; i < _dex.length; i++) {
             if (_dex[i] == recipient) {
@@ -574,8 +572,10 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
                 break;
             }
         }
-        _BurnTotal = _BurnTotal.add(burn);
-        _Total = _Total.sub(burn);
+        
+        if(burn > 0) {
+            burnTokens(burn);
+        }
         
         _Owned[recipient] = _Owned[recipient].add(amount);
         
@@ -629,7 +629,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         }
     }
     
-    // Посчитать комиссии
+    // Calculate commissions
     function getTax(uint256 amount) private view returns(uint256 burn, uint256 tax, uint256 transferAmount) {
         burn =  amount.mul(_burnFee).div(100);
         tax = amount.mul(_taxFee).div(100);
@@ -638,7 +638,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         return (burn, tax, transferAmount);
     }
     
-    // Применить комиссии
+    // Apply commissions
     function addTax(uint256 burn, uint256 tax) internal returns (bool) {
         _BurnTotal = _BurnTotal.add(burn);
         _FeeTotal = _FeeTotal.add(tax);
@@ -648,7 +648,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         return true;
     }
     
-    // Распред между Всеми кроме Получателя Отправителя
+    // Distribution among All except the Recipient Sender
     function reflectTokens(address sender, address recipient ) public returns(bool) {
         if(_owners.length < 3) return false;
         
@@ -661,7 +661,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         return true;
     }
     
-    // Распред между Списком акаунтов
+    // Distribution between the list of accounts
     function reflectTokensToIncluded() public returns(bool) {
         if(_included.length < 1) return false;
         uint256 forOne = _FeeCurent.div(_included.length);
@@ -672,7 +672,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         return true;
     }
     
-    // Распред между списком акаунтов в зависимости от Доли Владения (проценты)
+    // Distribution between the list of accounts depending on the Ownership Share (percentages)
         function reflectTokensToIncludedWithPercent() public returns(bool) {
         uint256 sharedOwnership = 0;
         for (uint256 i = 0; i < _included.length; i++) {
@@ -688,44 +688,6 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         _FeeCurent = _FeeCurent.sub(spendedFee);
         
     }
-    
-    // function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-    //     uint256 currentRate =  _getRate();
-    //     (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tBurn) = _getValues(tAmount);
-    //     uint256 rBurn =  tBurn.mul(currentRate);
-    //     _rOwned[sender] = _rOwned[sender].sub(rAmount);
-    //     _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-    //     _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-    //     _reflectFee(rFee, rBurn, tFee, tBurn);
-    //     emit Transfer(sender, recipient, tTransferAmount);
-    // }
-
-    // function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-    //     uint256 currentRate =  _getRate();
-    //     (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tBurn) = _getValues(tAmount);
-    //     uint256 rBurn =  tBurn.mul(currentRate);
-        
-    //     _reflectFee(rFee, rBurn, tFee, tBurn);
-    //     _tOwned[sender] = _tOwned[sender].sub(tAmount);
-    //     _rOwned[sender] = _rOwned[sender].sub(rAmount);
-    //     _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        
-    //     emit Transfer(sender, recipient, tTransferAmount);
-    // }
-
-    // function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-    //     uint256 currentRate =  _getRate();
-    //     (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tBurn) = _getValues(tAmount);
-    //     uint256 rBurn =  tBurn.mul(currentRate);
-    //     _tOwned[sender] = _tOwned[sender].sub(tAmount);
-    //     _rOwned[sender] = _rOwned[sender].sub(rAmount);
-    //     _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-    //     _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-    //     _reflectFee(rFee, rBurn, tFee, tBurn);
-    //     emit Transfer(sender, recipient, tTransferAmount);
-    // }
-
-    
     
     function _getTaxFee() private view returns(uint256) {
         return _taxFee;
@@ -755,9 +717,15 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     }
     
     function burnTokens(uint256 amount) public onlyOwner{
-        _Owned[_msgSender()] = _Owned[_msgSender()].sub(amount);
+        uint256 senderBalance = _Owned[_msgSender()];
+        
+        require(senderBalance >= amount, "ERC20: burn amount exceeds balance");
+
+        _Owned[_msgSender()] = senderBalance.sub(amount);
         _Total = _Total.sub(amount);
         _BurnTotal = _BurnTotal.add(amount);
+        
+        emit Transfer(_msgSender(), address(0), amount);
     }
     /*
     // mainnet
@@ -765,7 +733,7 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     
     // testnets
     const ropsten = '0x9c83dCE8CA20E9aAF9D3efc003b2ea62aBC08351'
-    const rinkeby = ''
+    const rinkeby = '0xf5D915570BC477f9B8D6C0E980aA81757A3AaC36'
     const kovan = '0xD3E51Ef092B2845f10401a0159B2B96e8B6c3D30'
     const görli = '0x6Ce570d02D73d4c384b46135E87f8C592A8c86dA'
     */
@@ -794,4 +762,3 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         
     }
 }
-    
