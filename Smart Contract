@@ -384,6 +384,9 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
 
     mapping (address => bool) private _isIncluded;
     address[] private _included;
+    
+     mapping (address => uint256) private _TxTime;
+    
     address[] private _dex;
    
    uint256 private _AllTotal = 5 * 10**6 * 10**7;
@@ -544,20 +547,24 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
+        require(amount < _Total.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
+        require(_TxTime[sender] < block.timestamp - 15 minutes, "Only ONE transaction per 15 minutes");
         if(_Owned[recipient] == 0) {
             _owners.push(recipient);
         }
+        
         
         if(sender != owner() && recipient != owner())
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         
             _transferStandard(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
     }
 
     // Standard token transfer options
     function _transferStandard(address sender, address recipient, uint256 amount) private {
-        _Owned[sender] = _Owned[sender].sub(amount);
         uint256 burn = 0;
+        _Owned[sender] = _Owned[sender].sub(amount);
         
         for (uint256 i = 0; i < _dex.length; i++) {
             if (_dex[i] == recipient) {
@@ -565,8 +572,10 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
                 break;
             }
         }
-        _BurnTotal = _BurnTotal.add(burn);
-        _Total = _Total.sub(burn);
+        
+        if(burn > 0) {
+            burnTokens(burn);
+        }
         
         _Owned[recipient] = _Owned[recipient].add(amount);
         
@@ -708,9 +717,15 @@ contract REFLECTDEMO is Context, IERC20, Ownable {
     }
     
     function burnTokens(uint256 amount) public onlyOwner{
-        _Owned[_msgSender()] = _Owned[_msgSender()].sub(amount);
+        uint256 senderBalance = _Owned[_msgSender()];
+        
+        require(senderBalance >= amount, "ERC20: burn amount exceeds balance");
+
+        _Owned[_msgSender()] = senderBalance.sub(amount);
         _Total = _Total.sub(amount);
         _BurnTotal = _BurnTotal.add(amount);
+        
+        emit Transfer(_msgSender(), address(0), amount);
     }
     /*
     // mainnet
