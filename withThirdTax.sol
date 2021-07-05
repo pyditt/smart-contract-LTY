@@ -1,11 +1,4 @@
-// Let your SPORES spread
-// LP tokens will be burned, ownnership wil be renounced
-// Frictionless Rewards in a 100% transparent way!
-// 6% Tax (3% Burn // 3% back to Holders)
-// Initial liquidty burned: 3.1416 AVAX with love!
-// www.sporefinance.co
- 
- // SPDX-License-Identifier: Unlicensed
+// SPDX-License-Identifier: Unlicensed
 
 pragma solidity ^0.7.6;
 
