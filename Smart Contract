@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: Unlicensed
-
 pragma solidity ^0.7.6;
 
 abstract contract Context {
@@ -423,6 +421,7 @@ contract LEDGITY is Context, IERC20, Ownable {
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
+    mapping (address => uint256) private _TxTime;
 
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
@@ -465,12 +464,20 @@ contract LEDGITY is Context, IERC20, Ownable {
         return _tTotal;
     }
     
-    function totalFees() public view returns (uint256) {
+        function allSupply() public pure returns (uint256) {
+        return _tAllTotal;
+    }
+    
+    function totalFee() public view returns (uint256) {
         return _tFeeTotal;
     }
     
      function totalBurn() public view returns (uint256) {
         return _tBurnedTotal;
+    }
+    
+    function maxTokenTx() public view returns (uint256) {
+        
     }
 
     function balanceOf(address account) public view override returns (uint256) {
@@ -577,18 +584,26 @@ contract LEDGITY is Context, IERC20, Ownable {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
+        require(amount < _tTotal.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
+        require(_TxTime[sender] < block.timestamp - 15 minutes, "Only ONE transaction per 15 minutes");
+
         if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
              revert("You cannot transfer more than 1 billion now");  }
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
             _transferToExcluded(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
         } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferStandard(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
         } else if (_isExcluded[sender] && _isExcluded[recipient]) {
             _transferBothExcluded(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
         } else {
             _transferStandard(sender, recipient, amount);
+            _TxTime[sender] = block.timestamp;
         }
     }
 
