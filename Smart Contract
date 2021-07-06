@@ -422,6 +422,7 @@ contract LEDGITY is Context, IERC20, Ownable {
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping (address => uint256) private _TxTime;
+    address[] private _dex;
 
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
@@ -441,7 +442,7 @@ contract LEDGITY is Context, IERC20, Ownable {
 
     
     uint256 _price = 7;
-    uint256 _startPrice = 1;
+    uint256 constant _startPrice = 1;
     
     constructor () {
         _rOwned[_msgSender()] = _rTotal;
@@ -464,7 +465,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         return _tTotal;
     }
     
-        function allSupply() public pure returns (uint256) {
+    function allSupply() public pure returns (uint256) {
         return _tAllTotal;
     }
     
@@ -477,7 +478,23 @@ contract LEDGITY is Context, IERC20, Ownable {
     }
     
     function maxTokenTx() public view returns (uint256) {
-        
+        return _tTotal.div(1000);
+    }
+    
+    function getStartPrice() public pure returns (uint256) {
+        return _startPrice;
+    }
+    
+    function getPrice() public view returns (uint256) {
+        return _price;
+    }
+    
+    function getDex() public view returns (address[] memory) {
+        return _dex;
+    }
+    
+    function getExcluded() public view returns (address[] memory) {
+        return _excluded;
     }
 
     function balanceOf(address account) public view override returns (uint256) {
@@ -545,13 +562,18 @@ contract LEDGITY is Context, IERC20, Ownable {
         return rAmount.div(currentRate);
     }
 
-    function excludeAccount(address account) external onlyOwner() {
+    function excludeAccount(address account) public onlyOwner() {
         require(!_isExcluded[account], "Account is already excluded");
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
         _isExcluded[account] = true;
         _excluded.push(account);
+    }
+    
+    function setDex(address dex) public onlyOwner () {
+        _dex.push(dex);
+        excludeAccount(dex);
     }
 
     function includeAccount(address account) external onlyOwner() {
