@@ -416,7 +416,7 @@ contract Ownable is Context {
 
 
 
-contract SPORE is Context, IERC20, Ownable {
+contract LEDGITY is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -431,11 +431,15 @@ contract SPORE is Context, IERC20, Ownable {
     uint256 private  _tTotal = 100000000000 * 10**6 * 10**9;
     uint256 private constant _tAllTotal = 100000000000 * 10**6 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
-    uint256 private _tFeeTotal;
-    string private _name = 'Spore.Finance';
-    string private _symbol = 'SPORE';
+    string private _name = 'LEDGITY';
+    string private _symbol = 'LTY';
     uint8 private _decimals = 9;
     uint256 public allowTradeAt;
+    
+    uint256 private _tBurnedTotal;
+    uint256 private _rBurnedTotal;
+    uint256 private _tFeeTotal;
+
     
     uint256 _price = 7;
     uint256 _startPrice = 1;
@@ -459,6 +463,14 @@ contract SPORE is Context, IERC20, Ownable {
 
     function totalSupply() public view override returns (uint256) {
         return _tTotal;
+    }
+    
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+    
+     function totalBurn() public view returns (uint256) {
+        return _tBurnedTotal;
     }
 
     function balanceOf(address account) public view override returns (uint256) {
@@ -498,10 +510,6 @@ contract SPORE is Context, IERC20, Ownable {
 
     function isExcluded(address account) public view returns (bool) {
         return _isExcluded[account];
-    }
-
-    function totalFees() public view returns (uint256) {
-        return _tFeeTotal;
     }
 
     function reflect(uint256 tAmount) public {
@@ -710,11 +718,30 @@ contract SPORE is Context, IERC20, Ownable {
     function getTax(uint256 tFee, uint256 rFee) private returns(bool) {
         uint256 tThird = tFee.div(3);
         uint256 rThird = rFee.div(3);
-        // burn(third);
-        _rTotal = _rTotal.sub(rThird);
-        _tTotal = _tTotal.sub(tThird);
-        
+        burnOnTax(tThird, rThird);
+
         // liquidty(third);
+        return true;
+    }
+    
+    function burnOnTax(uint256 tAmount, uint256 rAmount) private onlyOwner returns(bool){
+        _rTotal = _rTotal.sub(rAmount);
+        _tTotal = _tTotal.sub(tAmount);
+        _tBurnedTotal = _tBurnedTotal.add(tAmount);
+        return true;
+    }
+    
+    function burn(uint256 amount) public onlyOwner returns(bool){
+        uint256 currentRate =  _getRate();
+        uint256 rAmount = amount.mul(currentRate);
+        _rTotal = _rTotal.sub(rAmount);
+        _tTotal = _tTotal.sub(amount);
+        _tBurnedTotal = _tBurnedTotal.add(amount);
+        return true;
+    }
+    
+    function setPrice(uint256 newPrice) public onlyOwner returns(bool) {
+        _price = newPrice;
         return true;
     }
 }
