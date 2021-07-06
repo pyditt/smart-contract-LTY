@@ -4,10 +4,27 @@ import ethers from "ethers";
 
 async function getInfo(contract) {
   const totalSupply = await contract.methods.totalSupply().call();
+  // const allSupply = await contract.methods.allSupply().call();
   const name = await contract.methods.name().call();
   const decimals = await contract.methods.decimals().call();
   const symbol = await contract.methods.symbol().call();
-  return { totalSupply, name, decimals, symbol };
+  // const maxTokenTx = await contract.methods.maxTokenTx().call();
+  // const totalFee = await contract.method.totalFee().call();
+  // const totalBurn = await contract.method.totalBurn().call();
+  // const getPrice = await contract.method.getPrice().call();
+  // const getStartPrice = await contract.method.getStartPrice().call();
+  return {
+    totalSupply,
+    // allSupply,
+    name,
+    decimals,
+    symbol,
+    // maxTokenTx,
+    // totalFee,
+    // totalBurn,
+    // getStartPrice,
+    // getPrice
+  };
 }
 
 async function getTokenBalance(contract, address) {
@@ -26,8 +43,20 @@ function getBalance(address, ethereum) {
   });
 }
 
-async function transfer(contract, address) {
-  const balance = await contract.methods.balanceOf(address.toString()).call();
+async function getDex(contract, address) {
+  const dex = await contract.methods.getDex().call();
+  return dex;
+}
+
+async function getExcluded(contract, address) {
+  const excluded = await contract.methods.getExcluded().call();
+  return excluded;
+}
+
+async function transfer(contract, signer, address, amount) {
+  const balance = await contract.methods
+    .transfer(address.toString(), amount.toString())
+    .send({ from: signer });
   return balance;
 }
 
@@ -62,4 +91,12 @@ async function addTokenToWallet(contract, ethereum) {
   }
 }
 
-export { getInfo, getTokenBalance, getBalance, addTokenToWallet };
+export {
+  getInfo,
+  getTokenBalance,
+  getBalance,
+  addTokenToWallet,
+  transfer,
+  getDex,
+  getExcluded,
+};

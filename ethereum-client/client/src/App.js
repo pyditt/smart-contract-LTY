@@ -12,12 +12,15 @@ class App extends Component {
 
   componentDidMount = async () => {
     const ethereum = window.ethereum;
+    const web3 = await getWeb3();
     ethereum.on("accountsChanged", async () => {
+      const { contract, web3 } = this.state;
       const accounts = await window.ethereum.request({
         method: "eth_accounts",
       });
-      this.setState({ accounts: accounts });
-      console.log("IZMENEN--------------", this.state);
+      const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+      const balance = await Utils.getBalance(web3, accounts[0]);
+      this.setState({ accounts: accounts, balance, tokenBalance });
     });
 
     ethereum.on("chainChanged", (_chainId) => window.location.reload());
@@ -25,7 +28,6 @@ class App extends Component {
 
     try {
       // Get network provider and web3 instance.
-      const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts.
       const accounts = await ethereum.request({
@@ -62,14 +64,20 @@ class App extends Component {
 
     // Get the value from the contract to prove it worked.
     const info = await Lib.getInfo(contract);
-    const tokenBalance = await Lib.getTokenBalance(
+    const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+    const balance = await Utils.getBalance(web3, accounts[0]);
+
+    /*
+    Lib.transfer(
       contract,
-      "0x8adA0901ad5f4A9312bF372f20fde6A0e298Dd65"
+      accounts[0], // signer
+      "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", //recipient
+      10000000000 //amount
     );
-    const balance = await Utils.getBalance(
-      web3,
-      "0x8adA0901ad5f4A9312bF372f20fde6A0e298Dd65"
-    );
+    */
+
+    // Add token to wallet
+    // Lib.addTokenToWallet(contract, ethereum);
 
     // Add LTY token to your wallet
     // Lib.addTokenToWallet(contract, ethereum);
@@ -94,14 +102,14 @@ class App extends Component {
         <h1>Good to Go!</h1>
         <br />
         <br />
-        <button
+        {/* <button
           className="enableEthereumButton"
           onClick={() =>
             window.ethereum.request({ method: "eth_requestAccounts" })
           }
         >
           Enable Ethereum
-        </button>
+        </button> */}
         <br />
         <br />
         <p>Your Truffle Box is installed and ready.</p>
