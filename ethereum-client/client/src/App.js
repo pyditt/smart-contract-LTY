@@ -16,12 +16,12 @@ class App extends Component {
   state = { storageValue: 0, web3: null, accounts: null, contract: null, ethereum: null };
 
   componentDidMount = async () => {
+    const web3 = await getWeb3();
     if (window.ethereum) {
       this.setState({
         ethereum: window.ethereum,
       });
 
-      const web3 = await getWeb3();
       this.state.ethereum.on("accountsChanged", async () => {
         const { contract, web3 } = this.state;
         const accounts = await window.ethereum.request({
@@ -155,15 +155,14 @@ class App extends Component {
   render() {
     const { web3, accounts, ethereum } = this.state;
 
-    if(accounts) {
-      console.log('app');
-    } else {
-      console.log('empty');
-    }
+    console.log('web3', web3);
 
-    // if (!web3) {
-    //   return <div>Loading Web3, accounts, and contract...</div>;
+    // if(accounts) {
+    //   console.log('app');
+    // } else {
+    //   console.log('empty');
     // }
+
     return (
       <div className="app-layout">
         {accounts && ethereum
