@@ -7,6 +7,8 @@ import { ethers } from "ethers";
 
 import "./App.css";
 
+const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
+
 class App extends Component {
   state = { storageValue: 0, web3: null, accounts: null, contract: null };
 
@@ -39,7 +41,7 @@ class App extends Component {
       const deployedNetwork = networkId;
       const instance = new web3.eth.Contract(
         LedgityContract,
-        "0x2728D841b04E50834d1AE21D52056454CeE58114"
+        LedgityContractAddress
       );
 
       // Set web3, accounts, and contract to the state, and then proceed with an
@@ -63,9 +65,18 @@ class App extends Component {
     // await contract.methods.transfer("0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", 10000000000).send({ from: accounts[0] });
 
     // Get the value from the contract to prove it worked.
+
     const info = await Lib.getInfo(contract);
+    console.log(
+      "-------------------------",
+      info,
+      "------------------------------------"
+    );
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Utils.getBalance(web3, accounts[0]);
+
+    console.log("excl: ", Lib.getExcluded(contract));
+    console.log("DEX: ", Lib.getDex(contract));
 
     /*
     Lib.transfer(
@@ -76,11 +87,51 @@ class App extends Component {
     );
     */
 
+    /*
+    Lib.setPrice(
+      contract,
+      accounts[0], // signer
+      7 //newPrice
+    );
+    */
+
+    /*
+    Lib.burn(
+      contract,
+      accounts[0], // signer
+      1000000 //newPrice
+    );
+    */
+
+    /*
+    Lib.setDex(
+      contract,
+      accounts[0], // signer
+      "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b" //dexAddress
+    );
+    */
+
+    /*
+    Lib.includeAccount(
+      contract,
+      accounts[0],
+      "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b"
+    );
+    */
+
+    /*
+    Lib.excludeAccount(
+      contract,
+      accounts[0],
+      "0x4803003e06Fe7Bc150cC8CB21D12750A1A1bA135"
+    );
+    */
+
     // Add token to wallet
     // Lib.addTokenToWallet(contract, ethereum);
 
     // Add LTY token to your wallet
-    // Lib.addTokenToWallet(contract, ethereum);
+    // Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress);
 
     // Update state with the result.
     this.setState({
