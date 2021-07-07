@@ -1,0 +1,36 @@
+@import '../../../../styles/variables';
+@import '../../../../styles/mixins';
+
+.information {
+  color: inherit;
+  width: 31%;
+
+  &__block {
+    @include block;
+    min-height: 710px;
+  }
+
+  &__item {
+    margin-bottom: 50px;
+
+    &:last-child {
+      margin-bottom: 0px;
+    }
+  }
+
+  &__fields {
+    margin-top: 40px;
+  }
+
+  &__field {
+    margin-bottom: 30px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .field__input {
+      pointer-events: none;
+    }
+  }
+}

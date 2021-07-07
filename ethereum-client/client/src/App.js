@@ -5,7 +5,10 @@ import * as Lib from "./ledgityLib";
 import * as Utils from "./utils";
 import { ethers } from "ethers";
 
-import "./App.css";
+import { Header, Modal } from "./components/layout";
+import { Dashboard, Connect } from "./pages";
+
+import "./App.scss";
 
 class App extends Component {
   state = { storageValue: 0, web3: null, accounts: null, contract: null };
@@ -94,38 +97,33 @@ class App extends Component {
   };
 
   render() {
-    if (!this.state.web3) {
+    const { web3, accounts } = this.state;
+
+    if(accounts) {
+      console.log('app');
+    } else {
+      console.log('empty');
+    }
+
+    if (!web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
-      <div className="App">
-        <h1>Good to Go!</h1>
-        <br />
-        <br />
-        {/* <button
-          className="enableEthereumButton"
-          onClick={() =>
-            window.ethereum.request({ method: "eth_requestAccounts" })
-          }
-        >
-          Enable Ethereum
-        </button> */}
-        <br />
-        <br />
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-
-        <div>The stored totalSupply value is: {this.state.totalSupply}</div>
-        <div>The stored name value is: {this.state.name}</div>
-        <div>The stored symbol value is: {this.state.symbol}</div>
-        <div>The stored decimals value is: {this.state.decimals}</div>
-        <br />
-        <div> Account: {this.state.accounts[0]} </div>
-        <div> Balance(token) is: {this.state.tokenBalance} LTY</div>
-        <div> Balance(ETH) is: {this.state.balance} ETH</div>
+      <div className="app-layout">
+        {accounts
+            ? (
+                <>
+                  <Header />
+                  <main>
+                    <Dashboard />
+                  </main>
+                </>
+              )
+            : <Connect />
+        }
       </div>
     );
   }
-}
+};
 
 export default App;
