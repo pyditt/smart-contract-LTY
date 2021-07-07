@@ -1,7 +1,17 @@
 import React from 'react';
 
-const Modal = () => {
-    return <div> modal </div>
-};
+import './Modal.scss';
+
+const Modal = ({ close, children }) => {
+    return (
+        <>
+            <div className="overlay-bg" />
+            <div className="modal">
+                <div type="button" onClick={close} className="close-btn"> Х </div>
+                {children}
+            </div>
+        </>
+    )
+}
 
 export default Modal;
