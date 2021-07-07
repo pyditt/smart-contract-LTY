@@ -615,7 +615,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
         require(amount < _tTotal.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
-        require(_TxTime[sender] < block.timestamp - 15 minutes, "Only ONE transaction per 15 minutes");
+        require(_TxTime[sender] < block.timestamp - 15 seconds, "Only ONE transaction per 15 seconds");
 
         if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
              revert("You cannot transfer more than 1 billion now");  }
@@ -769,7 +769,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         return true;
     }
     
-    function burnOnTax(uint256 tAmount, uint256 rAmount) private onlyOwner returns(bool){
+    function burnOnTax(uint256 tAmount, uint256 rAmount) internal returns(bool){
         _rTotal = _rTotal.sub(rAmount);
         _tTotal = _tTotal.sub(tAmount);
         _tBurnedTotal = _tBurnedTotal.add(tAmount);
