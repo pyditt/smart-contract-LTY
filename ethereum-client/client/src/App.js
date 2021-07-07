@@ -13,50 +13,55 @@ import "./App.scss";
 const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { storageValue: 0, web3: null, accounts: null, contract: null, ethereum: null };
 
   componentDidMount = async () => {
-    const ethereum = window.ethereum;
-    const web3 = await getWeb3();
-    ethereum.on("accountsChanged", async () => {
-      const { contract, web3 } = this.state;
-      const accounts = await window.ethereum.request({
-        method: "eth_accounts",
-      });
-      const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
-      const balance = await Utils.getBalance(web3, accounts[0]);
-      this.setState({ accounts: accounts, balance, tokenBalance });
-    });
-
-    ethereum.on("chainChanged", (_chainId) => window.location.reload());
-    ethereum.on("disconnect", () => console.log("MetaMask Disconnect"));
-
-    try {
-      // Get network provider and web3 instance.
-
-      // Use web3 to get the user's accounts.
-      const accounts = await ethereum.request({
-        method: "eth_accounts",
+    if (window.ethereum) {
+      this.setState({
+        ethereum: window.ethereum,
       });
 
-      // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = networkId;
-      const instance = new web3.eth.Contract(
-        LedgityContract,
-        LedgityContractAddress
-      );
+      const web3 = await getWeb3();
+      this.state.ethereum.on("accountsChanged", async () => {
+        const { contract, web3 } = this.state;
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+        const balance = await Utils.getBalance(web3, accounts[0]);
+        this.setState({ accounts: accounts, balance, tokenBalance });
+      });
 
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
-    } catch (error) {
-      // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`
-      );
-      console.error(error);
-    }
+      this.state.ethereum.on("chainChanged", (_chainId) => window.location.reload());
+      this.state.ethereum.on("disconnect", () => console.log("MetaMask Disconnect"));
+
+      try {
+        // Get network provider and web3 instance.
+
+        // Use web3 to get the user's accounts.
+        const accounts = await this.state.ethereum.request({
+          method: "eth_accounts",
+        });
+
+        // Get the contract instance.
+        const networkId = await web3.eth.net.getId();
+        const deployedNetwork = networkId;
+        const instance = new web3.eth.Contract(
+            LedgityContract,
+            LedgityContractAddress
+        );
+
+        // Set web3, accounts, and contract to the state, and then proceed with an
+        // example of interacting with the contract's methods.
+        this.setState({ web3, accounts, contract: instance }, this.runExample);
+      } catch (error) {
+        // Catch any errors for any of the above operations.
+        alert(
+            `Failed to load web3, accounts, or contract. Check console for details.`
+        );
+        console.error(error);
+      }
+    };
   };
 
   runExample = async () => {
@@ -148,7 +153,7 @@ class App extends Component {
   };
 
   render() {
-    const { web3, accounts } = this.state;
+    const { web3, accounts, ethereum } = this.state;
 
     if(accounts) {
       console.log('app');
@@ -156,12 +161,12 @@ class App extends Component {
       console.log('empty');
     }
 
-    if (!web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
-    }
+    // if (!web3) {
+    //   return <div>Loading Web3, accounts, and contract...</div>;
+    // }
     return (
       <div className="app-layout">
-        {accounts
+        {accounts && ethereum
             ? (
                 <>
                   <Header />

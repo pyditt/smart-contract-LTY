@@ -5,7 +5,7 @@ import './Connect.scss';
 const Connect = () => {
     return (
         <div className="connect">
-
+            Connect
         </div>
     )
 }
