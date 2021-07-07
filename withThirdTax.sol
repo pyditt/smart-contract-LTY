@@ -452,6 +452,14 @@ contract LEDGITY is Context, IERC20, Ownable {
     function name() public view returns (string memory) {
         return _name;
     }
+    
+     function rAmnt() public view returns (uint256) {
+        return _rOwned[msg.sender];
+    }
+    
+    function tAmnt() public view returns (uint256) {
+        return _tOwned[msg.sender];
+    }
 
     function symbol() public view returns (string memory) {
         return _symbol;
@@ -768,12 +776,14 @@ contract LEDGITY is Context, IERC20, Ownable {
         return true;
     }
     
-    function burn(uint256 amount) public onlyOwner returns(bool){
+    function burn(uint256 tAmount) public onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
-        uint256 rAmount = amount.mul(currentRate);
+        uint256 rAmount = tAmount.mul(currentRate);
+        require(rAmount <= _rOwned[msg.sender], "Amount must be less than total reflections");
+        _rOwned[msg.sender] = _rOwned[msg.sender].sub(rAmount);
         _rTotal = _rTotal.sub(rAmount);
-        _tTotal = _tTotal.sub(amount);
-        _tBurnedTotal = _tBurnedTotal.add(amount);
+        _tTotal = _tTotal.sub(tAmount);
+        _tBurnedTotal = _tBurnedTotal.add(tAmount);
         return true;
     }
     
