@@ -1,0 +1,125 @@
+@import 'styles/variables';
+@import 'styles/mixins';
+
+* {
+    font-family: 'Montserrat', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: $primaryFontColor;
+}
+
+body {
+    background-color: $backgroundColor;
+    background-image: url('/images/figure.svg');
+    background-repeat: no-repeat;
+    background-position: right 5% bottom 5%;
+    min-height: 100vh;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+.btn-primary {
+    @include btn-primary;
+}
+
+.btn-secondary {
+    @include btn-secondary;
+}
+
+h2 {
+    color: $white;
+    font-size: 22px;
+    font-weight: 600;
+
+    &.title {
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+}
+
+.container {
+    width: 100%;
+    padding: 0px 40px;
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.balance {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+
+    &__title {
+        padding-right: 40px;
+    }
+    &__item {
+        margin-right: 60px;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+    }
+    &__token {
+        color: $secondaryFontColor;
+        text-transform: uppercase;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        margin-right: 40px;
+
+        span {
+            color: inherit;
+            padding-left: 10px;
+        }
+    }
+
+    &__price {
+        font-size: 30px;
+        font-weight: 600;
+        min-width: 100px;
+    }
+}
+
+.field {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    width: 100%;
+    font-size: 16px;
+
+    &__label {
+        font-size: inherit;
+        color: $white;
+        width: 33%;
+        margin-right: 20px;
+    }
+    &__input {
+        @include input;
+
+        width: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        font-weight: 600;
+        border: none;
+
+        &.single {
+            margin-left: 35%;
+            width: 46.9%;
+        }
+    }
+
+    &__note {
+        width: 15%;
+        color: $secondaryFontColor;
+    }
+}
+

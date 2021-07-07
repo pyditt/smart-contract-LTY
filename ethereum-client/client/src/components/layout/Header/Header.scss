@@ -1,0 +1,46 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.app-header {
+  background-color: $backgroundHeader;
+  width: 100%;
+  height: 100px;
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+
+  .container {
+    justify-content: space-between;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 220px;
+  }
+
+  &__info {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__btns {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-end;
+  }
+
+  &__account {
+    width: 220px;
+    height: 60px;
+    border: 1px solid $blue;
+    border-radius: $borderRadiusBtn;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $white;
+    margin-left: 40px;
+  }
+}
