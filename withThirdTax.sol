@@ -452,6 +452,14 @@ contract LEDGITY is Context, IERC20, Ownable {
     function name() public view returns (string memory) {
         return _name;
     }
+    
+     function rAmnt() public view returns (uint256) {
+        return _rOwned[msg.sender];
+    }
+    
+    function tAmnt() public view returns (uint256) {
+        return _tOwned[msg.sender];
+    }
 
     function symbol() public view returns (string memory) {
         return _symbol;
@@ -607,7 +615,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
         require(amount < _tTotal.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
-        require(_TxTime[sender] < block.timestamp - 15 minutes, "Only ONE transaction per 15 minutes");
+        require(_TxTime[sender] < block.timestamp - 15 seconds, "Only ONE transaction per 15 seconds");
 
         if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
              revert("You cannot transfer more than 1 billion now");  }
@@ -761,19 +769,21 @@ contract LEDGITY is Context, IERC20, Ownable {
         return true;
     }
     
-    function burnOnTax(uint256 tAmount, uint256 rAmount) private onlyOwner returns(bool){
+    function burnOnTax(uint256 tAmount, uint256 rAmount) internal returns(bool){
         _rTotal = _rTotal.sub(rAmount);
         _tTotal = _tTotal.sub(tAmount);
         _tBurnedTotal = _tBurnedTotal.add(tAmount);
         return true;
     }
     
-    function burn(uint256 amount) public onlyOwner returns(bool){
+    function burn(uint256 tAmount) public onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
-        uint256 rAmount = amount.mul(currentRate);
+        uint256 rAmount = tAmount.mul(currentRate);
+        require(rAmount <= _rOwned[msg.sender], "Amount must be less than total reflections");
+        _rOwned[msg.sender] = _rOwned[msg.sender].sub(rAmount);
         _rTotal = _rTotal.sub(rAmount);
-        _tTotal = _tTotal.sub(amount);
-        _tBurnedTotal = _tBurnedTotal.add(amount);
+        _tTotal = _tTotal.sub(tAmount);
+        _tBurnedTotal = _tBurnedTotal.add(tAmount);
         return true;
     }
     
