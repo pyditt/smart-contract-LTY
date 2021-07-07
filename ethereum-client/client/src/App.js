@@ -13,7 +13,14 @@ import "./App.scss";
 const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null, ethereum: null };
+  state = {
+    storageValue: 0,
+    web3: null,
+    accounts: null,
+    contract: null,
+    ethereum: null,
+    showModal: false,
+  };
 
   componentDidMount = async () => {
     const web3 = await getWeb3();
@@ -153,7 +160,7 @@ class App extends Component {
   };
 
   render() {
-    const { web3, accounts, ethereum } = this.state;
+    const { web3, accounts, ethereum, showModal } = this.state;
 
     console.log('web3', web3);
 
@@ -168,7 +175,7 @@ class App extends Component {
         {accounts && ethereum
             ? (
                 <>
-                  <Header />
+                  <Header/>
                   <main>
                     <Dashboard />
                   </main>
