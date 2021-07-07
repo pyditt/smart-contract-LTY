@@ -13,55 +13,68 @@ import "./App.scss";
 const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null, ethereum: null };
+  state = {
+    storageValue: 0,
+    web3: null,
+    accounts: null,
+    contract: null,
+    ethereum: null,
+  };
 
   componentDidMount = async () => {
     if (window.ethereum) {
+      const web3 = await getWeb3(); // FIX!!!!
       this.setState({
         ethereum: window.ethereum,
+        web3: web3,
+      });
+    }
+  };
+
+  connect = async () => {
+    const { contract, web3 } = this.state;
+    this.state.ethereum.on("accountsChanged", async () => {
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+      const balance = await Utils.getBalance(web3, accounts[0]);
+      this.setState({ accounts: accounts, balance, tokenBalance });
+    });
+
+    this.state.ethereum.on("chainChanged", (_chainId) =>
+      window.location.reload()
+    );
+    this.state.ethereum.on("disconnect", () =>
+      console.log("MetaMask Disconnect")
+    );
+
+    try {
+      // Get network provider and web3 instance.
+
+      // Use web3 to get the user's accounts.
+      const accounts = await this.state.ethereum.request({
+        method: "eth_accounts",
       });
 
-      const web3 = await getWeb3();
-      this.state.ethereum.on("accountsChanged", async () => {
-        const { contract, web3 } = this.state;
-        const accounts = await window.ethereum.request({
-          method: "eth_accounts",
-        });
-        const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
-        const balance = await Utils.getBalance(web3, accounts[0]);
-        this.setState({ accounts: accounts, balance, tokenBalance });
-      });
+      // Get the contract instance.
+      const networkId = await web3.eth.net.getId();
+      const deployedNetwork = networkId;
+      const instance = new web3.eth.Contract(
+        LedgityContract,
+        LedgityContractAddress
+      );
 
-      this.state.ethereum.on("chainChanged", (_chainId) => window.location.reload());
-      this.state.ethereum.on("disconnect", () => console.log("MetaMask Disconnect"));
-
-      try {
-        // Get network provider and web3 instance.
-
-        // Use web3 to get the user's accounts.
-        const accounts = await this.state.ethereum.request({
-          method: "eth_accounts",
-        });
-
-        // Get the contract instance.
-        const networkId = await web3.eth.net.getId();
-        const deployedNetwork = networkId;
-        const instance = new web3.eth.Contract(
-            LedgityContract,
-            LedgityContractAddress
-        );
-
-        // Set web3, accounts, and contract to the state, and then proceed with an
-        // example of interacting with the contract's methods.
-        this.setState({ web3, accounts, contract: instance }, this.runExample);
-      } catch (error) {
-        // Catch any errors for any of the above operations.
-        alert(
-            `Failed to load web3, accounts, or contract. Check console for details.`
-        );
-        console.error(error);
-      }
-    };
+      // Set web3, accounts, and contract to the state, and then proceed with an
+      // example of interacting with the contract's methods.
+      this.setState({ web3, accounts, contract: instance }, this.runExample);
+    } catch (error) {
+      // Catch any errors for any of the above operations.
+      alert(
+        `Failed to load web3, accounts, or contract. Check console for details.`
+      );
+      console.error(error);
+    }
   };
 
   runExample = async () => {
@@ -153,33 +166,34 @@ class App extends Component {
   };
 
   render() {
-    const { web3, accounts, ethereum } = this.state;
+    const { accounts, ethereum } = this.state;
 
-    if(accounts) {
-      console.log('app');
-    } else {
-      console.log('empty');
+    if (!ethereum) {
+      return (
+        <div>
+          Loading Web3, accounts, and contract. If you do not have{" "}
+          <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
+        </div>
+      );
     }
-
-    // if (!web3) {
-    //   return <div>Loading Web3, accounts, and contract...</div>;
-    // }
     return (
       <div className="app-layout">
-        {accounts && ethereum
-            ? (
-                <>
-                  <Header />
-                  <main>
-                    <Dashboard />
-                  </main>
-                </>
-              )
-            : <Connect />
-        }
+        {ethereum && accounts ? (
+          <>
+            <Header />
+            <main>
+              <Dashboard />
+            </main>
+          </>
+        ) : (
+          <>
+            <button onClick={this.connect}> Connect </button>
+            <Connect />
+          </>
+        )}
       </div>
     );
   }
-};
+}
 
 export default App;
