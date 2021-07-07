@@ -21,85 +21,82 @@ class App extends Component {
     ethereum: null,
   };
 
-    componentDidMount = async () => {
-        if (window.ethereum) {
-            const web3 = await getWeb3(); // FIX!!!!
-            this.setState({
-                ethereum: window.ethereum,
-                web3: web3,
-            });
-        }
-    };
+  componentDidMount = async () => {
+    if (window.ethereum) {
+      const web3 = await getWeb3(); // FIX!!!!
+      this.setState({
+        ethereum: window.ethereum,
+        web3: web3,
+      });
+    }
+  };
 
-    connect = async () => {
-        const { contract, web3 } = this.state;
-        this.state.ethereum.on("accountsChanged", async () => {
-            const accounts = await window.ethereum.request({
-                method: "eth_accounts",
-            });
-            const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
-            const balance = await Utils.getBalance(web3, accounts[0]);
-            this.setState({ accounts: accounts, balance, tokenBalance });
-        });
+  connect = async () => {
+    const { ethereum, contract, web3 } = this.state;
 
-        this.state.ethereum.on("chainChanged", (_chainId) =>
-            window.location.reload()
-        );
-        this.state.ethereum.on("disconnect", () =>
-            console.log("MetaMask Disconnect")
-        );
+    try {
+      // Get network provider and web3 instance.
 
-        try {
-            // Get network provider and web3 instance.
+      // Use web3 to get the user's accounts.
+      const accounts = await this.state.ethereum.request({
+        method: "eth_accounts",
+      });
 
-            // Use web3 to get the user's accounts.
-            const accounts = await this.state.ethereum.request({
-                method: "eth_accounts",
-            });
+      // Get the contract instance.
+      const networkId = await web3.eth.net.getId();
+      const deployedNetwork = networkId;
+      const instance = new web3.eth.Contract(
+        LedgityContract,
+        LedgityContractAddress
+      );
 
-            // Get the contract instance.
-            const networkId = await web3.eth.net.getId();
-            const deployedNetwork = networkId;
-            const instance = new web3.eth.Contract(
-                LedgityContract,
-                LedgityContractAddress
-            );
+      // Set web3, accounts, and contract to the state, and then proceed with an
+      // example of interacting with the contract's methods.
+      this.setState({ web3, accounts, contract: instance }, this.runExample);
+    } catch (error) {
+      // Catch any errors for any of the above operations.
+      alert(
+        `Failed to load web3, accounts, or contract. Check console for details.`
+      );
+      console.error(error);
+    }
+  };
 
-            // Set web3, accounts, and contract to the state, and then proceed with an
-            // example of interacting with the contract's methods.
-            this.setState({ web3, accounts, contract: instance }, this.runExample);
-        } catch (error) {
-            // Catch any errors for any of the above operations.
-            alert(
-                `Failed to load web3, accounts, or contract. Check console for details.`
-            );
-            console.error(error);
-        }
-    };
+  runExample = async () => {
+    const { accounts, contract, ethereum, web3 } = this.state;
 
-    runExample = async () => {
-        const web3 = this.state.web3;
-        console.log(web3.eth);
-        const { accounts, contract } = this.state;
-        const ethereum = window.ethereum;
-        // Stores a given value, 5 by default.
-        // await contract.methods.transfer("0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", 10000000000).send({ from: accounts[0] });
+    ethereum.on("accountsChanged", async () => {
+      const accounts = await ethereum.request({
+        method: "eth_accounts",
+      });
+      console.log(contract);
+      const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+      const balance = await Lib.getBalance(web3, accounts[0]);
+      const info = await Lib.getInfo(contract);
+      this.setState({ accounts: accounts, balance, tokenBalance, info });
+    });
 
-        // Get the value from the contract to prove it worked.
+    ethereum.on("chainChanged", (_chainId) => window.location.reload());
+    ethereum.on("disconnect", () => window.location.reload());
 
-        const info = await Lib.getInfo(contract);
-        console.log(
-            "-------------------------",
-            info,
-            "------------------------------------"
-        );
-        const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
-        const balance = await Utils.getBalance(web3, accounts[0]);
+    // Stores a given value, 5 by default.
+    // await contract.methods.transfer("0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", 10000000000).send({ from: accounts[0] });
 
-        console.log("excl: ", Lib.getExcluded(contract));
-        console.log("DEX: ", Lib.getDex(contract));
+    // Get the value from the contract to prove it worked.
 
-        /*
+    const info = await Lib.getInfo(contract);
+    console.log(
+      "-------------------------",
+      info,
+      "------------------------------------"
+    );
+    const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+    const balance = await Lib.getBalance(web3, accounts[0]);
+
+    console.log("excl: ", Lib.getExcluded(contract));
+    console.log("DEX: ", Lib.getDex(contract));
+
+    /*
         Lib.transfer(
           contract,
           accounts[0], // signer
@@ -108,7 +105,7 @@ class App extends Component {
         );
         */
 
-        /*
+    /*
         Lib.setPrice(
           contract,
           accounts[0], // signer
@@ -116,7 +113,7 @@ class App extends Component {
         );
         */
 
-        /*
+    /*
         Lib.burn(
           contract,
           accounts[0], // signer
@@ -124,7 +121,7 @@ class App extends Component {
         );
         */
 
-        /*
+    /*
         Lib.setDex(
           contract,
           accounts[0], // signer
@@ -132,7 +129,7 @@ class App extends Component {
         );
         */
 
-        /*
+    /*
         Lib.includeAccount(
           contract,
           accounts[0],
@@ -140,7 +137,7 @@ class App extends Component {
         );
         */
 
-        /*
+    /*
         Lib.excludeAccount(
           contract,
           accounts[0],
@@ -148,51 +145,78 @@ class App extends Component {
         );
         */
 
-        // Add token to wallet
-        // Lib.addTokenToWallet(contract, ethereum);
+    // Add token to wallet
+    // Lib.addTokenToWallet(contract, ethereum);
 
-        // Add LTY token to your wallet
-        // Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress);
+    // Add LTY token to your wallet
+    // Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress);
 
-        // Update state with the result.
-        this.setState({
-            totalSupply: info.totalSupply,
-            name: info.name,
-            decimals: info.decimals,
-            symbol: info.symbol,
-            tokenBalance,
-            balance,
-        });
-    };
+    // Update state with the result.
+    this.setState({
+      totalSupply: info.totalSupply,
+      name: info.name,
+      decimals: info.decimals,
+      symbol: info.symbol,
+      tokenBalance,
+      balance,
+      totalBurn: info.totalBurn,
+      totalFee: info.totalFee,
+      startPrice: info.startPrice,
+      price: info.price,
+      info: info,
+    });
+  };
 
-    render() {
-        const { accounts, ethereum } = this.state;
+  setPrice = async () => {
+    const { contract, accounts } = this.state;
+    await Lib.setPrice(
+      contract,
+      accounts[0], // signer
+      11 //newPrice
+    );
+    console.log("set");
+    const info = await Lib.getInfo(contract);
+    console.log(info);
+    this.setState({ info: info });
+  };
 
-        if (!ethereum) {
-            return (
-                <div>
-                    Loading Web3, accounts, and contract. If you do not have{" "}
-                    <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
-                </div>
-            );
-        }
+  render() {
+    const { tokenBalance, balance, contract, accounts, ethereum, info } =
+      this.state;
 
-        return (
-          <div className="app-layout">
-            {ethereum && accounts ? (
-              <>
-                <Header />
-                <main>
-                  <Dashboard />
-                </main>
-              </>
-            ) : (
-              <>
-                <button onClick={this.connect}> Connect </button>
-                <Connect />
-              </>
-            )}
-          </div>
+    if (!ethereum) {
+      return (
+        <div>
+          Loading Web3, accounts, and contract. If you do not have{" "}
+          <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
+        </div>
+      );
+    }
+    return (
+      <div className="app-layout">
+        {ethereum && accounts ? (
+          <>
+            <button onClick={() => this.setPrice()}>setPrice</button>
+            <Header
+              address={accounts[0]}
+              addToken={() =>
+                Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress)
+              }
+              balance={balance}
+              tokenBalance={tokenBalance}
+            />
+            <main>
+              <Dashboard
+                info={info}
+                getAddress={() => Lib.getExcluded(contract)}
+                getDex={() => Lib.getDex(contract)}
+              />
+            </main>
+          </>
+        ) : (
+          <Connect connect={this.connect} />
+        )}
+      </div>
     );
   }
 }

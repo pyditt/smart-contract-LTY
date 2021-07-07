@@ -50,19 +50,20 @@ async function getInfo(contract) {
 }
 
 async function getTokenBalance(contract, address) {
-  const balance = await contract.methods.balanceOf(address.toString()).call();
+  let balance = await contract.methods.balanceOf(address.toString()).call();
+  balance.length > 9
+    ? (balance = `${balance.substring(0, 9)}...`)
+    : (balance = balance.substring(0, 9));
   return balance;
 }
 
-function getBalance(address, ethereum) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const balance = await ethereum.provider.getBalance(address);
-      resolve(Number(ethers.utils.formatEther(balance.toString())));
-    } catch (error) {
-      reject(error);
-    }
-  });
+async function getBalance(web3, account) {
+  let balance = await web3.eth.getBalance(account);
+  balance = web3.utils.fromWei(balance, "ether");
+  balance.length > 9
+    ? (balance = `${balance.substring(0, 9)}...`)
+    : (balance = balance.substring(0, 9));
+  return balance;
 }
 
 async function getDex(contract) {
