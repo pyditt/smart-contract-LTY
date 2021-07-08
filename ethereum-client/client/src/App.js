@@ -184,8 +184,15 @@ class App extends Component {
   };
 
   render() {
-    const { tokenBalance, balance, contract, accounts, ethereum, info } =
-      this.state;
+    const {
+      tokenBalance,
+      balance,
+      contract,
+      accounts,
+      ethereum,
+      info,
+      loading,
+    } = this.state;
 
     if (!ethereum) {
       return (
