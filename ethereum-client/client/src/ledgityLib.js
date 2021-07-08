@@ -126,8 +126,7 @@ async function addTokenToWallet(contract, ethereum, tokenAddress) {
             address: tokenAddress,
             symbol: info.symbol,
             decimals: info.decimals,
-            image:
-              "https://cdn.icon-icons.com/icons2/38/PNG/512/closeupmode_close_4630.png",
+            image: "https://i.ibb.co/D1gFDs8/Icon-circle-Colore-512.png",
           },
         },
       })
