@@ -428,8 +428,8 @@ contract LEDGITY is Context, IERC20, Ownable {
     address[] private _excluded;
    
     uint256 private constant MAX = ~uint256(0);
-    uint256 private  _tTotal = 100000000000 * 10**6 * 10**9;
-    uint256 private constant _tAllTotal = 100000000000 * 10**6 * 10**9;
+    uint256 private  _tTotal = 100000000000000000 * 10**9;
+    uint256 private constant _tAllTotal = 100000000000000000 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     string private _name = 'LEDGITY';
     string private _symbol = 'LTY';
@@ -446,6 +446,7 @@ contract LEDGITY is Context, IERC20, Ownable {
     
     constructor () {
         _rOwned[_msgSender()] = _rTotal;
+        excludeAccount(_msgSender());
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -621,20 +622,16 @@ contract LEDGITY is Context, IERC20, Ownable {
              revert("You cannot transfer more than 1 billion now");  }
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
-            _TxTime[sender] = block.timestamp;
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
             _transferToExcluded(sender, recipient, amount);
-            _TxTime[sender] = block.timestamp;
         } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferStandard(sender, recipient, amount);
-            _TxTime[sender] = block.timestamp;
         } else if (_isExcluded[sender] && _isExcluded[recipient]) {
             _transferBothExcluded(sender, recipient, amount);
-            _TxTime[sender] = block.timestamp;
         } else {
             _transferStandard(sender, recipient, amount);
-            _TxTime[sender] = block.timestamp;
         }
+        _TxTime[sender] = block.timestamp;
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
@@ -650,7 +647,8 @@ contract LEDGITY is Context, IERC20, Ownable {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);     
+        getTax(tFee, rFee);
         _reflectFee(rFee.div(3), tFee.div(3));
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -660,6 +658,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        getTax(tFee, rFee);
         _reflectFee(rFee.div(3), tFee.div(3));
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -669,7 +668,8 @@ contract LEDGITY is Context, IERC20, Ownable {
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);    
+        getTax(tFee, rFee);
         _reflectFee(rFee.div(3), tFee.div(3));
         emit Transfer(sender, recipient, tTransferAmount);
     }
