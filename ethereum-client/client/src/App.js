@@ -181,8 +181,14 @@ class App extends Component {
   };
 
   render() {
-    const { tokenBalance, balance, contract, accounts, ethereum, info } =
-      this.state;
+    const {
+      tokenBalance,
+      balance,
+      contract,
+      accounts,
+      ethereum,
+      info
+    } = this.state;
 
     if (!ethereum) {
       return (
@@ -204,6 +210,7 @@ class App extends Component {
               }
               balance={balance}
               tokenBalance={tokenBalance}
+              info={info}
             />
             <main>
               <Dashboard

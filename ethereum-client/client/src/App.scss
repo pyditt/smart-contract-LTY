@@ -97,28 +97,28 @@ h2 {
     &__label {
         font-size: inherit;
         color: $white;
-        width: 33%;
+        width: 30%;
         margin-right: 20px;
     }
     &__input {
         @include input;
 
-        width: 50%;
+        width: 55%;
         display: flex;
         align-items: center;
-        justify-content: center;
         margin-right: 20px;
         font-weight: 600;
         border: none;
+        font-size: 16px;
+        padding: 0px 10px;
 
         &.single {
-            margin-left: 35%;
-            width: 46.9%;
+            width: 100%;
         }
     }
 
     &__note {
-        width: 15%;
+        width: 8%;
         color: $secondaryFontColor;
     }
 }
