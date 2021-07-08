@@ -180,6 +180,14 @@ class App extends Component {
     this.setState({ info: info });
   };
 
+  updateInfo = async () => {
+    const { contract } = this.state;
+    console.log('info before update', info);
+    const info = await Lib.getInfo(contract);
+    console.log('info after update', info);
+    this.setState({ info: info });
+  };
+
   render() {
     const {
       tokenBalance,
@@ -214,10 +222,12 @@ class App extends Component {
             />
             <main>
               <Dashboard
+                account={accounts[0]}
                 info={info}
                 contract={contract}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
+                uploadInfo={() => this.updateInfo}
               />
             </main>
           </>
