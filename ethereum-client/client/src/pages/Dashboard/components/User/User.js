@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import * as Lib from "../../../../ledgityLib";
 import ExcludeAddress from "./components/ExcludeAddress";
 import DexAccounts from "./components/DexAccounts";
@@ -6,18 +6,21 @@ import DexAccounts from "./components/DexAccounts";
 import "./User.scss";
 
 const User = (props) => {
-  const [accountInput, setAccountInput] = useState('');
+  const [accountInput, setAccountInput] = useState("");
   const [balance, setBalance] = useState(null);
   const [errorEl, setErrorEl] = useState(null);
-  const [token, setToken] = useState('');
-  const [address, setAddress] = useState('');
+  const [token, setToken] = useState("");
+  const [address, setAddress] = useState("");
 
   const getTokenBalance = async () => {
     setErrorEl(null);
     try {
-      const tokenAccountBalance = await Lib.getTokenBalance(props.contract, accountInput);
+      const tokenAccountBalance = await Lib.getTokenBalance(
+        props.contract,
+        accountInput
+      );
       setBalance(tokenAccountBalance);
-    } catch(error) {
+    } catch (error) {
       setErrorEl(<p> Incorrect address. Please, check it.. </p>);
     }
   };
@@ -25,9 +28,12 @@ const User = (props) => {
   const onChange = (event) => {
     // console.log('name=', event.target.name);
     switch (event.target.name) {
-      case 'account': return setAccountInput(event.target.value);
-      case 'token': return setToken(event.target.value);
-      case 'address': return setAddress(event.target.value);
+      case "account":
+        return setAccountInput(event.target.value);
+      case "token":
+        return setToken(event.target.value);
+      case "address":
+        return setAddress(event.target.value);
     }
   };
 
@@ -35,8 +41,8 @@ const User = (props) => {
     event.preventDefault();
     console.log(event);
 
-    console.log('token', token);
-    console.log('address', address);
+    console.log("token", token);
+    console.log("address", address);
     /*
         Lib.transfer(
           contract,
@@ -46,18 +52,13 @@ const User = (props) => {
         );
         */
 
-    await Lib.transfer(
-        props.contract,
-        props.account,
-        address,
-        token
-    );
-    console.log('transfer');
+    await Lib.transfer(props.contract, props.account, address, token);
+    console.log("transfer");
+    console.log(props);
     props.updateInfo();
 
-    setToken('');
-    setAddress('');
-
+    setToken("");
+    setAddress("");
   };
 
   return (
@@ -77,9 +78,9 @@ const User = (props) => {
                 onChange={onChange}
               />
               <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={getTokenBalance}
+                type="button"
+                className="btn-primary"
+                onClick={getTokenBalance}
               >
                 Get balance
               </button>
@@ -87,14 +88,14 @@ const User = (props) => {
             </div>
             <div className="user__balance">
               <span> Account balance: </span>
-              <h2> {balance || '0'} LTY</h2>
+              <h2> {balance || "0"} LTY</h2>
             </div>
           </div>
         </div>
 
         <div className="user__item columns">
-          <ExcludeAddress getAddress={props.getAddress}/>
-          <DexAccounts getDex={props.getDex}/>
+          <ExcludeAddress getAddress={props.getAddress} />
+          <DexAccounts getDex={props.getDex} />
         </div>
 
         <div className="user__item">
@@ -117,10 +118,7 @@ const User = (props) => {
                 value={address}
                 onChange={onChange}
               />
-              <button
-                  type="submit"
-                  className="btn-primary"
-              >
+              <button type="submit" className="btn-primary">
                 Transfer
               </button>
             </form>

@@ -182,21 +182,15 @@ class App extends Component {
 
   updateInfo = async () => {
     const { contract } = this.state;
-    console.log('info before update', info);
+    console.log("info before update", this.state.info);
     const info = await Lib.getInfo(contract);
-    console.log('info after update', info);
+    console.log("info after update", this.state.info);
     this.setState({ info: info });
   };
 
   render() {
-    const {
-      tokenBalance,
-      balance,
-      contract,
-      accounts,
-      ethereum,
-      info
-    } = this.state;
+    const { tokenBalance, balance, contract, accounts, ethereum, info } =
+      this.state;
 
     if (!ethereum) {
       return (
@@ -227,7 +221,7 @@ class App extends Component {
                 contract={contract}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
-                uploadInfo={() => this.updateInfo}
+                updateInfo={() => this.updateInfo()}
               />
             </main>
           </>
