@@ -215,6 +215,7 @@ class App extends Component {
             <main>
               <Dashboard
                 info={info}
+                contract={contract}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
               />

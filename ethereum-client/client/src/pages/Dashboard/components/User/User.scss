@@ -40,6 +40,7 @@
   &__field {
     margin-bottom: 30px;
     justify-content: space-between;
+    position: relative;
 
     &:last-child {
       margin-bottom: 0;
@@ -97,6 +98,21 @@
     .field__input {
       width: 100%;
       margin-bottom: 30px;
+    }
+  }
+}
+
+.addresses-list {
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto;
+
+  &__item {
+    font-weight: 400;
+
+    span {
+      font-weight: 700;
+      padding-right: 20px;
     }
   }
 }

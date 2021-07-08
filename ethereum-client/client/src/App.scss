@@ -123,3 +123,13 @@ h2 {
     }
 }
 
+.error-field {
+    position: absolute;
+    bottom: -20px;
+
+    p {
+        color: $red;
+        font-size: 16px;
+    }
+}
+

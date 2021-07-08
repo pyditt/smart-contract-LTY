@@ -3,8 +3,6 @@ import React from 'react';
 import './Modal.scss';
 
 const Modal = ({ close, children, title, open }) => {
-    console.log('open', open);
-
     return (
         <>
             <div className="overlay-bg" />

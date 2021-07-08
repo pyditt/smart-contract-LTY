@@ -76,7 +76,6 @@ const Header =
         <Modal
             close={closeModal}
             title="Contract details:"
-            open={visible}
         >
           <Contract
               info={info}

@@ -21,7 +21,7 @@ const Information = (props) => {
             <div className="information__field field">
               <div className="field__label"> Tokens burned: </div>
               <div className="field__input"> {info.totalBurn} </div>
-              <div className="field__note"> Fix </div>
+              <div className="field__note"> </div>
             </div>
             <div className="information__field field">
               <div className="field__label"> Total commission: </div>
