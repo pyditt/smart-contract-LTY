@@ -23,14 +23,19 @@ async function start(ethereum) {
 }
 
 async function getInfo(contract) {
-  const totalSupply = await contract.methods.totalSupply().call();
-  const allSupply = await contract.methods.allSupply().call();
-  const name = await contract.methods.name().call();
   const decimals = await contract.methods.decimals().call();
+  let totalSupply = await contract.methods.totalSupply().call();
+  totalSupply = (totalSupply / 10 ** decimals).toString();
+  let allSupply = await contract.methods.allSupply().call();
+  allSupply = (allSupply / 10 ** decimals).toString();
+  const name = await contract.methods.name().call();
   const symbol = await contract.methods.symbol().call();
-  const maxTokenTx = await contract.methods.maxTokenTx().call();
-  const totalFee = await contract.methods.totalFee().call();
-  const totalBurn = await contract.methods.totalBurn().call();
+  let maxTokenTx = await contract.methods.maxTokenTx().call();
+  maxTokenTx = (maxTokenTx / 10 ** decimals).toString();
+  let totalFee = await contract.methods.totalFee().call();
+  totalFee = (totalFee / 10 ** decimals).toString();
+  let totalBurn = await contract.methods.totalBurn().call();
+  totalBurn = (totalBurn / 10 ** decimals).toString();
   const price = await contract.methods.getPrice().call();
   const startPrice = await contract.methods.getStartPrice().call();
   const owner = await contract.methods.owner().call();
@@ -51,9 +56,11 @@ async function getInfo(contract) {
 
 async function getTokenBalance(contract, address) {
   let balance = await contract.methods.balanceOf(address.toString()).call();
-  balance.length > 9
-    ? (balance = `${balance.substring(0, 9)}...`)
-    : (balance = balance.substring(0, 9));
+  const decimals = await contract.methods.decimals().call();
+  balance = (balance / 10 ** decimals).toString();
+  balance.length > 15
+    ? (balance = `${balance.substring(0, 15)}...`)
+    : (balance = balance);
   return balance;
 }
 
@@ -62,7 +69,7 @@ async function getBalance(web3, account) {
   balance = web3.utils.fromWei(balance, "ether");
   balance.length > 9
     ? (balance = `${balance.substring(0, 9)}...`)
-    : (balance = balance.substring(0, 9));
+    : (balance = balance);
   return balance;
 }
 
@@ -77,6 +84,8 @@ async function getExcluded(contract) {
 }
 
 async function transfer(contract, signer, address, amount) {
+  const decimals = await contract.methods.decimals().call();
+  amount = amount * 10 ** decimals;
   const balance = await contract.methods
     .transfer(address.toString(), amount.toString())
     .send({ from: signer });
@@ -91,6 +100,8 @@ async function setPrice(contract, signer, newPrice) {
 }
 
 async function burn(contract, signer, amount) {
+  const decimals = await contract.methods.decimals().call();
+  amount = amount * 10 ** decimals;
   const status = await contract.methods
     .burn(amount.toString())
     .send({ from: signer });

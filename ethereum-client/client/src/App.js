@@ -24,9 +24,11 @@ class App extends Component {
 
   componentDidMount = async () => {
     if (window.ethereum) {
-      const web3 = await getWeb3(); // FIX!!!!
       this.setState({
         ethereum: window.ethereum,
+      });
+      const web3 = await getWeb3(); // FIX!!!!
+      this.setState({
         web3: web3,
       });
     }
@@ -70,7 +72,8 @@ class App extends Component {
       const accounts = await ethereum.request({
         method: "eth_accounts",
       });
-      console.log(contract);
+      console.log("Chenge----------");
+      if (!accounts || !accounts[0]) window.location.reload();
       const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
       const balance = await Lib.getBalance(web3, accounts[0]);
       const info = await Lib.getInfo(contract);
