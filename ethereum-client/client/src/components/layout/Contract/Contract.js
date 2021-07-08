@@ -2,9 +2,9 @@ import React from 'react';
 
 import './Contract.scss';
 
-const Contract = ({ address, info }) => {
+const Contract = ({ info }) => {
     console.log('info=', info);
-    const { symbol, name, totalSupply, decimals, allSupply, maxTokenTx, totalFee, totalBurn, startPrice, price  } = info;
+    const { owner, symbol, name, totalSupply, decimals, allSupply, maxTokenTx, totalFee, totalBurn, startPrice, price  } = info;
 
     const renderTokenSymbol = (symbol) => {
         switch (symbol) {
@@ -24,7 +24,7 @@ const Contract = ({ address, info }) => {
                     <img src="/images/user.svg" alt="owner"/>
                 </div>
                 <div className="contract__owner-info">
-                    <p className="contract__address"> { address } </p>
+                    <p className="contract__address"> { owner } </p>
                     <p className="contract__note"> Owner </p>
                 </div>
             </div>

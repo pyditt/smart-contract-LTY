@@ -79,7 +79,6 @@ const Header =
             open={visible}
         >
           <Contract
-              address={address}
               info={info}
           />
         </Modal>
