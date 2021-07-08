@@ -8,6 +8,7 @@ const Owner = ({ contract, account, updateInfo }) => {
   const [token, setToken] = useState('');
   const [dex, setDex] = useState('');
   const [accountInput, setAccountInput] = useState('');
+  const [errorEl, setErrorEl] = useState(null);
 
   const onChange = (event) => {
     switch (event.target.name) {
@@ -24,7 +25,6 @@ const Owner = ({ contract, account, updateInfo }) => {
 
   const applyPrice = async (event) => {
     event.preventDefault();
-    // console.log('price=', price);
     await Lib.setPrice(
         contract,
         account,
@@ -47,14 +47,19 @@ const Owner = ({ contract, account, updateInfo }) => {
 
   const addDex = async (event) => {
     event.preventDefault();
-    console.log(dex);
-    await Lib.setDex(
-        contract,
-        account,
-        dex
-    );
-    setDex('');
-    // updateInfo();
+    setErrorEl(null);
+    const allDex = await Lib.getDex(contract);
+    if (allDex.indexOf(dex) === -1) {
+      await Lib.setDex(
+          contract,
+          account,
+          dex
+      );
+      setDex('');
+    } else {
+      setErrorEl(<p> Incorrect address. Please, check it.. </p>);
+    }
+
   }
 
   const excludeAccount = async () => {
@@ -67,7 +72,6 @@ const Owner = ({ contract, account, updateInfo }) => {
   }
 
   const includeAccount = async () => {
-    console.log('accountInput=', accountInput);
     await Lib.includeAccount(
         contract,
         account,
@@ -120,6 +124,7 @@ const Owner = ({ contract, account, updateInfo }) => {
                 onChange={onChange}
               />
               <button type="submit" className="btn-primary"> Add DEX </button>
+              <div className="error-field">{errorEl}</div>
             </form>
           </div>
         </div>

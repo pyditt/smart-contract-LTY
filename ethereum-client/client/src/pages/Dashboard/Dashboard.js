@@ -10,11 +10,16 @@ const Dashboard = ({
   getDex,
   contract,
   updateInfo,
+  loading,
 }) => {
   return (
     <div className="container">
       <div className="app-main">
-        <Information info={info} />
+        <Information
+            loading={loading}
+            info={info}
+            updateInfo={updateInfo}
+        />
         <User
           getAddress={getAddress}
           getDex={getDex}

@@ -5,6 +5,15 @@
   color: inherit;
   width: 31%;
 
+  &__head {
+    display: flex;
+    flex-flow: row nowrap;
+
+    h2 {
+      padding-right: 30px;
+    }
+  }
+
   &__block {
     @include block;
     min-height: 710px;

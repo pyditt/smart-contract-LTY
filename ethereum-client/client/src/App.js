@@ -19,6 +19,7 @@ class App extends Component {
     accounts: null,
     contract: null,
     ethereum: null,
+    loading: true,
   };
 
   componentDidMount = async () => {
@@ -164,6 +165,7 @@ class App extends Component {
       startPrice: info.startPrice,
       price: info.price,
       info: info,
+      loading: false,
     });
   };
 
@@ -182,14 +184,13 @@ class App extends Component {
 
   updateInfo = async () => {
     const { contract } = this.state;
-    // console.log("info before update", this.state.info);
+    this.setState({ loading: true });
     const info = await Lib.getInfo(contract);
-    // console.log("info after update", this.state.info);
-    this.setState({ info: info });
+    this.setState({ info: info, loading: false });
   };
 
   render() {
-    const { tokenBalance, balance, contract, accounts, ethereum, info } =
+    const { tokenBalance, balance, contract, accounts, ethereum, info, loading } =
       this.state;
 
     if (!ethereum) {
@@ -216,6 +217,7 @@ class App extends Component {
             />
             <main>
               <Dashboard
+                loading={loading}
                 account={accounts[0]}
                 info={info}
                 contract={contract}
