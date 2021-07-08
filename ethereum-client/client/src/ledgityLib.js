@@ -51,9 +51,11 @@ async function getInfo(contract) {
 
 async function getTokenBalance(contract, address) {
   let balance = await contract.methods.balanceOf(address.toString()).call();
-  balance.length > 9
-    ? (balance = `${balance.substring(0, 9)}...`)
-    : (balance = balance.substring(0, 9));
+  const decimals = await contract.methods.decimals().call();
+  balance = (balance / 10 ** decimals).toString();
+  balance.length > 15
+    ? (balance = `${balance.substring(0, 15)}...`)
+    : (balance = balance);
   return balance;
 }
 
@@ -62,7 +64,7 @@ async function getBalance(web3, account) {
   balance = web3.utils.fromWei(balance, "ether");
   balance.length > 9
     ? (balance = `${balance.substring(0, 9)}...`)
-    : (balance = balance.substring(0, 9));
+    : (balance = balance);
   return balance;
 }
 
@@ -77,6 +79,8 @@ async function getExcluded(contract) {
 }
 
 async function transfer(contract, signer, address, amount) {
+  const decimals = await contract.methods.decimals().call();
+  amount = amount * 10 ** decimals;
   const balance = await contract.methods
     .transfer(address.toString(), amount.toString())
     .send({ from: signer });
@@ -91,6 +95,8 @@ async function setPrice(contract, signer, newPrice) {
 }
 
 async function burn(contract, signer, amount) {
+  const decimals = await contract.methods.decimals().call();
+  amount = amount * 10 ** decimals;
   const status = await contract.methods
     .burn(amount.toString())
     .send({ from: signer });
@@ -126,7 +132,8 @@ async function addTokenToWallet(contract, ethereum, tokenAddress) {
             address: tokenAddress,
             symbol: info.symbol,
             decimals: info.decimals,
-            image: "https://i.ibb.co/D1gFDs8/Icon-circle-Colore-512.png",
+            image:
+              "https://cdn.icon-icons.com/icons2/38/PNG/512/closeupmode_close_4630.png",
           },
         },
       })
