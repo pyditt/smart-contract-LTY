@@ -2,10 +2,8 @@ import React, { Component } from "react";
 import LedgityContract from "./contracts/Ledgity.json";
 import getWeb3 from "./getWeb3";
 import * as Lib from "./ledgityLib";
-import * as Utils from "./utils";
-import { ethers } from "ethers";
 
-import { Header, Modal } from "./components/layout";
+import { Header } from "./components/layout";
 import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
@@ -35,7 +33,7 @@ class App extends Component {
   };
 
   connect = async () => {
-    const { ethereum, contract, web3 } = this.state;
+    const { web3 } = this.state;
 
     try {
       // Get network provider and web3 instance.
@@ -46,8 +44,6 @@ class App extends Component {
       });
 
       // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = networkId;
       const instance = new web3.eth.Contract(
         LedgityContract,
         LedgityContractAddress
@@ -58,9 +54,7 @@ class App extends Component {
       this.setState({ web3, accounts, contract: instance }, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`
-      );
+      alert(`Failed to load. First, connect the MetaMask.`);
       console.error(error);
     }
   };
@@ -193,8 +187,15 @@ class App extends Component {
   };
 
   render() {
-    const { tokenBalance, balance, contract, accounts, ethereum, info, loading } =
-      this.state;
+    const {
+      tokenBalance,
+      balance,
+      contract,
+      accounts,
+      ethereum,
+      info,
+      loading,
+    } = this.state;
 
     if (!ethereum) {
       return (

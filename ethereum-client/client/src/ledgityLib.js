@@ -1,27 +1,3 @@
-import LedgityContractAbi from "./contracts/Ledgity.json";
-import getWeb3 from "./getWeb3";
-import { ethers } from "ethers";
-
-const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
-
-async function start(ethereum) {
-  const provider = new ethers.providers.Web3Provider(ethereum);
-  const signer = provider.getSigner();
-  const accounts = await ethereum.request({
-    method: "eth_accounts",
-  });
-  const LedgityContract = new ethers.Contract(
-    LedgityContractAddress,
-    LedgityContractAbi,
-    signer
-  );
-  const LedgityContractWithS = LedgityContract.connect(signer);
-
-  console.log(1, provider);
-  console.log(2, LedgityContract);
-  console.log(3, signer);
-}
-
 async function getInfo(contract) {
   const decimals = await contract.methods.decimals().call();
   let totalSupply = await contract.methods.totalSupply().call();
@@ -58,18 +34,14 @@ async function getTokenBalance(contract, address) {
   let balance = await contract.methods.balanceOf(address.toString()).call();
   const decimals = await contract.methods.decimals().call();
   balance = (balance / 10 ** decimals).toString();
-  balance.length > 15
-    ? (balance = `${balance.substring(0, 15)}...`)
-    : (balance = balance);
+  if (balance.length > 9) balance = `${balance.substring(0, 9)}...`;
   return balance;
 }
 
 async function getBalance(web3, account) {
   let balance = await web3.eth.getBalance(account);
   balance = web3.utils.fromWei(balance, "ether");
-  balance.length > 9
-    ? (balance = `${balance.substring(0, 9)}...`)
-    : (balance = balance);
+  if (balance.length > 9) balance = `${balance.substring(0, 9)}...`;
   return balance;
 }
 
@@ -128,29 +100,18 @@ async function addTokenToWallet(contract, ethereum, tokenAddress) {
   try {
     const info = await getInfo(contract);
 
-    ethereum
-      .request({
-        method: "wallet_watchAsset",
-        params: {
-          type: "ERC20",
-          options: {
-            address: tokenAddress,
-            symbol: info.symbol,
-            decimals: info.decimals,
-            image:
-              "https://cdn.icon-icons.com/icons2/38/PNG/512/closeupmode_close_4630.png",
-          },
+    ethereum.request({
+      method: "wallet_watchAsset",
+      params: {
+        type: "ERC20",
+        options: {
+          address: tokenAddress,
+          symbol: info.symbol,
+          decimals: info.decimals,
+          image: "https://i.ibb.co/D1gFDs8/Icon-circle-Colore-512.png",
         },
-      })
-      .then((success) => {
-        if (success) {
-          console.log(`${info.name} in your wallet!`);
-          alert(`${info.name} in your wallet!`);
-        } else {
-          alert("Something went wrong.");
-          throw new Error("Something went wrong.");
-        }
-      });
+      },
+    });
   } catch (error) {
     console.error(error);
   }
