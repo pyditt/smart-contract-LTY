@@ -3,13 +3,35 @@ import { Information, Owner, User } from "./components";
 
 import "./Dashboard.scss";
 
-const Dashboard = (props) => {
+const Dashboard = ({
+  account,
+  info,
+  getAddress,
+  getDex,
+  contract,
+  updateInfo,
+  loading,
+}) => {
   return (
     <div className="container">
       <div className="app-main">
-        <Information info={props.info} />
-        <User getAddress={props.getAddress} getDex={props.getDex} />
-        <Owner />
+        <Information
+            loading={loading}
+            info={info}
+            updateInfo={updateInfo}
+        />
+        <User
+          getAddress={getAddress}
+          getDex={getDex}
+          contract={contract}
+          account={account}
+          updateInfo={updateInfo}
+        />
+        <Owner
+            contract={contract}
+            account={account}
+            updateInfo={updateInfo}
+        />
       </div>
     </div>
   );

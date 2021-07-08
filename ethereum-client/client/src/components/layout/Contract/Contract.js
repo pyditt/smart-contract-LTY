@@ -3,7 +3,6 @@ import React from 'react';
 import './Contract.scss';
 
 const Contract = ({ info }) => {
-    console.log('info=', info);
     const { owner, symbol, name, totalSupply, decimals, allSupply, maxTokenTx, totalFee, totalBurn, startPrice, price  } = info;
 
     const renderTokenSymbol = (symbol) => {
@@ -14,8 +13,6 @@ const Contract = ({ info }) => {
     }
 
     const tokenSymbol = renderTokenSymbol(info.symbol);
-
-    console.log('tokenSymbol', tokenSymbol);
 
     return (
         <div className="contract">

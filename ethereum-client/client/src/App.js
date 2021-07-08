@@ -19,6 +19,7 @@ class App extends Component {
     accounts: null,
     contract: null,
     ethereum: null,
+    loading: true,
   };
 
   componentDidMount = async () => {
@@ -167,6 +168,7 @@ class App extends Component {
       startPrice: info.startPrice,
       price: info.price,
       info: info,
+      loading: false,
     });
   };
 
@@ -183,16 +185,16 @@ class App extends Component {
     this.setState({ info: info });
   };
 
+  updateInfo = async () => {
+    const { contract } = this.state;
+    this.setState({ loading: true });
+    const info = await Lib.getInfo(contract);
+    this.setState({ info: info, loading: false });
+  };
+
   render() {
-    const {
-      tokenBalance,
-      balance,
-      contract,
-      accounts,
-      ethereum,
-      info,
-      loading,
-    } = this.state;
+    const { tokenBalance, balance, contract, accounts, ethereum, info, loading } =
+      this.state;
 
     if (!ethereum) {
       return (
@@ -206,7 +208,7 @@ class App extends Component {
       <div className="app-layout">
         {ethereum && accounts ? (
           <>
-            <button onClick={() => this.setPrice()}>setPrice</button>
+            {/*<button onClick={() => this.setPrice()}>setPrice</button>*/}
             <Header
               address={accounts[0]}
               addToken={() =>
@@ -218,9 +220,13 @@ class App extends Component {
             />
             <main>
               <Dashboard
+                loading={loading}
+                account={accounts[0]}
                 info={info}
+                contract={contract}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
+                updateInfo={() => this.updateInfo()}
               />
             </main>
           </>
