@@ -23,14 +23,19 @@ async function start(ethereum) {
 }
 
 async function getInfo(contract) {
-  const totalSupply = await contract.methods.totalSupply().call();
-  const allSupply = await contract.methods.allSupply().call();
-  const name = await contract.methods.name().call();
   const decimals = await contract.methods.decimals().call();
+  let totalSupply = await contract.methods.totalSupply().call();
+  totalSupply = (totalSupply / 10 ** decimals).toString();
+  let allSupply = await contract.methods.allSupply().call();
+  allSupply = (allSupply / 10 ** decimals).toString();
+  const name = await contract.methods.name().call();
   const symbol = await contract.methods.symbol().call();
-  const maxTokenTx = await contract.methods.maxTokenTx().call();
-  const totalFee = await contract.methods.totalFee().call();
-  const totalBurn = await contract.methods.totalBurn().call();
+  let maxTokenTx = await contract.methods.maxTokenTx().call();
+  maxTokenTx = (maxTokenTx / 10 ** decimals).toString();
+  let totalFee = await contract.methods.totalFee().call();
+  totalFee = (totalFee / 10 ** decimals).toString();
+  let totalBurn = await contract.methods.totalBurn().call();
+  totalBurn = (totalBurn / 10 ** decimals).toString();
   const price = await contract.methods.getPrice().call();
   const startPrice = await contract.methods.getStartPrice().call();
   const owner = await contract.methods.owner().call();
