@@ -3,7 +3,7 @@ import React from "react";
 import "./Information.scss";
 
 const Information = (props) => {
-  console.log(props);
+  // console.log(props);
   const info = props.info || {};
 
   return (

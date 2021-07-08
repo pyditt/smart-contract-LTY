@@ -182,9 +182,9 @@ class App extends Component {
 
   updateInfo = async () => {
     const { contract } = this.state;
-    console.log("info before update", this.state.info);
+    // console.log("info before update", this.state.info);
     const info = await Lib.getInfo(contract);
-    console.log("info after update", this.state.info);
+    // console.log("info after update", this.state.info);
     this.setState({ info: info });
   };
 
@@ -204,7 +204,7 @@ class App extends Component {
       <div className="app-layout">
         {ethereum && accounts ? (
           <>
-            <button onClick={() => this.setPrice()}>setPrice</button>
+            {/*<button onClick={() => this.setPrice()}>setPrice</button>*/}
             <Header
               address={accounts[0]}
               addToken={() =>

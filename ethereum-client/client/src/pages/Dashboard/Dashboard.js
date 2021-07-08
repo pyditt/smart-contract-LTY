@@ -22,7 +22,11 @@ const Dashboard = ({
           account={account}
           updateInfo={updateInfo}
         />
-        <Owner />
+        <Owner
+            contract={contract}
+            account={account}
+            updateInfo={updateInfo}
+        />
       </div>
     </div>
   );

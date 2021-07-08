@@ -39,22 +39,9 @@ const User = (props) => {
 
   const transferTokens = async (event) => {
     event.preventDefault();
-    console.log(event);
-
-    console.log("token", token);
-    console.log("address", address);
-    /*
-        Lib.transfer(
-          contract,
-          accounts[0], // signer
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", //recipient
-          10000000000 //amount
-        );
-        */
 
     await Lib.transfer(props.contract, props.account, address, token);
-    console.log("transfer");
-    console.log(props);
+    // console.log("transfer");
     props.updateInfo();
 
     setToken("");
