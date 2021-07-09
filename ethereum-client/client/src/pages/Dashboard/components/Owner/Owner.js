@@ -4,10 +4,10 @@ import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
 
 const Owner = ({ contract, account, updateInfo }) => {
-  const [price, setPrice] = useState('');
-  const [token, setToken] = useState('');
-  const [dex, setDex] = useState('');
-  const [accountInput, setAccountInput] = useState('');
+  const [price, setPrice] = useState("");
+  const [token, setToken] = useState("");
+  const [dex, setDex] = useState("");
+  const [accountInput, setAccountInput] = useState("");
   const [isOwner, setIsOwner] = useState(false);
 
   const [errorPrice, setErrorPrice] = useState(null);
@@ -18,11 +18,12 @@ const Owner = ({ contract, account, updateInfo }) => {
   const getInfo = async () => {
     const info = await Lib.getInfo(contract);
     return info;
-  }
+  };
 
   useEffect(() => {
     getInfo().then((res) => {
-      if (account === res.owner) {
+      console.log(account, res.owner);
+      if (account === res.owner.toLowerCase()) {
         setIsOwner(true);
       }
     });
@@ -51,12 +52,8 @@ const Owner = ({ contract, account, updateInfo }) => {
     setErrorPrice(null);
 
     try {
-      await Lib.setPrice(
-          contract,
-          account,
-          price
-      );
-      setPrice('');
+      await Lib.setPrice(contract, account, price);
+      setPrice("");
       updateInfo();
     } catch (error) {
       if (error.code === 4001) {
@@ -70,21 +67,16 @@ const Owner = ({ contract, account, updateInfo }) => {
     event.preventDefault();
     setErrorToken(null);
     try {
-      await Lib.burn(
-          contract,
-          account,
-          token
-      );
-      setToken('');
+      await Lib.burn(contract, account, token);
+      setToken("");
       updateInfo();
-    } catch(error) {
+    } catch (error) {
       if (error.code === 4001) {
         return setErrorToken(<p>Transaction signature was denied.</p>);
       }
       setErrorToken(<p> Incorrect token. </p>);
     }
-
-  }
+  };
 
   const addDex = async (event) => {
     event.preventDefault();
@@ -92,34 +84,26 @@ const Owner = ({ contract, account, updateInfo }) => {
     try {
       const allDex = await Lib.getDex(contract);
       if (allDex.indexOf(dex) === -1) {
-        await Lib.setDex(
-            contract,
-            account,
-            dex
-        );
-        setDex('');
+        await Lib.setDex(contract, account, dex);
+        setDex("");
       } else {
         setErrorDex(<p> Such address already exists. </p>);
       }
-    } catch(error) {
+    } catch (error) {
       if (error.code === 4001) {
         return setErrorToken(<p>Transaction signature was denied.</p>);
       }
       setErrorDex(<p> Incorrect address. Please, check it.. </p>);
     }
-  }
+  };
 
   const excludeAccount = async () => {
     setErrorAccount(null);
     try {
       const allExcluded = await Lib.getExcluded(contract);
-      if(allExcluded.indexOf(accountInput) === -1) {
-        await Lib.excludeAccount(
-            contract,
-            account,
-            accountInput
-        );
-        setAccountInput('');
+      if (allExcluded.indexOf(accountInput) === -1) {
+        await Lib.excludeAccount(contract, account, accountInput);
+        setAccountInput("");
       } else {
         setErrorAccount(<p> Such account is already excluded. </p>);
       }
@@ -129,38 +113,31 @@ const Owner = ({ contract, account, updateInfo }) => {
       }
       setErrorAccount(<p> Incorrect account. Please, check it.. </p>);
     }
-  }
+  };
 
   const includeAccount = async () => {
     setErrorAccount(null);
     try {
-      await Lib.includeAccount(
-          contract,
-          account,
-          accountInput
-      );
-      setAccountInput('');
+      await Lib.includeAccount(contract, account, accountInput);
+      setAccountInput("");
     } catch (error) {
       if (error.code === 4001) {
         return setErrorAccount(<p>Transaction signature was denied.</p>);
       }
       setErrorAccount(<p> Incorrect account. Please, check it.. </p>);
     }
-  }
+  };
 
   return (
     <div className="owner">
-      {isOwner
-        ? (
-              <h2 className="title"> Owner </h2>
-          ) : (
-              <div className="owner__head">
-                <h2 className="title"> Owner </h2>
-                <p>(Only for contract Owner)</p>
-              </div>
-          )
-      }
-
+      {isOwner ? (
+        <h2 className="title"> Owner </h2>
+      ) : (
+        <div className="owner__head">
+          <h2 className="title"> Owner </h2>
+          <p>(Only for contract Owner)</p>
+        </div>
+      )}
 
       <div className="owner__block">
         <div className="owner__item commission">
@@ -173,16 +150,16 @@ const Owner = ({ contract, account, updateInfo }) => {
               <input
                 type="number"
                 name="price"
-                className={isOwner? "field__input" : "field__input disabled"}
+                className={isOwner ? "field__input" : "field__input disabled"}
                 disabled={!isOwner}
                 placeholder="Enter price"
                 value={price}
                 onChange={onChange}
               />
               <button
-                  type="submit"
-                  className={isOwner? "btn-primary" : "btn-primary disabled"}
-                  disabled={!isOwner}
+                type="submit"
+                className={isOwner ? "btn-primary" : "btn-primary disabled"}
+                disabled={!isOwner}
               >
                 Set
               </button>
@@ -193,17 +170,17 @@ const Owner = ({ contract, account, updateInfo }) => {
                 Burn token:
               </label>
               <input
-                  type="number"
-                  name="token"
-                  className={isOwner? "field__input" : "field__input disabled"}
-                  disabled={!isOwner}
-                  value={token}
-                  onChange={onChange}
+                type="number"
+                name="token"
+                className={isOwner ? "field__input" : "field__input disabled"}
+                disabled={!isOwner}
+                value={token}
+                onChange={onChange}
               />
               <button
-                  type="submit"
-                  className={isOwner? "btn-primary" : "btn-primary disabled"}
-                  disabled={!isOwner}
+                type="submit"
+                className={isOwner ? "btn-primary" : "btn-primary disabled"}
+                disabled={!isOwner}
               >
                 Burn
               </button>
@@ -214,12 +191,19 @@ const Owner = ({ contract, account, updateInfo }) => {
                 type="text"
                 placeholder="Enter address"
                 name="dex"
-                className={isOwner? "field__input" : "field__input disabled"}
+                className={isOwner ? "field__input" : "field__input disabled"}
                 disabled={!isOwner}
                 value={dex}
                 onChange={onChange}
               />
-              <button type="submit" className={isOwner? "btn-primary" : "btn-primary disabled"} disabled={!isOwner}> Add DEX </button>
+              <button
+                type="submit"
+                className={isOwner ? "btn-primary" : "btn-primary disabled"}
+                disabled={!isOwner}
+              >
+                {" "}
+                Add DEX{" "}
+              </button>
               <div className="error-field">{errorDex}</div>
             </form>
           </div>
@@ -229,26 +213,26 @@ const Owner = ({ contract, account, updateInfo }) => {
           <div className="owner__fields">
             <div className="owner__field field full">
               <input
-                  type="text"
-                  name="account"
-                  className={isOwner? "field__input" : "field__input disabled"}
-                  disabled={!isOwner}
-                  value={accountInput}
-                  onChange={onChange}
+                type="text"
+                name="account"
+                className={isOwner ? "field__input" : "field__input disabled"}
+                disabled={!isOwner}
+                value={accountInput}
+                onChange={onChange}
               />
               <button
-                  type="button"
-                  className={isOwner? "btn-primary" : "btn-primary disabled"}
-                  disabled={!isOwner}
-                  onClick={excludeAccount}
+                type="button"
+                className={isOwner ? "btn-primary" : "btn-primary disabled"}
+                disabled={!isOwner}
+                onClick={excludeAccount}
               >
                 Exclude account
               </button>
               <button
-                  type="button"
-                  className={isOwner? "btn-primary" : "btn-primary disabled"}
-                  disabled={!isOwner}
-                  onClick={includeAccount}
+                type="button"
+                className={isOwner ? "btn-primary" : "btn-primary disabled"}
+                disabled={!isOwner}
+                onClick={includeAccount}
               >
                 Include account
               </button>
