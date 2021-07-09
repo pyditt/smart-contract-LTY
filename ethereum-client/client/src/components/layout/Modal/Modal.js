@@ -2,7 +2,7 @@ import React from 'react';
 
 import './Modal.scss';
 
-const Modal = ({ close, children, title, open }) => {
+const Modal = ({ close, children, title }) => {
     return (
         <>
             <div className="overlay-bg" />
@@ -11,8 +11,9 @@ const Modal = ({ close, children, title, open }) => {
                 <div type="button" onClick={close} className="close-btn">
                     <img src="/images/close.svg" alt="Close"/>
                 </div>
-
-                {children}
+                <div className="modal__content">
+                    {children}
+                </div>
             </div>
         </>
     )
