@@ -8,7 +8,7 @@ import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
 
-const LedgityContractAddress = "0x75264cAdcC904651167B89e69D99CeFfcBc7283d";
+const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
 
 class App extends Component {
   state = {
