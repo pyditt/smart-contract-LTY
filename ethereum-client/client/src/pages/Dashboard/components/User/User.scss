@@ -57,6 +57,10 @@
     .btn-primary {
       width: 41%;
     }
+
+    .error-field {
+      bottom: 54px;
+    }
   }
 
   &__balance {
@@ -85,6 +89,7 @@
     &:last-child {
       margin-right: 0;
       align-items: flex-end;
+      justify-content: space-between;
 
       h2 {
         padding-right: 24px;
@@ -109,10 +114,20 @@
 
   &__item {
     font-weight: 400;
+    display: flex;
 
     span {
       font-weight: 700;
       padding-right: 20px;
+      min-width: 50px;
+    }
+  }
+}
+
+@media(max-width: 1470px) {
+  .user {
+    &__block {
+      padding: 20px;
     }
   }
 }

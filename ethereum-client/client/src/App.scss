@@ -28,6 +28,12 @@ input::-webkit-inner-spin-button {
 
 .btn-primary {
     @include btn-primary;
+
+    &.disabled {
+        background-color: $secondaryFontColor;
+        cursor: auto;
+        pointer-events: none;
+    }
 }
 
 .btn-secondary {
@@ -42,6 +48,7 @@ h2 {
     &.title {
         font-weight: 700;
         text-transform: uppercase;
+        min-height: 30px;
     }
 }
 
@@ -115,6 +122,10 @@ h2 {
         &.single {
             width: 100%;
         }
+
+        &.disabled {
+            pointer-events: none;
+        }
     }
 
     &__note {
@@ -150,3 +161,55 @@ h2 {
     }
 }
 
+@media(max-width: 1720px) {
+    .app-header {
+        &__btns {
+            align-items: center;
+        }
+
+        &__account {
+            width: auto;
+            padding: 0px 22px;
+            height: 50px;
+            margin-left: 20px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: auto;
+            padding: 0px 22px;
+            height: 50px;
+        }
+    }
+
+    .balance {
+        &__item {
+            margin-right: 25px;
+        }
+        &__title {
+            padding-right: 25px;
+        }
+        &__token {
+            margin-right: 16px;
+        }
+        &__price {
+            font-size: 26px;
+            min-width: auto;
+        }
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+}
+
+@media(max-width: 1470px) {
+    .field {
+        &__input {
+            margin-right: 10px;
+        }
+        &__label {
+            margin-right: 10px;
+        }
+    }
+}

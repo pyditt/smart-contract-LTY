@@ -43,3 +43,11 @@
     }
   }
 }
+
+@media(max-width: 1470px) {
+  .information {
+    &__block {
+      padding: 20px;
+    }
+  }
+}

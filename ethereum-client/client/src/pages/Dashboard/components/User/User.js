@@ -8,12 +8,14 @@ import "./User.scss";
 const User = (props) => {
   const [accountInput, setAccountInput] = useState("");
   const [balance, setBalance] = useState(null);
-  const [errorEl, setErrorEl] = useState(null);
   const [token, setToken] = useState("");
   const [address, setAddress] = useState("");
 
+  const [errorBalance, setErrorBalance] = useState(null);
+  const [errorTransfer, setErrorTransfer] = useState(null);
+
   const getTokenBalance = async () => {
-    setErrorEl(null);
+    setErrorBalance(null);
     try {
       const tokenAccountBalance = await Lib.getTokenBalance(
         props.contract,
@@ -21,12 +23,13 @@ const User = (props) => {
       );
       setBalance(tokenAccountBalance);
     } catch (error) {
-      setErrorEl(<p> Incorrect address. Please, check it.. </p>);
+      setErrorBalance(<p> Incorrect address. Please, check it.. </p>);
     }
   };
 
   const onChange = (event) => {
-    // console.log('name=', event.target.name);
+    setErrorBalance(null);
+    setErrorTransfer(null);
     switch (event.target.name) {
       case "account":
         return setAccountInput(event.target.value);
@@ -39,13 +42,22 @@ const User = (props) => {
 
   const transferTokens = async (event) => {
     event.preventDefault();
+    setErrorTransfer(null);
 
-    await Lib.transfer(props.contract, props.account, address, token);
-    // console.log("transfer");
-    props.updateInfo();
+    try {
+      await Lib.transfer(props.contract, props.account, address, token);
+      // console.log("transfer");
+      props.updateInfo();
 
-    setToken("");
-    setAddress("");
+      setToken("");
+      setAddress("");
+    } catch(error) {
+      if (error.code === 4001) {
+        return setErrorTransfer(<p>Transaction signature was denied.</p>);
+      }
+      setErrorTransfer(<p> Incorrect information. Please, check it.. </p>);
+    }
+
   };
 
   return (
@@ -71,7 +83,7 @@ const User = (props) => {
               >
                 Get balance
               </button>
-              <div className="error-field"> {errorEl} </div>
+              <div className="error-field"> {errorBalance} </div>
             </div>
             <div className="user__balance">
               <span> Account balance: </span>
@@ -90,7 +102,7 @@ const User = (props) => {
           <div className="user__field field">
             <form className="user__form" onSubmit={transferTokens}>
               <input
-                type="text"
+                type="number"
                 placeholder="Number of tokens"
                 name="token"
                 className="field__input"
@@ -108,6 +120,7 @@ const User = (props) => {
               <button type="submit" className="btn-primary">
                 Transfer
               </button>
+              <div className="error-field"> {errorTransfer} </div>
             </form>
           </div>
         </div>
