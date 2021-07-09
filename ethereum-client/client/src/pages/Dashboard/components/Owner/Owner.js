@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
 
-const Owner = ({ contract, account, updateInfo }) => {
+const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [price, setPrice] = useState("");
   const [token, setToken] = useState("");
   const [dex, setDex] = useState("");
@@ -130,7 +130,7 @@ const Owner = ({ contract, account, updateInfo }) => {
 
   return (
     <div className="owner">
-      {isOwner ? (
+      {ownership ? (
         <h2 className="title"> Owner </h2>
       ) : (
         <div className="owner__head">
@@ -150,16 +150,16 @@ const Owner = ({ contract, account, updateInfo }) => {
               <input
                 type="number"
                 name="price"
-                className={isOwner ? "field__input" : "field__input disabled"}
-                disabled={!isOwner}
+                className={ownership ? "field__input" : "field__input disabled"}
+                disabled={!ownership}
                 placeholder="Enter price"
                 value={price}
                 onChange={onChange}
               />
               <button
                 type="submit"
-                className={isOwner ? "btn-primary" : "btn-primary disabled"}
-                disabled={!isOwner}
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
               >
                 Set
               </button>
@@ -172,15 +172,15 @@ const Owner = ({ contract, account, updateInfo }) => {
               <input
                 type="number"
                 name="token"
-                className={isOwner ? "field__input" : "field__input disabled"}
-                disabled={!isOwner}
+                className={ownership ? "field__input" : "field__input disabled"}
+                disabled={!ownership}
                 value={token}
                 onChange={onChange}
               />
               <button
                 type="submit"
-                className={isOwner ? "btn-primary" : "btn-primary disabled"}
-                disabled={!isOwner}
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
               >
                 Burn
               </button>
@@ -191,15 +191,15 @@ const Owner = ({ contract, account, updateInfo }) => {
                 type="text"
                 placeholder="Enter address"
                 name="dex"
-                className={isOwner ? "field__input" : "field__input disabled"}
-                disabled={!isOwner}
+                className={ownership ? "field__input" : "field__input disabled"}
+                disabled={!ownership}
                 value={dex}
                 onChange={onChange}
               />
               <button
                 type="submit"
-                className={isOwner ? "btn-primary" : "btn-primary disabled"}
-                disabled={!isOwner}
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
               >
                 {" "}
                 Add DEX{" "}
@@ -215,23 +215,23 @@ const Owner = ({ contract, account, updateInfo }) => {
               <input
                 type="text"
                 name="account"
-                className={isOwner ? "field__input" : "field__input disabled"}
-                disabled={!isOwner}
+                className={ownership ? "field__input" : "field__input disabled"}
+                disabled={!ownership}
                 value={accountInput}
                 onChange={onChange}
               />
               <button
                 type="button"
-                className={isOwner ? "btn-primary" : "btn-primary disabled"}
-                disabled={!isOwner}
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
                 onClick={excludeAccount}
               >
                 Exclude account
               </button>
               <button
                 type="button"
-                className={isOwner ? "btn-primary" : "btn-primary disabled"}
-                disabled={!isOwner}
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
                 onClick={includeAccount}
               >
                 Include account

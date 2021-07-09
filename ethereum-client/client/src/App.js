@@ -18,6 +18,7 @@ class App extends Component {
     contract: null,
     ethereum: null,
     loading: true,
+    isOwner: false,
   };
 
   componentDidMount = async () => {
@@ -25,15 +26,18 @@ class App extends Component {
       this.setState({
         ethereum: window.ethereum,
       });
-      const web3 = await getWeb3(); // FIX!!!!
-      this.setState({
-        web3: web3,
-      });
+      // const web3 = await getWeb3(); // FIX!!!!
+      // this.setState({
+      //   web3: web3,
+      // });
     }
   };
 
   connect = async () => {
-    const { web3 } = this.state;
+    const web3 = await getWeb3();
+    this.setState({
+      web3: web3,
+    });
 
     try {
       // Get network provider and web3 instance.
@@ -59,6 +63,13 @@ class App extends Component {
     }
   };
 
+  isOwner = (info, account) => {
+    let res;
+    const owner = info.owner;
+    owner.toLowerCase() == account.toLowerCase() ? (res = true) : (res = false);
+    return res;
+  };
+
   runExample = async () => {
     const { accounts, contract, ethereum, web3 } = this.state;
 
@@ -71,7 +82,15 @@ class App extends Component {
       const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
       const balance = await Lib.getBalance(web3, accounts[0]);
       const info = await Lib.getInfo(contract);
-      this.setState({ accounts: accounts, balance, tokenBalance, info });
+      const ownership = this.isOwner(info, accounts[0]);
+      console.log(ownership);
+      this.setState({
+        accounts: accounts,
+        balance,
+        tokenBalance,
+        info,
+        ownership,
+      });
     });
 
     ethereum.on("chainChanged", (_chainId) => window.location.reload());
@@ -186,6 +205,14 @@ class App extends Component {
     this.setState({ info: info, loading: false });
   };
 
+  updateBalances = async () => {
+    const { contract, accounts, web3 } = this.state;
+    const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
+    const balance = await Lib.getBalance(web3, accounts[0]);
+    this.setState({ balance: balance, tokenBalance: tokenBalance });
+    console.log("UpdateB");
+  };
+
   render() {
     const {
       tokenBalance,
@@ -195,6 +222,7 @@ class App extends Component {
       ethereum,
       info,
       loading,
+      ownership,
     } = this.state;
 
     if (!ethereum) {
@@ -224,10 +252,12 @@ class App extends Component {
                 loading={loading}
                 account={accounts[0]}
                 info={info}
+                ownership={ownership}
                 contract={contract}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
                 updateInfo={() => this.updateInfo()}
+                updateBalances={() => this.updateBalances()}
               />
             </main>
           </>

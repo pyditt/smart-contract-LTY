@@ -48,16 +48,16 @@ const User = (props) => {
       await Lib.transfer(props.contract, props.account, address, token);
       // console.log("transfer");
       props.updateInfo();
+      props.updateBalances();
 
       setToken("");
       setAddress("");
-    } catch(error) {
+    } catch (error) {
       if (error.code === 4001) {
         return setErrorTransfer(<p>Transaction signature was denied.</p>);
       }
       setErrorTransfer(<p> Incorrect information. Please, check it.. </p>);
     }
-
   };
 
   return (

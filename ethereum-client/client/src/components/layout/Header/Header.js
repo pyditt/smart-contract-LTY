@@ -4,14 +4,7 @@ import { Contract } from "../index";
 
 import "./Header.scss";
 
-const Header =
-    ({
-       tokenBalance,
-       balance,
-       addToken,
-       address,
-       info,
-    }) => {
+const Header = ({ tokenBalance, balance, addToken, address, info }) => {
   const [visible, setVisible] = useState(false);
 
   const showModal = () => {
@@ -57,11 +50,7 @@ const Header =
             </div>
           </div>
           <div className="app-header__btns">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={addToken}
-            >
+            <button type="button" className="btn-secondary" onClick={addToken}>
               Add LTY to wallet
             </button>
             <div className="app-header__account">
@@ -72,16 +61,11 @@ const Header =
           </div>
         </div>
       </header>
-      {visible &&
-        <Modal
-            close={closeModal}
-            title="Contract details:"
-        >
-          <Contract
-              info={info}
-          />
+      {visible && (
+        <Modal close={closeModal} title="Contract details:">
+          <Contract info={info} />
         </Modal>
-      }
+      )}
     </>
   );
 };
