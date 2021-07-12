@@ -591,13 +591,13 @@ contract LEDGITY is Context, IERC20, Ownable {
     
     uint256 _price = 7;
     uint256 constant _startPrice = 1;
-    uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
+    uint256 private numTokensSellToAddToLiquidity = 5000 * 10**9;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
     
-    constructor (address uniswapRouter) {
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(uniswapRouter);
+    constructor () {
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
          // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
@@ -814,11 +814,16 @@ contract LEDGITY is Context, IERC20, Ownable {
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
         require(amount < _tTotal.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
-        require(_TxTime[sender] < block.timestamp - 15 seconds, "Only ONE transaction per 15 seconds");
+        //require(_TxTime[sender] < block.timestamp - 15 seconds || sender != owner(), "Only ONE transaction per 15 seconds");
 
-        if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
-             revert("You cannot transfer more than 1 billion now");  }
-        if (_isExcluded[sender] && !_isExcluded[recipient]) {
+        //if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
+             //revert("You cannot transfer more than 1 billion now");  }
+        if (sender == address(this) || sender == owner()) {
+            _transferOwner(sender, recipient, amount);
+        } else {
+            _transferStandard(sender, recipient, amount);
+        }
+        /*if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
             _TxTime[sender] = block.timestamp;
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
@@ -833,7 +838,15 @@ contract LEDGITY is Context, IERC20, Ownable {
         } else {
             _transferStandard(sender, recipient, amount);
             _TxTime[sender] = block.timestamp;
-        }
+        }*/
+    }
+    
+     function _transferOwner( address sender, address recipient, uint256 tAmount) private {
+        uint256 currentRate =  _getRate();
+        uint256 rAmount = tAmount.mul(currentRate);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rAmount);
+        emit Transfer(sender, recipient, rAmount);
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
@@ -875,7 +888,7 @@ contract LEDGITY is Context, IERC20, Ownable {
     
     
  
-    function culcTax (uint256 amount) private view returns(uint256 fee) {
+    function culcTax (uint256 amount) public view returns(uint256 fee) {
         
         // [1] - >50% and price
         if(_tTotal >= _tAllTotal.mul(50).div(100)) {
@@ -964,18 +977,23 @@ contract LEDGITY is Context, IERC20, Ownable {
         uint256 rThird = rFee.div(3);
         burnOnTax(tThird, rThird);
         
-        uint256 initialBalance = address(this).balance;
-        bool overMinTokenBalance = initialBalance >= numTokensSellToAddToLiquidity;
-
-        if (overMinTokenBalance) {
-            swapTokensForEth(tFee.div(2));
+        _tOwned[address(this)] = _tOwned[address(this)].add(tThird);
+        uint256 contractTokenBalance = _tOwned[address(this)];
+        
+        if(contractTokenBalance >= numTokensSellToAddToLiquidity) {
+            uint256 initialBalance = address(this).balance;
+            uint256 contractTokenBalanceHalf = contractTokenBalance.div(2);
+            swapTokensForEth(contractTokenBalanceHalf);
             uint256 newBalance = address(this).balance.sub(initialBalance);
-            addLiquidity(tFee.div(2), newBalance);
-        } else {
-            _tOwned[address(this)] = _tOwned[address(this)].add(tThird);
+            addLiquidity(contractTokenBalance.sub(contractTokenBalanceHalf), newBalance);
+            _tOwned[address(this)] = 0;
         }
 
         return true;
+    }
+    
+    function getLiqValue() public view returns(uint256) {
+        return _tOwned[address(this)];
     }
     
     function burnOnTax(uint256 tAmount, uint256 rAmount) internal returns(bool){
