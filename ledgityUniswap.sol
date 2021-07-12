@@ -965,14 +965,14 @@ contract LEDGITY is Context, IERC20, Ownable {
         burnOnTax(tThird, rThird);
         
         uint256 initialBalance = address(this).balance;
-        bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
+        bool overMinTokenBalance = initialBalance >= numTokensSellToAddToLiquidity;
 
         if (overMinTokenBalance) {
             swapTokensForEth(tFee.div(2));
             uint256 newBalance = address(this).balance.sub(initialBalance);
             addLiquidity(tFee.div(2), newBalance);
         } else {
-            _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
+            _tOwned[address(this)] = _tOwned[address(this)].add(tThird);
         }
 
         return true;
