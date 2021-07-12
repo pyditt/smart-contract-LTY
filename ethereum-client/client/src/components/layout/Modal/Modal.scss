@@ -7,12 +7,28 @@
   left: 50%;
   transform: translate(-50%,-50%);
   width: 630px;
-  min-height: 120px;
-  max-height: 800px;
+  padding: 40px 20px 20px;
   background-color: $white;
   border-radius: 20px;
   z-index: 10;
-  padding: 40px;
+
+
+  &__title {
+    color: $primaryFontColor;
+    margin-bottom: 40px;
+  }
+
+  &__content {
+    padding: 20px;
+    min-height: 120px;
+    max-height: 600px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar-track {border-radius: 4px;}
+    &::-webkit-scrollbar {width: 6px;}
+    &::-webkit-scrollbar-thumb {border-radius: 4px;background: #f0f2f5;}
+    &:hover::-webkit-scrollbar-thumb {background: #6a7d9b;}
+  }
 }
 
 .close-btn {

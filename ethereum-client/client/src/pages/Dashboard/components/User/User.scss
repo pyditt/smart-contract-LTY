@@ -16,7 +16,7 @@
   }
 
   &__item {
-    margin-bottom: 50px;
+    margin-bottom: 32px;
 
     &:last-child {
       margin-bottom: 0px;
@@ -38,8 +38,9 @@
   }
 
   &__field {
-    margin-bottom: 30px;
+    margin-bottom: 26px;
     justify-content: space-between;
+    position: relative;
 
     &:last-child {
       margin-bottom: 0;
@@ -55,6 +56,10 @@
 
     .btn-primary {
       width: 41%;
+    }
+
+    .error-field {
+      bottom: 54px;
     }
   }
 
@@ -84,6 +89,7 @@
     &:last-child {
       margin-right: 0;
       align-items: flex-end;
+      justify-content: space-between;
 
       h2 {
         padding-right: 24px;
@@ -97,6 +103,31 @@
     .field__input {
       width: 100%;
       margin-bottom: 30px;
+    }
+  }
+}
+
+.addresses-list {
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto;
+
+  &__item {
+    font-weight: 400;
+    display: flex;
+
+    span {
+      font-weight: 700;
+      padding-right: 20px;
+      min-width: 50px;
+    }
+  }
+}
+
+@media(max-width: 1470px) {
+  .user {
+    &__block {
+      padding: 20px;
     }
   }
 }

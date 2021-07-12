@@ -1,9 +1,19 @@
-@import '../../../../styles/variables';
-@import '../../../../styles/mixins';
+@import "../../../../styles/variables";
+@import "../../../../styles/mixins";
 
 .information {
   color: inherit;
   width: 31%;
+
+  &__head {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+
+    h2 {
+      padding-right: 30px;
+    }
+  }
 
   &__block {
     @include block;
@@ -31,6 +41,14 @@
 
     .field__input {
       pointer-events: none;
+    }
+  }
+}
+
+@media (max-width: 1470px) {
+  .information {
+    &__block {
+      padding: 20px;
     }
   }
 }

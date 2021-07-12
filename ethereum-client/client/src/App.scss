@@ -28,6 +28,12 @@ input::-webkit-inner-spin-button {
 
 .btn-primary {
     @include btn-primary;
+
+    &.disabled {
+        background-color: $secondaryFontColor;
+        cursor: auto;
+        pointer-events: none;
+    }
 }
 
 .btn-secondary {
@@ -42,6 +48,7 @@ h2 {
     &.title {
         font-weight: 700;
         text-transform: uppercase;
+        min-height: 30px;
     }
 }
 
@@ -97,29 +104,112 @@ h2 {
     &__label {
         font-size: inherit;
         color: $white;
-        width: 33%;
+        width: 30%;
         margin-right: 20px;
     }
     &__input {
         @include input;
 
-        width: 50%;
+        width: 55%;
         display: flex;
         align-items: center;
-        justify-content: center;
         margin-right: 20px;
         font-weight: 600;
         border: none;
+        font-size: 16px;
+        padding: 0px 10px;
 
         &.single {
-            margin-left: 35%;
-            width: 46.9%;
+            width: 100%;
+        }
+
+        &.disabled {
+            pointer-events: none;
         }
     }
 
     &__note {
-        width: 15%;
+        width: 8%;
         color: $secondaryFontColor;
     }
 }
 
+.error-field {
+    position: absolute;
+    bottom: -20px;
+
+    p {
+        color: $red;
+        font-size: 16px;
+    }
+}
+
+.reload {
+    width: 30px;
+    height: 30px;
+    background-image: url('/images/reset.svg');
+    background-color: rgba(255,255,255,0.3);
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    border-radius: 6px;
+    border: none;
+    transition: all .2s ease;
+
+    &:hover {
+        background-color: rgba(255,255,255,0.5);
+    }
+}
+
+@media(max-width: 1720px) {
+    .app-header {
+        &__btns {
+            align-items: center;
+        }
+
+        &__account {
+            width: auto;
+            padding: 0px 22px;
+            height: 50px;
+            margin-left: 20px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: auto;
+            padding: 0px 22px;
+            height: 50px;
+        }
+    }
+
+    .balance {
+        &__item {
+            margin-right: 25px;
+        }
+        &__title {
+            padding-right: 25px;
+        }
+        &__token {
+            margin-right: 16px;
+        }
+        &__price {
+            font-size: 26px;
+            min-width: auto;
+        }
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+}
+
+@media(max-width: 1470px) {
+    .field {
+        &__input {
+            margin-right: 10px;
+        }
+        &__label {
+            margin-right: 10px;
+        }
+    }
+}

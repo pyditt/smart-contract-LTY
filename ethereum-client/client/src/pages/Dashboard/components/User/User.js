@@ -1,16 +1,63 @@
-import React from "react";
+import React, { useState } from "react";
+import * as Lib from "../../../../ledgityLib";
+import ExcludeAddress from "./components/ExcludeAddress";
+import DexAccounts from "./components/DexAccounts";
 
 import "./User.scss";
 
 const User = (props) => {
-  const getAddress = async () => {
-    const res = await props.getAddress();
-    console.log("getAddress", res);
+  const [accountInput, setAccountInput] = useState("");
+  const [balance, setBalance] = useState(null);
+  const [token, setToken] = useState("");
+  const [address, setAddress] = useState("");
+
+  const [errorBalance, setErrorBalance] = useState(null);
+  const [errorTransfer, setErrorTransfer] = useState(null);
+
+  const getTokenBalance = async () => {
+    setErrorBalance(null);
+    try {
+      const tokenAccountBalance = await Lib.getTokenBalance(
+        props.contract,
+        accountInput
+      );
+      setBalance(tokenAccountBalance);
+    } catch (error) {
+      setErrorBalance(<p> Incorrect address. Please, check it.. </p>);
+    }
   };
 
-  const getDex = async () => {
-    const res = await props.getDex();
-    console.log("getDex", res);
+  const onChange = (event) => {
+    setErrorBalance(null);
+    setErrorTransfer(null);
+    switch (event.target.name) {
+      case "account":
+        return setAccountInput(event.target.value);
+      case "token":
+        return setToken(event.target.value);
+      case "address":
+        return setAddress(event.target.value);
+    }
+  };
+
+  const transferTokens = async (event) => {
+    event.preventDefault();
+    setErrorTransfer(null);
+
+    try {
+      await Lib.transfer(props.contract, props.account, address, token);
+      // console.log("transfer");
+      props.updateInfo();
+      props.updateBalances();
+
+      setToken("");
+      setAddress("");
+    } catch (error) {
+      if (error.code === 4001) {
+        return setErrorTransfer(<p>Transaction signature was denied.</p>);
+      }
+      setErrorTransfer(<p> Incorrect information. Please, check it.. </p>);
+    }
   };
 
   return (
@@ -26,54 +73,54 @@ const User = (props) => {
                 placeholder="Enter account address"
                 name="account"
                 className="field__input"
+                value={accountInput}
+                onChange={onChange}
               />
-              <button type="button" className="btn-primary">
-                {" "}
-                Get balance{" "}
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={getTokenBalance}
+              >
+                Get balance
               </button>
+              <div className="error-field"> {errorBalance} </div>
             </div>
             <div className="user__balance">
               <span> Account balance: </span>
-              <h2> 0 LTY</h2>
+              <h2> {balance || "0"} LTY</h2>
             </div>
           </div>
         </div>
+
         <div className="user__item columns">
-          <div className="user__column">
-            <h2> Get included accounts: </h2>
-            <button type="button" className="btn-primary" onClick={getAddress}>
-              {" "}
-              Get address{" "}
-            </button>
-          </div>
-          <div className="user__column">
-            <h2> Get DEX accounts: </h2>
-            <button type="button" className="btn-primary" onClick={getDex}>
-              {" "}
-              Get DEX{" "}
-            </button>
-          </div>
+          <ExcludeAddress getAddress={props.getAddress} />
+          <DexAccounts getDex={props.getDex} />
         </div>
+
         <div className="user__item">
           <h2> Transfer tokens: </h2>
           <div className="user__field field">
-            <form action="" className="user__form">
+            <form className="user__form" onSubmit={transferTokens}>
               <input
-                type="text"
+                type="number"
                 placeholder="Number of tokens"
                 name="token"
                 className="field__input"
+                value={token}
+                onChange={onChange}
               />
               <input
                 type="text"
                 placeholder="Address"
                 name="address"
                 className="field__input"
+                value={address}
+                onChange={onChange}
               />
               <button type="submit" className="btn-primary">
-                {" "}
-                Transfer{" "}
+                Transfer
               </button>
+              <div className="error-field"> {errorTransfer} </div>
             </form>
           </div>
         </div>

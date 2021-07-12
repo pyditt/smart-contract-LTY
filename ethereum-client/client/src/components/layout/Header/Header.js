@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Modal } from "../index";
+import { Contract } from "../index";
+
 import "./Header.scss";
 
-const Header = (props) => {
+const Header = ({ tokenBalance, balance, addToken, address, info }) => {
   const [visible, setVisible] = useState(false);
 
   const showModal = () => {
@@ -12,6 +14,8 @@ const Header = (props) => {
   const closeModal = () => {
     setVisible(false);
   };
+
+  console.log(address);
 
   return (
     <>
@@ -25,14 +29,14 @@ const Header = (props) => {
                   <img src="/images/lty.svg" alt="lty" />
                   <span> LTY </span>
                 </div>
-                <div className="balance__price">{props.tokenBalance}</div>
+                <div className="balance__price">{tokenBalance}</div>
               </div>
               <div className="balance__item">
                 <div className="balance__token">
                   <img src="/images/eth.svg" alt="eth" />
                   <span> ETH </span>
                 </div>
-                <div className="balance__price">{props.balance}</div>
+                <div className="balance__price">{balance}</div>
               </div>
             </div>
             <div className="app-header__contract">
@@ -41,30 +45,27 @@ const Header = (props) => {
                 className="btn-secondary"
                 onClick={showModal}
               >
-                {" "}
-                Contract details{" "}
+                Contract details
               </button>
             </div>
           </div>
           <div className="app-header__btns">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={props.addToken}
-            >
-              {" "}
-              Add LTY to wallet{" "}
+            <button type="button" className="btn-secondary" onClick={addToken}>
+              Add LTY to wallet
             </button>
             <div className="app-header__account">
-              {" "}
-              {`${props.address.substring(0, 6)}...${props.address.substring(
-                props.address.length - 4
-              )}`}{" "}
+              {`${address.substring(0, 6)}...${address.substring(
+                address.length - 4
+              )}`}
             </div>
           </div>
         </div>
       </header>
-      {visible && <Modal close={closeModal}>will be..</Modal>}
+      {visible && (
+        <Modal close={closeModal} title="Contract details:">
+          <Contract info={info} />
+        </Modal>
+      )}
     </>
   );
 };

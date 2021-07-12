@@ -2,13 +2,18 @@ import React from "react";
 
 import "./Information.scss";
 
-const Information = (props) => {
-  console.log(props);
-  const info = props.info || {};
+const Information = ({ info = {}, loading, updateInfo }) => {
+  const loadingElement = (
+    <div style={{ color: "#fff", marginLeft: "15px" }}> Loading ... </div>
+  );
 
   return (
     <div className="information">
-      <h2 className="title"> Information </h2>
+      <div className="information__head">
+        <h2 className="title"> Information </h2>
+        <button type="button" onClick={updateInfo} className="reload"></button>
+        {loading ? loadingElement : ""}
+      </div>
       <div className="information__block">
         <div className="information__item">
           <h2> Transaction </h2>
@@ -21,7 +26,7 @@ const Information = (props) => {
             <div className="information__field field">
               <div className="field__label"> Tokens burned: </div>
               <div className="field__input"> {info.totalBurn} </div>
-              <div className="field__note"> Fix </div>
+              <div className="field__note"> </div>
             </div>
             <div className="information__field field">
               <div className="field__label"> Total commission: </div>
