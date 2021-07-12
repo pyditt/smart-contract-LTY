@@ -591,7 +591,8 @@ contract LEDGITY is Context, IERC20, Ownable {
     
     uint256 _price = 7;
     uint256 constant _startPrice = 1;
-    
+    uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
+
     IUniswapV2Router02 public immutable uniswapV2Router;
     address public immutable uniswapV2Pair;
     
@@ -603,7 +604,7 @@ contract LEDGITY is Context, IERC20, Ownable {
 
         // set the rest of the contract variables
         uniswapV2Router = _uniswapV2Router;
-        
+
         _rOwned[_msgSender()] = _rTotal;
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
@@ -800,6 +801,14 @@ contract LEDGITY is Context, IERC20, Ownable {
         );
     }
 
+    function _takeLiquidity(uint256 tLiquidity) private {
+        uint256 currentRate =  _getRate();
+        uint256 rLiquidity = tLiquidity.mul(currentRate);
+        _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
+        if(_isExcluded[address(this)])
+            _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
+    }
+
     function _transfer(address sender, address recipient, uint256 amount) private {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
@@ -956,9 +965,15 @@ contract LEDGITY is Context, IERC20, Ownable {
         burnOnTax(tThird, rThird);
         
         uint256 initialBalance = address(this).balance;
-        swapTokensForEth(tFee.div(2));
-        uint256 newBalance = address(this).balance.sub(initialBalance);
-        addLiquidity(tFee.div(2), newBalance);
+        bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
+
+        if (overMinTokenBalance) {
+            swapTokensForEth(tFee.div(2));
+            uint256 newBalance = address(this).balance.sub(initialBalance);
+            addLiquidity(tFee.div(2), newBalance);
+        } else {
+            _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
+        }
 
         return true;
     }
