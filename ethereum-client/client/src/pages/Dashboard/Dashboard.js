@@ -13,6 +13,7 @@ const Dashboard = ({
   loading,
   ownership,
   updateBalances,
+  tokenBalance,
 }) => {
   return (
     <div className="container">
@@ -23,6 +24,8 @@ const Dashboard = ({
           getDex={getDex}
           contract={contract}
           account={account}
+          tokenBalance={tokenBalance}
+          info={info}
           updateInfo={updateInfo}
           updateBalances={updateBalances}
         />

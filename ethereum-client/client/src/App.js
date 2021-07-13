@@ -66,7 +66,7 @@ class App extends Component {
   isOwner = (info, account) => {
     let res;
     const owner = info.owner;
-    owner.toLowerCase() == account.toLowerCase() ? (res = true) : (res = false);
+    owner.toLowerCase() === account.toLowerCase() ? (res = true) : (res = false);
     return res;
   };
 
@@ -77,13 +77,12 @@ class App extends Component {
       const accounts = await ethereum.request({
         method: "eth_accounts",
       });
-      console.log("Chenge----------");
+      console.log("Change----------");
       if (!accounts || !accounts[0]) window.location.reload();
       const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
       const balance = await Lib.getBalance(web3, accounts[0]);
       const info = await Lib.getInfo(contract);
       const ownership = this.isOwner(info, accounts[0]);
-      console.log(ownership);
       this.setState({
         accounts: accounts,
         balance,
@@ -110,8 +109,8 @@ class App extends Component {
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
 
-    console.log("excl: ", Lib.getExcluded(contract));
-    console.log("DEX: ", Lib.getDex(contract));
+    // console.log("excl: ", Lib.getExcluded(contract));
+    // console.log("DEX: ", Lib.getDex(contract));
 
     /*
         Lib.transfer(
@@ -185,19 +184,6 @@ class App extends Component {
     });
   };
 
-  setPrice = async () => {
-    const { contract, accounts } = this.state;
-    await Lib.setPrice(
-      contract,
-      accounts[0], // signer
-      11 //newPrice
-    );
-    console.log("set");
-    const info = await Lib.getInfo(contract);
-    console.log(info);
-    this.setState({ info: info });
-  };
-
   updateInfo = async () => {
     const { contract } = this.state;
     this.setState({ loading: true });
@@ -210,7 +196,7 @@ class App extends Component {
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
     this.setState({ balance: balance, tokenBalance: tokenBalance });
-    console.log("UpdateB");
+    console.log("Update Balance");
   };
 
   render() {
@@ -237,7 +223,6 @@ class App extends Component {
       <div className="app-layout">
         {ethereum && accounts ? (
           <>
-            {/*<button onClick={() => this.setPrice()}>setPrice</button>*/}
             <Header
               address={accounts[0]}
               addToken={() =>
@@ -254,6 +239,7 @@ class App extends Component {
                 info={info}
                 ownership={ownership}
                 contract={contract}
+                tokenBalance={tokenBalance}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
                 updateInfo={() => this.updateInfo()}

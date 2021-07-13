@@ -22,7 +22,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
 
   useEffect(() => {
     getInfo().then((res) => {
-      console.log(account, res.owner);
       if (account === res.owner.toLowerCase()) {
         setIsOwner(true);
       }
