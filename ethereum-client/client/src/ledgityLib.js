@@ -31,18 +31,14 @@ async function getInfo(contract) {
 }
 
 async function getTokenBalance(contract, address) {
-  let balance = await contract.methods.balanceOf(address.toString()).call();
+  const balance = await contract.methods.balanceOf(address.toString()).call();
   const decimals = await contract.methods.decimals().call();
-  balance = (balance / 10 ** decimals).toString();
-  if (balance.length > 9) balance = `${balance.substring(0, 9)}...`;
-  return balance;
+  return (balance / 10 ** decimals).toString();
 }
 
 async function getBalance(web3, account) {
-  let balance = await web3.eth.getBalance(account);
-  balance = web3.utils.fromWei(balance, "ether");
-  if (balance.length > 9) balance = `${balance.substring(0, 9)}...`;
-  return balance;
+  const balance = await web3.eth.getBalance(account);
+  return web3.utils.fromWei(balance, "ether");
 }
 
 async function getDex(contract) {
