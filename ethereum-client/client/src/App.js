@@ -108,6 +108,7 @@ class App extends Component {
     );
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
+    const ownership = this.isOwner(info, accounts[0]);
 
     // console.log("excl: ", Lib.getExcluded(contract));
     // console.log("DEX: ", Lib.getDex(contract));
@@ -181,6 +182,7 @@ class App extends Component {
       price: info.price,
       info: info,
       loading: false,
+      ownership,
     });
   };
 
@@ -212,12 +214,23 @@ class App extends Component {
     } = this.state;
 
     if (!ethereum) {
-      return (
-        <div>
-          Loading Web3, accounts, and contract. If you do not have{" "}
-          <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
-        </div>
-      );
+      return(
+          <Connect>
+            <div className="connect__install">
+              <p>
+                Loading Web3, accounts, and contract. <br />
+                If you do not have MetaMask please install...
+              </p>
+              <a href="https://metamask.io/download" className="btn-primary">Install Metamask</a>{" "}
+            </div>
+          </Connect>
+      ) ;
+      // return (
+      //   <div>
+      //     Loading Web3, accounts, and contract. If you do not have{" "}
+      //     <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
+      //   </div>
+      // );
     }
     return (
       <div className="app-layout">

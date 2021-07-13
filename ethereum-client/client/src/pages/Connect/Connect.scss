@@ -29,4 +29,19 @@
       text-align: center;
     }
   }
+
+  &__install {
+    text-align: center;
+    color: $secondaryFontColor;
+
+    p {
+      color: inherit;
+      margin-bottom: 30px;
+    }
+
+    .btn-primary {
+      text-decoration: none;
+      padding: 10px 20px;
+    }
+  }
 }
