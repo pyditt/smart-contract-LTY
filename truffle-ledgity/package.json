@@ -1,0 +1,9 @@
+{
+  "name": "truffle-ledgity",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "truffle": "^5.4.0"
+  }
+}
