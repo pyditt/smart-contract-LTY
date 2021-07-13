@@ -44,19 +44,29 @@ const User = (props) => {
     event.preventDefault();
     setErrorTransfer(null);
 
+    if(Number(token) > Number(props.tokenBalance)) {
+      return setErrorTransfer(<p> The transfer amount is greater than your Token balance.  </p>)
+    }
+
     try {
       await Lib.transfer(props.contract, props.account, address, token);
-      // console.log("transfer");
       props.updateInfo();
       props.updateBalances();
 
       setToken("");
       setAddress("");
     } catch (error) {
+      // console.log(error);
+      if(error.arg === 'amount') {
+        return setErrorTransfer(<p> The transfer amount is greater than the maximum allowed transaction value.  </p>)
+      }
+      if(error.arg === 'recipient') {
+        return setErrorTransfer(<p> Incorrect recipient address.  </p>)
+      }
       if (error.code === 4001) {
         return setErrorTransfer(<p>Transaction signature was denied.</p>);
       }
-      setErrorTransfer(<p> Incorrect information. Please, check it.. </p>);
+      setErrorTransfer(<p> Transfer attempt more than once every 15 minutes </p>);
     }
   };
 
