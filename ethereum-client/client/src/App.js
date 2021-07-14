@@ -26,10 +26,6 @@ class App extends Component {
       this.setState({
         ethereum: window.ethereum,
       });
-      // const web3 = await getWeb3(); // FIX!!!!
-      // this.setState({
-      //   web3: web3,
-      // });
     }
   };
 
@@ -101,11 +97,11 @@ class App extends Component {
     // Get the value from the contract to prove it worked.
 
     const info = await Lib.getInfo(contract);
-    console.log(
-      "-------------------------",
-      info,
-      "------------------------------------"
-    );
+    // console.log(
+    //   "-------------------------",
+    //   info,
+    //   "------------------------------------"
+    // );
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
     const ownership = this.isOwner(info, accounts[0]);
@@ -187,6 +183,7 @@ class App extends Component {
   };
 
   updateInfo = async () => {
+    // console.log('update info');
     const { contract } = this.state;
     this.setState({ loading: true });
     const info = await Lib.getInfo(contract);
@@ -194,11 +191,11 @@ class App extends Component {
   };
 
   updateBalances = async () => {
+    // console.log('update balance');
     const { contract, accounts, web3 } = this.state;
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
     this.setState({ balance: balance, tokenBalance: tokenBalance });
-    console.log("Update Balance");
   };
 
   render() {
@@ -224,13 +221,7 @@ class App extends Component {
               <a href="https://metamask.io/download" className="btn-primary">Install Metamask</a>{" "}
             </div>
           </Connect>
-      ) ;
-      // return (
-      //   <div>
-      //     Loading Web3, accounts, and contract. If you do not have{" "}
-      //     <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
-      //   </div>
-      // );
+      );
     }
     return (
       <div className="app-layout">
@@ -244,6 +235,7 @@ class App extends Component {
               balance={balance}
               tokenBalance={tokenBalance}
               info={info}
+              updateBalances={() => this.updateBalances()}
             />
             <main>
               <Dashboard

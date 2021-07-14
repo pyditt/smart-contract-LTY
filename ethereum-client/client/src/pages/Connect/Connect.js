@@ -3,7 +3,6 @@ import React from "react";
 import "./Connect.scss";
 
 const Connect = (props) => {
-  console.log(props.children);
   const info = (
       <>
         <button type="button" className="btn-primary" onClick={props.connect}>

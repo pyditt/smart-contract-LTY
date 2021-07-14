@@ -37,6 +37,8 @@ const User = (props) => {
         return setToken(event.target.value);
       case "address":
         return setAddress(event.target.value);
+      default:
+        break;
     }
   };
 
