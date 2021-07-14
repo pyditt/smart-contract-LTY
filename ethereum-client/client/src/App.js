@@ -10,6 +10,8 @@ import "./App.scss";
 
 const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
 
+const ws = new WebSocket("ws://localhost:9000");
+
 class App extends Component {
   state = {
     storageValue: 0,
@@ -19,9 +21,17 @@ class App extends Component {
     ethereum: null,
     loading: true,
     isOwner: false,
+    users: null,
   };
 
   componentDidMount = async () => {
+    ws.onopen = () => {
+      console.log("CONECT WS");
+    };
+    ws.onclose = () => {
+      console.log("CLOSE WS");
+    };
+    ws.onmessage = (response) => this.setState({ users: response.data });
     if (window.ethereum) {
       this.setState({
         ethereum: window.ethereum,
@@ -62,7 +72,9 @@ class App extends Component {
   isOwner = (info, account) => {
     let res;
     const owner = info.owner;
-    owner.toLowerCase() === account.toLowerCase() ? (res = true) : (res = false);
+    owner.toLowerCase() === account.toLowerCase()
+      ? (res = true)
+      : (res = false);
     return res;
   };
 
@@ -211,16 +223,18 @@ class App extends Component {
     } = this.state;
 
     if (!ethereum) {
-      return(
-          <Connect>
-            <div className="connect__install">
-              <p>
-                Loading Web3, accounts, and contract. <br />
-                If you do not have MetaMask please install...
-              </p>
-              <a href="https://metamask.io/download" className="btn-primary">Install Metamask</a>{" "}
-            </div>
-          </Connect>
+      return (
+        <Connect>
+          <div className="connect__install">
+            <p>
+              Loading Web3, accounts, and contract. <br />
+              If you do not have MetaMask please install...
+            </p>
+            <a href="https://metamask.io/download" className="btn-primary">
+              Install Metamask
+            </a>{" "}
+          </div>
+        </Connect>
       );
     }
     return (
