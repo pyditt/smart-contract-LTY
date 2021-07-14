@@ -10,7 +10,7 @@ import "./App.scss";
 
 const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
 
-const ws = new WebSocket("ws://localhost:9000");
+const ws = new WebSocket("ws://52.12.224.224:9000");
 
 class App extends Component {
   state = {
@@ -40,6 +40,7 @@ class App extends Component {
   };
 
   connect = async () => {
+    console.log(this.state.users);
     const web3 = await getWeb3();
     this.setState({
       web3: web3,
