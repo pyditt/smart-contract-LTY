@@ -1,11 +1,20 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { Modal } from "../index";
 import { Contract } from "../index";
 
 import "./Header.scss";
 
-const Header = ({ tokenBalance = "", balance = "", addToken, address, info }) => {
+const Header = ({ tokenBalance = "", balance = "", addToken, address, info, updateBalances }) => {
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    updateBalances();
+    const interval = setInterval(() => {
+      updateBalances();
+    }, 10000);
+
+    return () => clearInterval(interval)
+  }, []);
 
   const showModal = () => {
     setVisible(true);

@@ -9,6 +9,7 @@ const Contract = ({ info }) => {
         switch (symbol) {
             case 'LTY': return <img src="/images/lty.svg" alt="lty"/>
             case 'ETH': return <img src="/images/eth.svg" alt="eth" />
+            default: break;
         }
     }
 
