@@ -31,7 +31,9 @@ class App extends Component {
     ws.onclose = () => {
       console.log("CLOSE WS");
     };
-    ws.onmessage = (response) => this.setState({ users: response.data });
+    ws.onmessage = (response) => {
+      this.setState({ users: response.data });
+    }
     if (window.ethereum) {
       this.setState({
         ethereum: window.ethereum,
@@ -86,7 +88,6 @@ class App extends Component {
       const accounts = await ethereum.request({
         method: "eth_accounts",
       });
-      console.log("Change----------");
       if (!accounts || !accounts[0]) window.location.reload();
       const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
       const balance = await Lib.getBalance(web3, accounts[0]);
@@ -105,77 +106,13 @@ class App extends Component {
     ethereum.on("disconnect", () => window.location.reload());
 
     // Stores a given value, 5 by default.
-    // await contract.methods.transfer("0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", 10000000000).send({ from: accounts[0] });
 
     // Get the value from the contract to prove it worked.
 
     const info = await Lib.getInfo(contract);
-    // console.log(
-    //   "-------------------------",
-    //   info,
-    //   "------------------------------------"
-    // );
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
     const ownership = this.isOwner(info, accounts[0]);
-
-    // console.log("excl: ", Lib.getExcluded(contract));
-    // console.log("DEX: ", Lib.getDex(contract));
-
-    /*
-        Lib.transfer(
-          contract,
-          accounts[0], // signer
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", //recipient
-          10000000000 //amount
-        );
-        */
-
-    /*
-        Lib.setPrice(
-          contract,
-          accounts[0], // signer
-          7 //newPrice
-        );
-        */
-
-    /*
-        Lib.burn(
-          contract,
-          accounts[0], // signer
-          1000000 //newPrice
-        );
-        */
-
-    /*
-        Lib.setDex(
-          contract,
-          accounts[0], // signer
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b" //dexAddress
-        );
-        */
-
-    /*
-        Lib.includeAccount(
-          contract,
-          accounts[0],
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b"
-        );
-        */
-
-    /*
-        Lib.excludeAccount(
-          contract,
-          accounts[0],
-          "0x4803003e06Fe7Bc150cC8CB21D12750A1A1bA135"
-        );
-        */
-
-    // Add token to wallet
-    // Lib.addTokenToWallet(contract, ethereum);
-
-    // Add LTY token to your wallet
-    // Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress);
 
     // Update state with the result.
     this.setState({
@@ -221,6 +158,7 @@ class App extends Component {
       info,
       loading,
       ownership,
+      users,
     } = this.state;
 
     if (!ethereum) {
@@ -250,6 +188,7 @@ class App extends Component {
               balance={balance}
               tokenBalance={tokenBalance}
               info={info}
+              users={users}
               updateBalances={() => this.updateBalances()}
             />
             <main>
