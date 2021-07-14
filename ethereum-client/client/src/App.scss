@@ -50,6 +50,10 @@ h2 {
         text-transform: uppercase;
         min-height: 30px;
     }
+
+    @media(max-width: 1720px) {
+        font-size: 18px;
+    }
 }
 
 .container {
@@ -65,13 +69,42 @@ h2 {
     align-items: center;
 
     &__title {
-        padding-right: 40px;
+        padding-right: 30px;
+
+        @media(max-width: 1720px) {
+            padding-right: 25px;
+        }
     }
-    &__item {
-        margin-right: 60px;
+
+    &__btns {
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
+
+        @media(max-width: 1500px) {
+            flex-direction: column;
+            margin-right: 30px;
+        }
+    }
+
+    &__item {
+        margin-right: 40px;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+
+        @media(max-width: 1720px) {
+            margin-right: 25px;
+        }
+
+        @media(max-width: 1500px) {
+            margin: 0px 0px 15px;
+            width: 100%;
+
+            &:last-child {
+                margin-bottom: 0px;
+            }
+        }
     }
     &__token {
         color: $secondaryFontColor;
@@ -79,11 +112,20 @@ h2 {
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
-        margin-right: 40px;
+        margin-right: 15px;
 
         span {
             color: inherit;
             padding-left: 10px;
+        }
+
+        img {
+            width: 26px;
+        }
+
+        @media(max-width: 1720px) {
+            margin-right: 16px;
+            font-size: 15px;
         }
     }
 
@@ -96,6 +138,11 @@ h2 {
             font-weight: inherit;
             min-width: inherit;
             cursor: default;
+        }
+
+        @media(max-width: 1720px) {
+            font-size: 22px;
+            min-width: auto;
         }
     }
 }
@@ -112,6 +159,10 @@ h2 {
         color: $white;
         width: 30%;
         margin-right: 20px;
+
+        @media(max-width: 1470px) {
+            margin-right: 10px;
+        }
     }
     &__input {
         @include input;
@@ -131,6 +182,10 @@ h2 {
 
         &.disabled {
             pointer-events: none;
+        }
+
+        @media(max-width: 1470px) {
+            margin-right: 10px;
         }
     }
 
@@ -170,10 +225,13 @@ h2 {
 .dropdown {
     position: relative;
     display: inline-block;
+}
 
+.dropdown-btn {
     &:hover {
-        .dropdown-btn + .dropdown-content {
-            opacity: 1;
+        & + .dropdown-content {
+            display: block;
+            //opacity: 1;
         }
     }
 }
@@ -181,7 +239,7 @@ h2 {
 .dropdown-content {
     position: absolute;
     left: 50%;
-    bottom: -60px;
+    bottom: -50px;
     transform: translate(-50%, 0);
     min-width: 160px;
     height: 50px;
@@ -189,11 +247,12 @@ h2 {
     background-color: #edefff;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     transition: all .3s ease-in-out;
-    opacity: 0;
+    //opacity: 0;
     border: 1px solid $secondaryFontColor;
     border-radius: 37px;
     text-align: center;
     z-index: 1;
+    display: none;
 
     &:after,
     &:before {
@@ -214,60 +273,5 @@ h2 {
         border-bottom-color: inherit;
         top: -12px;
         margin-left: -22px;
-    }
-}
-
-.dropdown:hover .dropbtn {background-color: #3e8e41;}
-
-@media(max-width: 1720px) {
-    .app-header {
-        &__btns {
-            align-items: center;
-        }
-
-        &__account {
-            width: auto;
-            padding: 0px 22px;
-            height: 50px;
-            margin-left: 20px;
-        }
-
-        .btn-primary,
-        .btn-secondary {
-            width: auto;
-            padding: 0px 22px;
-            height: 50px;
-        }
-    }
-
-    .balance {
-        &__item {
-            margin-right: 25px;
-        }
-        &__title {
-            padding-right: 25px;
-        }
-        &__token {
-            margin-right: 16px;
-        }
-        &__price {
-            font-size: 26px;
-            min-width: auto;
-        }
-    }
-
-    h2 {
-        font-size: 18px;
-    }
-}
-
-@media(max-width: 1470px) {
-    .field {
-        &__input {
-            margin-right: 10px;
-        }
-        &__label {
-            margin-right: 10px;
-        }
     }
 }
