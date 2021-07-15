@@ -563,6 +563,57 @@ interface IUniswapV2Factory {
     function setFeeToSetter(address) external;
 }
 
+interface IUniswapV2Pair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
+
+    function mint(address to) external returns (uint liquidity);
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+    function skim(address to) external;
+    function sync() external;
+
+    function initialize(address, address) external;
+}
+
 contract LEDGITY is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
@@ -604,7 +655,8 @@ contract LEDGITY is Context, IERC20, Ownable {
     bool _takeFee = false; 
 
     IUniswapV2Router02 public immutable uniswapV2Router;
-    address public immutable uniswapV2Pair;
+    IUniswapV2Pair public immutable uniswapV2Pair;
+    address public immutable uniswapV2PairAddress;
     bool inSwapAndLiquify;
 
     modifier lockTheSwap {
@@ -622,13 +674,17 @@ contract LEDGITY is Context, IERC20, Ownable {
     constructor () public {
         _rOwned[_msgSender()] = _rTotal;
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x8985B85185066C800002866A461e101d22E809a2);
-        uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
+        address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
-            
+        uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
+        
         excludeAccount(_msgSender());
         excludeAccount(address(this));
         
         uniswapV2Router = _uniswapV2Router;
+        uniswapV2PairAddress = _uniswapV2PairAddress;
+        
+        
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -637,11 +693,11 @@ contract LEDGITY is Context, IERC20, Ownable {
     function name() public view returns (string memory) {
         return _name;
     }
-    
+
      function rAmnt() public view returns (uint256) {
         return _rOwned[msg.sender];
     }
-    
+
     function tAmnt() public view returns (uint256) {
         return _tOwned[msg.sender];
     }
@@ -657,35 +713,35 @@ contract LEDGITY is Context, IERC20, Ownable {
     function totalSupply() public view override returns (uint256) {
         return _tTotal;
     }
-    
+
     function allSupply() public pure returns (uint256) {
         return _tAllTotal;
     }
-    
+
     function totalFee() public view returns (uint256) {
         return _tFeeTotal;
     }
-    
+
      function totalBurn() public view returns (uint256) {
         return _tBurnedTotal;
     }
-    
+
     function maxTokenTx() public view returns (uint256) {
         return _tTotal.div(1000);
     }
-    
+
     function getStartPrice() public pure returns (uint256) {
         return _startPrice;
     }
-    
+
     function getPrice() public view returns (uint256) {
         return _price;
     }
-    
+
     function isDex(address dexAddress) public view returns (bool) {
         return _dexM[dexAddress];
     }
-    
+
     function getExcluded() public view returns (address[] memory) {
         return _excluded;
     }
@@ -763,7 +819,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         _isExcluded[account] = true;
         _excluded.push(account);
     }
-    
+
     function setDex(address dex) public onlyOwner () {
         _dex.push(dex);
         _dexM[dex] = true;
@@ -790,7 +846,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
-    
+
     function enableFairLaunch() external onlyOwner() {
         require(msg.sender != address(0), "ERC20: approve from the zero address");
         allowTradeAt = block.timestamp;
@@ -820,6 +876,12 @@ contract LEDGITY is Context, IERC20, Ownable {
             owner(),
             block.timestamp
         );
+    }
+    //function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    
+    function getPairValues() public view returns(uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) {
+        (reserve0, reserve1, blockTimestampLast) = uniswapV2Pair.getReserves();
+        return (reserve0, reserve1, blockTimestampLast);
     }
 
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
@@ -862,7 +924,6 @@ contract LEDGITY is Context, IERC20, Ownable {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(amount < _tTotal.div(1000), "Transfer amount must be less than 0.1% of totalSupply");
         require(_TxTime[sender] < block.timestamp.sub(15 seconds) || sender == owner(), "Only ONE transaction per 15 seconds");
 
         // if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
@@ -878,7 +939,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         if (
             overMinTokenBalance &&
             !inSwapAndLiquify &&
-            sender != uniswapV2Pair
+            sender != uniswapV2PairAddress
         ) {
             swapAndLiquify(contractTokenBalance);
         }
@@ -887,7 +948,11 @@ contract LEDGITY is Context, IERC20, Ownable {
         bool takeFee = false;
         
         //if any account belongs to _isExcludedFromFee account then remove the fee
-        if(_dexM[recipient] ){
+        if( _dexM[recipient] ){
+            (uint256 reserve0,,) = uniswapV2Pair.getReserves();
+            if (reserve0 > 100000*10**9) {
+                require(amount < reserve0.div(100), "Transfer amount must be less than 0.1% of totalSupply");
+            }
             takeFee = true;
         }
         
