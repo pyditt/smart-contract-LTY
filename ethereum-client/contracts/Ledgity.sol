@@ -614,7 +614,7 @@ interface IUniswapV2Pair {
     function initialize(address, address) external;
 }
 
-contract LEDGITY is Context, IERC20, Ownable {
+contract Ledgity is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -627,35 +627,36 @@ contract LEDGITY is Context, IERC20, Ownable {
 
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
-   
+
     uint256 private constant MAX = ~uint256(0);
     uint256 private  _tTotal = 100000000000 * 10**6 * 10**9;
     uint256 private constant _tAllTotal = 100000000000 * 10**6 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
-    string private _name = 'LEDGITY';
+    string private _name = 'Ledgity';
     string private _symbol = 'LTY';
     uint8 private _decimals = 9;
     uint256 public allowTradeAt;
-    
+
     uint256 private _tBurnedTotal;
     uint256 private _rBurnedTotal;
     uint256 private _tFeeTotal;
-    
+
     uint256 _price = 7;
     uint256 constant _startPrice = 1;
-    
+
     uint256 private numTokensSellToAddToLiquidity = 5000 * 10**9;
-    
+
     uint256 public _taxFee = 33;
     uint256 private _previousTaxFee = _taxFee;
-    
+
     uint256 public _liquidityFee = 33;
     uint256 private _previousLiquidityFee = _liquidityFee;
-    
-    bool _takeFee = false; 
+
+    bool _takeFee = false;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
     IUniswapV2Pair public immutable uniswapV2Pair;
+    // TODO: remove this
     address public immutable uniswapV2PairAddress;
     bool inSwapAndLiquify;
 
@@ -671,20 +672,20 @@ contract LEDGITY is Context, IERC20, Ownable {
         uint256 tokensIntoLiqudity
     );
 
-    constructor () public {
+    constructor(address uniswapRouter) public {
         _rOwned[_msgSender()] = _rTotal;
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x8985B85185066C800002866A461e101d22E809a2);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
         uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
-        
+
         excludeAccount(_msgSender());
         excludeAccount(address(this));
-        
+
         uniswapV2Router = _uniswapV2Router;
         uniswapV2PairAddress = _uniswapV2PairAddress;
-        
-        
+
+
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -878,7 +879,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         );
     }
     //function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    
+
     function getPairValues() public view returns(uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) {
         (reserve0, reserve1, blockTimestampLast) = uniswapV2Pair.getReserves();
         return (reserve0, reserve1, blockTimestampLast);
@@ -900,23 +901,23 @@ contract LEDGITY is Context, IERC20, Ownable {
         burnFee(tThird, rThird);
         _rOwned[address(this)] = _rOwned[address(this)].add(rThird);
     }
-    
+
     function removeAllFee() private {
         if(_taxFee == 0 && _liquidityFee == 0) return;
-        
+
         _previousTaxFee = _taxFee;
         _previousLiquidityFee = _liquidityFee;
-        
+
         _taxFee = 0;
         _liquidityFee = 0;
-        
+
         _takeFee = false;
     }
-    
+
     function restoreAllFee() private {
         _taxFee = _previousTaxFee;
         _liquidityFee = _previousLiquidityFee;
-        
+
         _takeFee = true;
     }
 
@@ -928,14 +929,14 @@ contract LEDGITY is Context, IERC20, Ownable {
 
         // if (block.timestamp < allowTradeAt + 24 hours && amount >= 10**6 * 10**9 ) {
         //      revert("You cannot transfer more than 1 billion now");  }
-        
+
         uint256 contractTokenBalance = balanceOf(address(this));
         if(contractTokenBalance >= maxTokenTx())
         {
             contractTokenBalance = maxTokenTx();
         }
         bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
-        
+
         if (
             overMinTokenBalance &&
             !inSwapAndLiquify &&
@@ -943,10 +944,10 @@ contract LEDGITY is Context, IERC20, Ownable {
         ) {
             swapAndLiquify(contractTokenBalance);
         }
-        
+
         //indicates if fee should be deducted from transfer
         bool takeFee = false;
-        
+
         //if any account belongs to _isExcludedFromFee account then remove the fee
         if( _dexM[recipient] ){
             (uint256 reserve0,,) = uniswapV2Pair.getReserves();
@@ -955,15 +956,15 @@ contract LEDGITY is Context, IERC20, Ownable {
             }
             takeFee = true;
         }
-        
+
         //transfer amount, it will take tax, burn, liquidity fee
         _tokenTransfer(sender,recipient,amount,takeFee);
     }
-    
+
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         if(!takeFee)
             removeAllFee();
-        
+
         if (sender == owner() || recipient == owner()) {
             _transferOwner(sender,recipient,amount);
         } else if (_isExcluded[sender] && !_isExcluded[recipient]) {
@@ -978,20 +979,20 @@ contract LEDGITY is Context, IERC20, Ownable {
             _transferStandard(sender, recipient, amount);
         }
         _TxTime[sender] = block.timestamp;
-        
+
         if(!takeFee)
             restoreAllFee();
     }
-    
+
      function _transferOwner( address sender, address recipient, uint256 tAmount) private {
         uint256 currentRate =  _getRate();
         uint256 rAmount = tAmount.mul(currentRate);
-       
+
         if(_isExcluded[sender]) {
             _tOwned[sender] = _tOwned[sender].sub(tAmount);
         } else
             _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        
+
         _rOwned[recipient] = _rOwned[recipient].add(rAmount);
         if(_isExcluded[recipient])
             _tOwned[recipient] = _tOwned[recipient].add(tAmount);
@@ -1012,7 +1013,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tFee, rFee);
         _reflectFee(rFee.div(3), tFee.div(3));
         emit Transfer(sender, recipient, tTransferAmount);
@@ -1033,14 +1034,14 @@ contract LEDGITY is Context, IERC20, Ownable {
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tFee, rFee);
         _reflectFee(rFee.div(3), tFee.div(3));
         emit Transfer(sender, recipient, tTransferAmount);
     }
-    
-    
- 
+
+
+
     function calculateTFee (uint256 amount) public view returns(uint256 fee) {
         // [1] - >50% and price
         if(_tTotal >= _tAllTotal.mul(50).div(100)) {
@@ -1107,7 +1108,7 @@ contract LEDGITY is Context, IERC20, Ownable {
 
     function _getCurrentSupply() private view returns(uint256, uint256) {
         uint256 rSupply = _rTotal;
-        uint256 tSupply = _tTotal;      
+        uint256 tSupply = _tTotal;
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
             rSupply = rSupply.sub(_rOwned[_excluded[i]]);
@@ -1116,18 +1117,18 @@ contract LEDGITY is Context, IERC20, Ownable {
         if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
         return (rSupply, tSupply);
     }
-    
+
     function getLiqValue() public view returns(uint256) {
         return _tOwned[address(this)];
     }
-    
+
     function burnFee(uint256 tAmount, uint256 rAmount) internal returns(bool){
         _rTotal = _rTotal.sub(rAmount);
         _tTotal = _tTotal.sub(tAmount);
         _tBurnedTotal = _tBurnedTotal.add(tAmount);
         return true;
     }
-    
+
     function burn(uint256 tAmount) public onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
         uint256 rAmount = tAmount.mul(currentRate);
@@ -1138,7 +1139,7 @@ contract LEDGITY is Context, IERC20, Ownable {
         _tBurnedTotal = _tBurnedTotal.add(tAmount);
         return true;
     }
-    
+
     function setPrice(uint256 newPrice) public onlyOwner returns(bool) {
         _price = newPrice;
         return true;
