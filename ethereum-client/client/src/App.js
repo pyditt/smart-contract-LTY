@@ -8,6 +8,7 @@ import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
 
+const LedgityContractAbi = LedgityContract.abi;
 const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
 
 const ws = new WebSocket("ws://52.12.224.224:9000");
@@ -33,7 +34,7 @@ class App extends Component {
     };
     ws.onmessage = (response) => {
       this.setState({ users: response.data });
-    }
+    };
     if (window.ethereum) {
       this.setState({
         ethereum: window.ethereum,
@@ -58,7 +59,7 @@ class App extends Component {
 
       // Get the contract instance.
       const instance = new web3.eth.Contract(
-        LedgityContract,
+        LedgityContractAbi,
         LedgityContractAddress
       );
 
