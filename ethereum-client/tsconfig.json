@@ -12,7 +12,8 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
   },
-  "exclude": [
-    "client/**/*"
+  "include": [
+    "test/**/*",
+    "types/**/*",
   ],
 }
