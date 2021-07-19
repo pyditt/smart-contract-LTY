@@ -50,6 +50,10 @@ h2 {
         text-transform: uppercase;
         min-height: 30px;
     }
+
+    @media(max-width: 1720px) {
+        font-size: 18px;
+    }
 }
 
 .container {
@@ -65,13 +69,42 @@ h2 {
     align-items: center;
 
     &__title {
-        padding-right: 40px;
+        padding-right: 30px;
+
+        @media(max-width: 1720px) {
+            padding-right: 25px;
+        }
     }
-    &__item {
-        margin-right: 60px;
+
+    &__btns {
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
+
+        @media(max-width: 1500px) {
+            flex-direction: column;
+            margin-right: 30px;
+        }
+    }
+
+    &__item {
+        margin-right: 40px;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+
+        @media(max-width: 1720px) {
+            margin-right: 25px;
+        }
+
+        @media(max-width: 1500px) {
+            margin: 0px 0px 15px;
+            width: 100%;
+
+            &:last-child {
+                margin-bottom: 0px;
+            }
+        }
     }
     &__token {
         color: $secondaryFontColor;
@@ -79,18 +112,38 @@ h2 {
         display: flex;
         flex-flow: row nowrap;
         align-items: center;
-        margin-right: 40px;
+        margin-right: 15px;
 
         span {
             color: inherit;
             padding-left: 10px;
+        }
+
+        img {
+            width: 26px;
+        }
+
+        @media(max-width: 1720px) {
+            margin-right: 16px;
+            font-size: 15px;
         }
     }
 
     &__price {
         font-size: 30px;
         font-weight: 600;
-        min-width: 100px;
+
+        .dropdown-btn {
+            font-size: inherit;
+            font-weight: inherit;
+            min-width: inherit;
+            cursor: default;
+        }
+
+        @media(max-width: 1720px) {
+            font-size: 22px;
+            min-width: auto;
+        }
     }
 }
 
@@ -106,6 +159,10 @@ h2 {
         color: $white;
         width: 30%;
         margin-right: 20px;
+
+        @media(max-width: 1470px) {
+            margin-right: 10px;
+        }
     }
     &__input {
         @include input;
@@ -126,6 +183,10 @@ h2 {
         &.disabled {
             pointer-events: none;
         }
+
+        @media(max-width: 1470px) {
+            margin-right: 10px;
+        }
     }
 
     &__note {
@@ -136,11 +197,11 @@ h2 {
 
 .error-field {
     position: absolute;
-    bottom: -20px;
+    top: 100%;
 
     p {
         color: $red;
-        font-size: 16px;
+        font-size: 14px;
     }
 }
 
@@ -161,55 +222,56 @@ h2 {
     }
 }
 
-@media(max-width: 1720px) {
-    .app-header {
-        &__btns {
-            align-items: center;
-        }
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
 
-        &__account {
-            width: auto;
-            padding: 0px 22px;
-            height: 50px;
-            margin-left: 20px;
+.dropdown-btn {
+    &:hover {
+        & + .dropdown-content {
+            display: block;
+            //opacity: 1;
         }
-
-        .btn-primary,
-        .btn-secondary {
-            width: auto;
-            padding: 0px 22px;
-            height: 50px;
-        }
-    }
-
-    .balance {
-        &__item {
-            margin-right: 25px;
-        }
-        &__title {
-            padding-right: 25px;
-        }
-        &__token {
-            margin-right: 16px;
-        }
-        &__price {
-            font-size: 26px;
-            min-width: auto;
-        }
-    }
-
-    h2 {
-        font-size: 18px;
     }
 }
 
-@media(max-width: 1470px) {
-    .field {
-        &__input {
-            margin-right: 10px;
-        }
-        &__label {
-            margin-right: 10px;
-        }
+.dropdown-content {
+    position: absolute;
+    left: 50%;
+    bottom: -50px;
+    transform: translate(-50%, 0);
+    min-width: 160px;
+    height: 50px;
+    padding: 13px 20px;
+    background-color: #edefff;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    transition: all .3s ease-in-out;
+    //opacity: 0;
+    border: 1px solid $secondaryFontColor;
+    border-radius: 37px;
+    text-align: center;
+    z-index: 1;
+    display: none;
+
+    &:after,
+    &:before {
+        position: absolute;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-bottom: 10px solid #edefff;
+        top: -10px;
+        content: '';
+        left: 54%;
+        margin-left: -20px;
+    }
+
+    &:before {
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-bottom: 12px solid;
+        border-bottom-color: inherit;
+        top: -12px;
+        margin-left: -22px;
     }
 }

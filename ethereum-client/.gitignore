@@ -1,0 +1,4 @@
+# Artifacts
+build
+migrations
+types/truffle-contracts

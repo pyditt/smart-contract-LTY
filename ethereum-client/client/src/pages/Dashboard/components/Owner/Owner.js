@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
@@ -8,26 +8,11 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [token, setToken] = useState("");
   const [dex, setDex] = useState("");
   const [accountInput, setAccountInput] = useState("");
-  const [isOwner, setIsOwner] = useState(false);
 
   const [errorPrice, setErrorPrice] = useState(null);
   const [errorDex, setErrorDex] = useState(null);
   const [errorToken, setErrorToken] = useState(null);
   const [errorAccount, setErrorAccount] = useState(null);
-
-  const getInfo = async () => {
-    const info = await Lib.getInfo(contract);
-    return info;
-  };
-
-  useEffect(() => {
-    getInfo().then((res) => {
-      console.log(account, res.owner);
-      if (account === res.owner.toLowerCase()) {
-        setIsOwner(true);
-      }
-    });
-  });
 
   const onChange = (event) => {
     setErrorPrice(null);
@@ -44,6 +29,8 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         return setDex(event.target.value);
       case "account":
         return setAccountInput(event.target.value);
+      default:
+        break;
     }
   };
 

@@ -8,7 +8,10 @@ import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
 
+const LedgityContractAbi = LedgityContract.abi;
 const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
+
+const ws = new WebSocket("ws://52.12.224.224:9000");
 
 class App extends Component {
   state = {
@@ -19,21 +22,28 @@ class App extends Component {
     ethereum: null,
     loading: true,
     isOwner: false,
+    users: null,
   };
 
   componentDidMount = async () => {
+    ws.onopen = () => {
+      console.log("CONECT WS");
+    };
+    ws.onclose = () => {
+      console.log("CLOSE WS");
+    };
+    ws.onmessage = (response) => {
+      this.setState({ users: response.data });
+    };
     if (window.ethereum) {
       this.setState({
         ethereum: window.ethereum,
       });
-      // const web3 = await getWeb3(); // FIX!!!!
-      // this.setState({
-      //   web3: web3,
-      // });
     }
   };
 
   connect = async () => {
+    console.log(this.state.users);
     const web3 = await getWeb3();
     this.setState({
       web3: web3,
@@ -49,7 +59,7 @@ class App extends Component {
 
       // Get the contract instance.
       const instance = new web3.eth.Contract(
-        LedgityContract,
+        LedgityContractAbi,
         LedgityContractAddress
       );
 
@@ -66,7 +76,9 @@ class App extends Component {
   isOwner = (info, account) => {
     let res;
     const owner = info.owner;
-    owner.toLowerCase() == account.toLowerCase() ? (res = true) : (res = false);
+    owner.toLowerCase() === account.toLowerCase()
+      ? (res = true)
+      : (res = false);
     return res;
   };
 
@@ -77,13 +89,11 @@ class App extends Component {
       const accounts = await ethereum.request({
         method: "eth_accounts",
       });
-      console.log("Chenge----------");
       if (!accounts || !accounts[0]) window.location.reload();
       const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
       const balance = await Lib.getBalance(web3, accounts[0]);
       const info = await Lib.getInfo(contract);
       const ownership = this.isOwner(info, accounts[0]);
-      console.log(ownership);
       this.setState({
         accounts: accounts,
         balance,
@@ -97,76 +107,13 @@ class App extends Component {
     ethereum.on("disconnect", () => window.location.reload());
 
     // Stores a given value, 5 by default.
-    // await contract.methods.transfer("0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", 10000000000).send({ from: accounts[0] });
 
     // Get the value from the contract to prove it worked.
 
     const info = await Lib.getInfo(contract);
-    console.log(
-      "-------------------------",
-      info,
-      "------------------------------------"
-    );
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
-
-    console.log("excl: ", Lib.getExcluded(contract));
-    console.log("DEX: ", Lib.getDex(contract));
-
-    /*
-        Lib.transfer(
-          contract,
-          accounts[0], // signer
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b", //recipient
-          10000000000 //amount
-        );
-        */
-
-    /*
-        Lib.setPrice(
-          contract,
-          accounts[0], // signer
-          7 //newPrice
-        );
-        */
-
-    /*
-        Lib.burn(
-          contract,
-          accounts[0], // signer
-          1000000 //newPrice
-        );
-        */
-
-    /*
-        Lib.setDex(
-          contract,
-          accounts[0], // signer
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b" //dexAddress
-        );
-        */
-
-    /*
-        Lib.includeAccount(
-          contract,
-          accounts[0],
-          "0xB984f9F42d405A37F7f3903C73cbF7112DCc859b"
-        );
-        */
-
-    /*
-        Lib.excludeAccount(
-          contract,
-          accounts[0],
-          "0x4803003e06Fe7Bc150cC8CB21D12750A1A1bA135"
-        );
-        */
-
-    // Add token to wallet
-    // Lib.addTokenToWallet(contract, ethereum);
-
-    // Add LTY token to your wallet
-    // Lib.addTokenToWallet(contract, ethereum, LedgityContractAddress);
+    const ownership = this.isOwner(info, accounts[0]);
 
     // Update state with the result.
     this.setState({
@@ -182,23 +129,12 @@ class App extends Component {
       price: info.price,
       info: info,
       loading: false,
+      ownership,
     });
   };
 
-  setPrice = async () => {
-    const { contract, accounts } = this.state;
-    await Lib.setPrice(
-      contract,
-      accounts[0], // signer
-      11 //newPrice
-    );
-    console.log("set");
-    const info = await Lib.getInfo(contract);
-    console.log(info);
-    this.setState({ info: info });
-  };
-
   updateInfo = async () => {
+    // console.log('update info');
     const { contract } = this.state;
     this.setState({ loading: true });
     const info = await Lib.getInfo(contract);
@@ -206,11 +142,11 @@ class App extends Component {
   };
 
   updateBalances = async () => {
+    // console.log('update balance');
     const { contract, accounts, web3 } = this.state;
     const tokenBalance = await Lib.getTokenBalance(contract, accounts[0]);
     const balance = await Lib.getBalance(web3, accounts[0]);
     this.setState({ balance: balance, tokenBalance: tokenBalance });
-    console.log("UpdateB");
   };
 
   render() {
@@ -223,21 +159,28 @@ class App extends Component {
       info,
       loading,
       ownership,
+      users,
     } = this.state;
 
     if (!ethereum) {
       return (
-        <div>
-          Loading Web3, accounts, and contract. If you do not have{" "}
-          <a href="https://metamask.io/download">MetaMask please install...</a>{" "}
-        </div>
+        <Connect>
+          <div className="connect__install">
+            <p>
+              Loading Web3, accounts, and contract. <br />
+              If you do not have MetaMask please install...
+            </p>
+            <a href="https://metamask.io/download" className="btn-primary">
+              Install Metamask
+            </a>{" "}
+          </div>
+        </Connect>
       );
     }
     return (
       <div className="app-layout">
         {ethereum && accounts ? (
           <>
-            {/*<button onClick={() => this.setPrice()}>setPrice</button>*/}
             <Header
               address={accounts[0]}
               addToken={() =>
@@ -246,6 +189,8 @@ class App extends Component {
               balance={balance}
               tokenBalance={tokenBalance}
               info={info}
+              users={users}
+              updateBalances={() => this.updateBalances()}
             />
             <main>
               <Dashboard
@@ -254,6 +199,7 @@ class App extends Component {
                 info={info}
                 ownership={ownership}
                 contract={contract}
+                tokenBalance={tokenBalance}
                 getAddress={() => Lib.getExcluded(contract)}
                 getDex={() => Lib.getDex(contract)}
                 updateInfo={() => this.updateInfo()}
