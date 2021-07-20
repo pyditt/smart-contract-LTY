@@ -21,11 +21,6 @@ contract Ledgity is Context, IERC20, Ownable {
     uint256 public allowTradeAt;
     uint256  public constant startPrice = 1;
     uint256 public numTokensSellToAddToLiquidity = 5000 * 10e9;
-    uint8 public _feeStep1 = 50;
-    uint8 public _feeStep2 = 30;
-    uint8 public _feeStep3 = 10;
-    uint8 public _feeStep4 = 5;
-    uint8 public _feeStep5 = 2;
     bool public inSwapAndLiquify;
 
     uint256 private  _tTotal = 10e26;
@@ -50,6 +45,7 @@ contract Ledgity is Context, IERC20, Ownable {
     mapping (address => uint256) private _TxTime;
     mapping (address => bool) private _dexM;
     mapping (address => bool) private _isExcluded;
+    mapping (address => bool) private _ExcludedFromFee;
 
     modifier lockTheSwap {
         inSwapAndLiquify = true;
@@ -75,6 +71,9 @@ contract Ledgity is Context, IERC20, Ownable {
         _rOwned[_msgSender()] = _rTotal;
         excludeAccount(_msgSender());
         excludeAccount(address(this));
+        _ExcludedFromFee[address(this)]=true;
+        _ExcludedFromFee[_msgSender()]=true;
+        /*_ExcludedFromFee[RESERVE]=true;*/
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -87,6 +86,7 @@ contract Ledgity is Context, IERC20, Ownable {
         uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
         uniswapV2Router = _uniswapV2Router;
         uniswapV2PairAddress = _uniswapV2PairAddress;
+        setDex(uniswapV2PairAddress);
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -95,10 +95,6 @@ contract Ledgity is Context, IERC20, Ownable {
 
     function totalFee() public view returns (uint256) {
         return _tFeeTotal;
-    }
-
-     function totalBurn() public view returns (uint256) {
-        return _tBurnedTotal;
     }
 
     function maxTokenTx() public view returns (uint256) {
@@ -159,7 +155,7 @@ contract Ledgity is Context, IERC20, Ownable {
     function reflect(uint256 tAmount) public {
         address sender = _msgSender();
         require(!_isExcluded[sender], "Ledgity: excluded addresses cannot call reflect");
-        (uint256 rAmount,,,,) = _getValues(tAmount);
+        (uint256 rAmount,,,,,,) = _getValues(tAmount, sender, address(0));
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rTotal = _rTotal.sub(rAmount);
         _tFeeTotal = _tFeeTotal.add(tAmount);
@@ -172,10 +168,10 @@ contract Ledgity is Context, IERC20, Ownable {
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256 rTransferAmount) {
         require(tAmount <= _tTotal, "Ledgity: amount must be less than supply");
         if (!deductTransferFee) {
-            (uint256 rAmount,,,,) = _getValues(tAmount);
+            (uint256 rAmount,,,,,,) = _getValues(tAmount, address(0), address(0));
             return rAmount;
         } else {
-            (,rTransferAmount,,,) = _getValues(tAmount);
+            (,rTransferAmount,,,,,) = _getValues(tAmount, address(0), address(0));
             return rTransferAmount;
         }
     }
@@ -272,11 +268,8 @@ contract Ledgity is Context, IERC20, Ownable {
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
-    function _takeLiquidity(uint256 tFee, uint256 rFee) private {
-        uint256 tThird = tFee.div(3);
-        uint256 rThird = rFee.div(3);
-        burnFee(tThird, rThird);
-        _rOwned[address(this)] = _rOwned[address(this)].add(rThird);
+    function _takeLiquidity(uint256 tFee/*, uint256 rFee*/) private {
+        _tOwned[address(this)] = _tOwned[address(this)].add(tFee);
     }
 
     function removeAllFee() private {
@@ -308,7 +301,7 @@ contract Ledgity is Context, IERC20, Ownable {
             swapAndLiquify(contractTokenBalance);
         }
         bool takeFee = false;
-        if( _dexM[recipient] ){
+        if((!_ExcludedFromFee[sender] || !_ExcludedFromFee[recipient]) && (_dexM[recipient] || _dexM[sender])){
             (uint256 reserve0,,) = uniswapV2Pair.getReserves();
             if (reserve0 > 100000*10e9) {
                 require(amount < reserve0.div(100), "Ledgity: transfer amount must be less than 0.1% of totalSupply");
@@ -321,9 +314,7 @@ contract Ledgity is Context, IERC20, Ownable {
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         if(!takeFee)
             removeAllFee();
-        if (sender == owner() || recipient == owner()) {
-            _transferOwner(sender,recipient,amount);
-        } else if (_isExcluded[sender] && !_isExcluded[recipient]) {
+        if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
             _transferToExcluded(sender, recipient, amount);
@@ -355,72 +346,43 @@ contract Ledgity is Context, IERC20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect, uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) = _getValues(tAmount, sender, recipient);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeLiquidity(tFee, rFee);
-        _reflectFee(rFee.div(3), tFee.div(3));
+        _takeLiquidity(tFeeLiquid/*, rFeeLiquid*/);
+        _reflectFee(rFeeReflect, tFeeReflect);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect, uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) = _getValues(tAmount, sender, recipient);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeLiquidity(tFee, rFee);
-        _reflectFee(rFee.div(3), tFee.div(3));
+        _takeLiquidity(tFeeLiquid/*, rFeeLiquid*/);
+        _reflectFee(rFeeReflect, tFeeReflect);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect, uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) = _getValues(tAmount, sender, recipient);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeLiquidity(tFee, rFee);
-        _reflectFee(rFee.div(3), tFee.div(3));
+        _takeLiquidity(tFeeLiquid/*, rFeeLiquid*/);
+        _reflectFee(rFeeReflect, tFeeReflect);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect, uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) = _getValues(tAmount, sender, recipient);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeLiquidity(tFee, rFee);
-        _reflectFee(rFee.div(3), tFee.div(3));
+        _takeLiquidity(tFeeLiquid/*, rFeeLiquid*/);
+        _reflectFee(rFeeReflect, tFeeReflect);
         emit Transfer(sender, recipient, tTransferAmount);
-    }
-
-
-
-    function calculateTFee (uint256 amount) public view returns(uint256 fee) {
-        if(_tTotal >= tAllTotal.mul(50).div(100)) {
-            if(_price < startPrice.mul(5)) {
-                fee = amount.mul(50).div(100);
-                return (fee);
-            }
-            if(_price > startPrice.mul(5) && _price < startPrice.mul(10)) {
-                fee = amount.mul(30).div(100);
-                return (fee);
-            }
-            fee = amount.mul(10).div(100);
-            return (fee);
-        }
-        if(_tTotal < tAllTotal.mul(50).div(100)) {
-           if(_tTotal > tAllTotal.mul(30).div(100)) {
-                fee = amount.mul(5).div(100);
-                return (fee);
-           }
-          if(_tTotal > tAllTotal.mul(25).div(100)) {
-                fee = amount.mul(2).div(100);
-                return (fee);
-           }
-            fee = 0;
-            return (fee);
-        }
     }
 
     function _reflectFee(uint256 rFee, uint256 tFee) private {
@@ -428,28 +390,32 @@ contract Ledgity is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 fee) = _getTValues(tAmount);
+    function _getValues(uint256 tAmount, address sender, address recipient) private view returns (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect, uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) {
+        (tTransferAmount, tFeeLiquid, tFeeReflect) = _getTValues(tAmount, sender, recipient);
         uint256 currentRate =  _getRate();
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, fee, currentRate);
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, fee);
+        ( rAmount, rTransferAmount, rFeeLiquid, rFeeReflect) = _getRValues(tAmount, tFeeLiquid, tFeeReflect, currentRate);
     }
 
-    function _getTValues(uint256 tAmount) private view returns (uint256 tTransferAmount, uint256 tFee) {
+    function _getTValues(uint256 tAmount, address sender, address recipient) private view returns (uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) {
         if(_takeFee) {
-            tFee = calculateTFee(tAmount);
+                if(_dexM[recipient] && _price < startPrice.mul(10)){
+                    tFeeLiquid = tAmount.mul(21).div(100);
+                } else {
+                    tFeeLiquid = tAmount.mul(6).div(100);
+                }
+            tFeeReflect = tAmount.mul(4).div(100);
         } else {
-            tFee = 0;
+            tFeeReflect = 0;
+            tFeeLiquid = 0;
         }
-        tTransferAmount = tAmount.sub(tFee);
-        return (tTransferAmount, tFee);
+        tTransferAmount = tAmount.sub(tFeeLiquid).sub(tFeeReflect);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
-        uint256 rAmount = tAmount.mul(currentRate);
-        uint256 rFee = tFee.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee);
-        return (rAmount, rTransferAmount, rFee);
+    function _getRValues(uint256 tAmount, uint256 tFeeLiquid, uint256 tFeeReflect, uint256 currentRate) private pure returns (uint256 rAmount, uint256 rTransferAmount, uint256 rFeeLiquid, uint256 rFeeReflect) {
+        rAmount = tAmount.mul(currentRate);
+        rFeeLiquid = tFeeLiquid.mul(currentRate);
+        rFeeReflect = tFeeReflect.mul(currentRate);
+        rTransferAmount = rAmount.sub(rFeeLiquid).sub(tFeeReflect);
     }
 
     function _getRate() private view returns(uint256) {
@@ -473,12 +439,6 @@ contract Ledgity is Context, IERC20, Ownable {
         return _tOwned[address(this)];
     }
 
-    function burnFee(uint256 tAmount, uint256 rAmount) internal returns(bool){
-        _rTotal = _rTotal.sub(rAmount);
-        _tTotal = _tTotal.sub(tAmount);
-        _tBurnedTotal = _tBurnedTotal.add(tAmount);
-        return true;
-    }
 
     function burn(uint256 tAmount) public onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
