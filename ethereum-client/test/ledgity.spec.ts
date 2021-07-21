@@ -250,7 +250,7 @@ contract('Ledgity', (addresses) => {
       );
     });
 
-    it.only('should charge 4% fee when buying', async () => {
+    it('should charge 4% fee when buying', async () => {
       const aliceBalanceBefore = await token.balanceOf(alice);
       const usdcAmount = toTokens('10', await usdcToken.decimals());
       const boughtAmount = await buy(usdcAmount, alice);
