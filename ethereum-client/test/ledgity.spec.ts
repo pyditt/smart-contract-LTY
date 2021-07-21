@@ -4,7 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import chaiBN from 'chai-bn';
 import { LedgityInstance, MockUSDCInstance, UniswapV2FactoryInstance, UniswapV2PairInstance, UniswapV2Router02Instance } from '../types/truffle-contracts';
 import { Transfer } from '../types/truffle-contracts/Ledgity';
-import { blockchainTimeTravel } from './utils';
+import { blockchainTimeTravel, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from './utils';
 const Ledgity = artifacts.require('Ledgity');
 const UniswapV2Factory = artifacts.require('UniswapV2Factory');
 const UniswapV2Pair = artifacts.require('UniswapV2Pair');
@@ -19,19 +19,13 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 
-const DECIMALS = new BN('9');
 const START_PRICE = new BN('100');
 const INITIAL_TOTAL_SUPPLY = new BN('10').pow(new BN('26'));
 const NUM_TOKENS_TO_SELL_LIQUIDITY = toTokens('5000');
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 /**
  * Transfer fee immediately after the contract is deployed.
  */
 const INITIAL_FEE = new BN(30);
-
-function toTokens(amount: string, decimals: string | BN = DECIMALS) {
-  return new BN(amount).mul(new BN('10').pow(new BN(decimals)));
-}
 
 contract('Ledgity', (addresses) => {
   const [alice, bob, charlie] = addresses;
@@ -65,7 +59,7 @@ contract('Ledgity', (addresses) => {
     expect(await token.name()).to.eq('Ledgity');
     expect(await token.symbol()).to.eq('LTY');
     expect(await token.totalSupply()).to.bignumber.eq(INITIAL_TOTAL_SUPPLY);
-    expect(await token.decimals()).to.bignumber.eq(DECIMALS);
+    expect(await token.decimals()).to.bignumber.eq(LEDGITY_DECIMALS);
     expect(await token.getStartPrice()).to.bignumber.eq(START_PRICE);
   });
 
