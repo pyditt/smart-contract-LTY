@@ -1,4 +1,5 @@
 # Artifacts
 build
+client/src/contracts
 migrations
 types/truffle-contracts
