@@ -20,16 +20,11 @@ const expect = chai.expect;
 
 
 const DECIMALS = new BN('9');
-const START_PRICE = new BN('100');
 const INITIAL_TOTAL_SUPPLY = new BN('10').pow(new BN('26'));
 const NUM_TOKENS_TO_SELL_LIQUIDITY = toTokens('5000');
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-/**
- * Transfer fee immediately after the contract is deployed.
- */
-const INITIAL_FEE = new BN(30);
 
-function toTokens(amount: string, decimals: string | BN = DECIMALS) {
+function toTokens(amount: string | BN, decimals: string | BN = DECIMALS) {
   return new BN(amount).mul(new BN('10').pow(new BN(decimals)));
 }
 
@@ -40,16 +35,19 @@ contract('Ledgity', (addresses) => {
   let factory: UniswapV2FactoryInstance;
   let usdcToken: MockUSDCInstance;
   let router: UniswapV2Router02Instance;
+  // TODO: this should be The Reserve
+  let tokenReserve: LedgityInstance;
 
   before(async () => {
     factory = await UniswapV2Factory.new(ZERO_ADDRESS);
     const weth = await WETH.new();
     router = await UniswapV2Router02.new(factory.address, weth.address);
     usdcToken = await MockUSDC.new();
+    tokenReserve = await Ledgity.new();
   });
 
   beforeEach(async () => {
-    token = await Ledgity.new(router.address, { from: alice });
+    token = await Ledgity.new({ from: alice });
   });
 
   async function getPair() {
@@ -61,17 +59,60 @@ contract('Ledgity', (addresses) => {
     return await pair.token0() === token.address ? [0, 1] as const : [1, 0] as const;
   }
 
-  it('should have correct token info', async () => {
-    expect(await token.name()).to.eq('Ledgity');
-    expect(await token.symbol()).to.eq('LTY');
-    expect(await token.totalSupply()).to.bignumber.eq(INITIAL_TOTAL_SUPPLY);
-    expect(await token.decimals()).to.bignumber.eq(DECIMALS);
-    expect(await token.getStartPrice()).to.bignumber.eq(START_PRICE);
-  });
+  /**
+   * Add some token/USDC liquidity.
+   */
+  async function addLiquidity(tokenAmount: string | BN, usdcAmount: string | BN) {
+    tokenAmount = toTokens(tokenAmount);
+    usdcAmount = toTokens(usdcAmount, await usdcToken.decimals());
+    await token.approve(router.address, tokenAmount, { from: alice });
+    await usdcToken.mint(alice, usdcAmount);
+    await usdcToken.approve(router.address, usdcAmount, { from: alice });
+    await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, Math.floor(Date.now() / 1000) + 3600, { from: alice });
+  }
 
-  it('should send all supply to the owner', async () => {
-    const balance = await token.balanceOf(alice);
-    expect(balance).to.bignumber.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
+  async function sell(tokenAmount: BN, from: string) {
+    await token.approve(router.address, tokenAmount, { from });
+    await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+      tokenAmount,
+      0, // accept any amount of USDC
+      [token.address, usdcToken.address],
+      from,
+      Math.floor(Date.now() / 1000) + 3600,
+      { from }
+    );
+  }
+
+  async function buy(usdcAmount: BN, from: string) {
+    const pair = await getPair();
+    const [tokenIndex] = await getPairIndices(pair);
+    const reservesBefore = await pair.getReserves();
+    await usdcToken.mint(from, usdcAmount);
+    await usdcToken.approve(router.address, usdcAmount, { from });
+    await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+      usdcAmount,
+      0, // accept any amount of USDC
+      [usdcToken.address, token.address],
+      from,
+      Math.floor(Date.now() / 1000) + 3600,
+      { from }
+    );
+    // How many tokens bought(without the fee)?
+    return reservesBefore[tokenIndex].sub((await pair.getReserves())[tokenIndex]);
+  }
+
+  describe('constructor', () => {
+    it('should have correct token info', async () => {
+      expect(await token.name()).to.eq('Ledgity', 'name');
+      expect(await token.symbol()).to.eq('LTY', 'symbol');
+      expect(await token.totalSupply()).to.bignumber.eq(INITIAL_TOTAL_SUPPLY, 'initial total supply');
+      expect(await token.decimals()).to.bignumber.eq(DECIMALS, 'decimals');
+    });
+
+    it('should send all supply to the owner', async () => {
+      const balance = await token.balanceOf(alice);
+      expect(balance).to.bignumber.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
+    });
   });
 
   describe('transfer', () => {
@@ -80,11 +121,11 @@ contract('Ledgity', (addresses) => {
       const bobBalanceBefore = await token.balanceOf(bob);
       const amount = toTokens('10');
       await token.transfer(bob, amount, { from: alice });
-      expect(await token.balanceOf(alice)).to.bignumber.gt(aliceBalanceBefore.sub(amount), 'Alice');  // including token distribution
-      expect(await token.balanceOf(bob)).to.bignumber.gt(bobBalanceBefore, 'Bob');
+      expect(await token.balanceOf(alice)).to.bignumber.eq(aliceBalanceBefore.sub(amount), 'Alice');
+      expect(await token.balanceOf(bob)).to.bignumber.eq(bobBalanceBefore.add(amount), 'Bob');
     });
 
-    it('should emit TransferEvent', async () => {
+    it('should emit Transfer event', async () => {
       const amount = toTokens('10');
       const res = await token.transfer(bob, amount);
       expect(res.logs.length).to.eq(1);
@@ -92,7 +133,7 @@ contract('Ledgity', (addresses) => {
       expect(log.event).to.eq('Transfer');
       expect(log.args.from).to.eq(alice);
       expect(log.args.to).to.eq(bob);
-      expect(log.args.value).to.bignumber.eq(amount.sub(amount.mul(INITIAL_FEE).divn(100)));
+      expect(log.args.value).to.bignumber.eq(amount);
     });
 
     it('should allow only one transfer per 15 minutes', async () => {
@@ -105,31 +146,52 @@ contract('Ledgity', (addresses) => {
         await token.transfer(charlie, toTokens('1'), { from: alice });
       });
     });
+  });
 
-    it('should allow owner to transfer any amount of tokens', async () => {
-      await token.transfer(bob, await token.totalSupply(), { from: alice });
+  describe('transfer: max size', () => {
+    beforeEach(async () => {
+      await addLiquidity('10000', '1000');
     });
 
-    it('should not allow transfers over 0.1% of total supply if the sender is not the owner', async () => {
-      await token.transfer(bob, await token.totalSupply(), { from: alice });
+    it('should allow owner to transfer any amount of tokens', async () => {
+      await token.transfer(bob, await token.balanceOf(alice), { from: alice });
+    });
 
+    it('should not allow transfers over 0.1% of the liquidity pool reserves if the sender is not the owner', async () => {
+      await token.transfer(bob, await token.balanceOf(alice), { from: alice });
+
+      const pair = await getPair();
+      const [tokenIndex] = await getPairIndices(pair);
       for (const divisor of [10, 100, 1000]) {  // 10%, 1%, 0.1%
-        const totalSupply = await token.totalSupply();
+        const tokenReserve = (await pair.getReserves())[tokenIndex];
         await expect(
-          token.transfer(alice, totalSupply.divn(divisor), { from: bob })
+          token.transfer(alice, tokenReserve.divn(divisor), { from: bob })
         ).to.eventually.be.rejectedWith(Error, undefined, `divisor: ${divisor}`);
       }
     });
 
-    it('should allow transfers less than 0.1% of total supply', async () => {
-      await token.transfer(bob, await token.totalSupply(), { from: alice });
-      const totalSupply = await token.totalSupply();
-      await token.transfer(alice, totalSupply.divn(1001), { from: bob });
+    it('should allow transfers less than 0.1% of the liquidity pool reserves', async () => {
+      await token.transfer(bob, await token.balanceOf(alice), { from: alice });
+
+      const pair = await getPair();
+      const [tokenIndex] = await getPairIndices(pair);
+      const tokenReserve = (await pair.getReserves())[tokenIndex];
+      await token.transfer(alice, tokenReserve.divn(1001), { from: bob });
     });
   });
 
-  describe('transfer between users fee', () => {
-    it('should not charge fees when transferring tokens between users', async () => {
+  describe('transfer: fees', () => {
+    let pair: UniswapV2PairInstance;
+    let reservesBefore: { 0: BN, 1: BN; };
+    let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
+    beforeEach(async () => {
+      await addLiquidity('1000', '100');
+      pair = await getPair();
+      reservesBefore = await pair.getReserves();
+      [tokenIndex, usdcIndex] = await getPairIndices(pair);
+    });
+
+    it('should NOT charge fees when transferring tokens between users', async () => {
       const amount = toTokens('10');
       await token.transfer(bob, amount, { from: alice });
       expect(await token.balanceOf(bob)).to.bignumber.eq(amount);
@@ -138,169 +200,77 @@ contract('Ledgity', (addresses) => {
       await token.transfer(charlie, amount2, { from: bob });
       expect(await token.balanceOf(charlie)).to.bignumber.eq(amount2);
     });
-  });
 
-  describe('dex selling fee', () => {
-    beforeEach(async () => {
-      // Add some token/USDC liquidity
-      const tokenAmount = toTokens('10');
-      const usdcAmount = toTokens('1', await usdcToken.decimals());
-      await token.approve(router.address, tokenAmount, { from: alice });
-      await usdcToken.mint(alice, usdcAmount);
-      await usdcToken.approve(router.address, usdcAmount, { from: alice });
-      await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, Math.floor(Date.now() / 1000) + 3600, { from: alice });
-    });
-
-    async function testFee(account: string, fee: number) {
+    it('should charge 6% fee when selling', async () => {
       const amount = toTokens('10');
-      if (account !== alice) {
-        await token.transfer(account, amount, { from: alice });
-      }
-
-      const pair = await getPair();
-      const reservesBefore = await pair.getReserves();
-      const accountBalanceBefore = await token.balanceOf(account);
-
-      await token.approve(router.address, amount, { from: account });
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-        amount,
-        0, // accept any amount of USDC
-        [token.address, usdcToken.address],
-        account,
-        Math.floor(Date.now() / 1000) + 3600,
-        { from: account }
-      );
+      await sell(amount, alice);
       const reserves = await pair.getReserves();
-      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      const feeInTokens = amount.muln(fee).divn(100);
+      const feeInTokens = amount.muln(6).divn(100);
       expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens), 'token reserve');
       expect(reserves[usdcIndex]).to.bignumber.lt(reservesBefore[usdcIndex], 'USDC reserve');
-
-      const tokensDistributed = feeInTokens.divn(3);
-      const accountBalance = await token.balanceOf(account);
-      const accountBalanceExpectedOffByOne = accountBalanceBefore.sub(amount).add(tokensDistributed);
-      // TODO: uncomment
-      // TODO: is it possible to avoid off-by-one errors when calculating the balance of a user?
-      // expect((accountBalance.sub(accountBalanceExpectedOffByOne)).abs()).to.bignumber.lte(
-      //   new BN('1'),
-      //   `account balance, ${accountBalance.toString()} | ${accountBalanceExpectedOffByOne.toString()}`,
-      // )
-    }
-
-    it('should sell with no fee if the seller is the contract owner', async () => {
-      await token.setPrice(START_PRICE.divn(6), { from: alice });
-      await testFee(alice, 0);
+      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
     });
 
-    it('should sell with 50% fee if price < x5 IDO price', async () => {
-      await token.setPrice(START_PRICE.divn(6), { from: alice });
-      await testFee(bob, 50);
-    });
-
-    for (const multiplier of [6, 9]) {
-      it(`should sell with 30% fee if token price between x5 and x10 IDO price: x${multiplier}`, async () => {
-        await token.setPrice(START_PRICE.muln(multiplier), { from: alice });
-        await testFee(bob, 30);
-      });
-    }
-
-    it('should sell with 10% fee if current supply is >50% and price is >x10 than IDO price', async () => {
-      // burn <50%
-      await token.burn(INITIAL_TOTAL_SUPPLY.divn(2).subn(1), { from: alice });
-      await token.setPrice(START_PRICE.muln(11), { from: alice });
-      await testFee(bob, 10);
-    });
-
-    it('should sell with 5% fee if current supply is between 30% and 50%', async () => {
-      // burn <70%
-      await token.burn(INITIAL_TOTAL_SUPPLY.muln(70).divn(100).subn(1), { from: alice });
-      await testFee(bob, 5);
-    });
-
-    it('should sell with 2% fee if current supply is between 25% and 30%', async () => {
-      // burn <75%
-      await token.burn(INITIAL_TOTAL_SUPPLY.muln(75).divn(100).subn(1), { from: alice });
-      await testFee(bob, 2);
-    });
-  });
-
-  describe('transfer fee distribution', () => {
-    const [sender, recipient, holder1, holder2, holder3] = addresses;
-    beforeEach(async () => {
-      // Burn <50% of tokens and set the price to x11 relative to IDO price to set the fee to 10%
-      await token.burn(INITIAL_TOTAL_SUPPLY.divn(2).subn(1), { from: sender });
-      await token.setPrice(START_PRICE.muln(11), { from: sender });
-    });
-
-    /// Send tokens to holders, expecting their balances to match amounts.
-    async function sendTokensToHolders(amount1: BN, amount2: BN, amount3: BN) {
-      // 10% fee
-      amount3 = amount3.add(amount3.divn(10));
-      // amount distributes from transfer to holder3 (/ 10(fee) / 3(parts) / 2(holders))
-      const amount3TransferDistribution = amount3.divn(10 * 3 * 2);
-      amount2 = amount2.add(amount2.divn(10)).sub(amount3TransferDistribution);  // 10% fee - distribution amount
-      // amount distributes from transfer to holder3 (/ 10(fee) / 3(parts) / 1(holder))
-      const amount2TransferDistribution = amount2.divn(10 * 3);
-      amount1 = amount1.add(amount1.divn(10)).sub(amount3TransferDistribution).sub(amount2TransferDistribution);  // 10% fee - distribution amount
-      await blockchainTimeTravel(async travel => {
-        await token.transfer(holder1, amount1, { from: sender });
-        await travel(16 * 60);
-        await token.transfer(holder2, amount2, { from: sender });
-        await travel(16 * 60);
-        await token.transfer(holder3, amount3, { from: sender });
-      });
-      // Sanity checks
-      expect(await token.balanceOf(holder1)).to.bignumber.eq(amount1);
-      expect(await token.balanceOf(holder2)).to.bignumber.eq(amount2);
-      expect(await token.balanceOf(holder3)).to.bignumber.eq(amount3);
-    }
-
-    it('should burn 1/3 of fee', async () => {
-      const totalSupplyBefore = await token.totalSupply();
-      const totalBurnedBefore = await token.totalBurn();
-      await token.transfer(recipient, toTokens('90'), { from: sender });
-      const expectBurned = toTokens('3');  // 90 * 0.1 / 3
-      expect(await token.totalSupply()).to.bignumber.eq(totalSupplyBefore.sub(expectBurned), 'supply');
-      expect(await token.totalBurn()).to.bignumber.eq(totalBurnedBefore.add(expectBurned), 'burned');
-    });
-
-    // TODO: FIXME and enable
-    it.skip('should distribute 1/3 of fee between holders in proportion', async () => {
-      await sendTokensToHolders(toTokens('15'), toTokens('4'), toTokens('1'));
+    it('should charge 6% + 15% fee when selling if token price is less than x10 IDO price', async () => {
       const amount = toTokens('10');
-      await token.transfer(recipient, amount, { from: sender });
-      // The 1/3 of fee must be split in "15 : 4 : 1" proportion
-      const distributed = amount.divn(10 * 3);  // 1/3 of 10% fee
-      expect(await token.balanceOf(holder1)).to.bignumber.eq(toTokens('15').add(distributed.muln(15).divn(20)));
-      expect(await token.balanceOf(holder2)).to.bignumber.eq(toTokens('4').add(distributed.muln(4).divn(20)));
-      expect(await token.balanceOf(holder3)).to.bignumber.eq(toTokens('1').add(distributed.muln(1).divn(20)));
+      await sell(amount, alice);
+      const reserves = await pair.getReserves();
+      const feeInTokens = amount.muln(6 + 15).divn(100);
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens), 'token reserve');
+      expect(reserves[usdcIndex]).to.bignumber.lt(reservesBefore[usdcIndex], 'USDC reserve');
+      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
     });
 
-    // TODO: FIXME and enable
-    it.skip('should not distribute tokens between excluded holders', async () => {
-      await sendTokensToHolders(toTokens('15'), toTokens('5'), toTokens('100'));
-      await token.excludeAccount(holder3);
+    it('should distribute 4% of transferred tokens among holders when selling', async () => {
+      await token.transfer(bob, toTokens('15'), { from: alice });
+      await token.transfer(charlie, toTokens('5'), { from: alice });
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const bobBalanceBefore = await token.balanceOf(bob);
+      const charlieBalanceBefore = await token.balanceOf(charlie);
+
       const amount = toTokens('10');
-      await token.transfer(recipient, amount, { from: sender });
-      // The 1/3 of fee must be split in "15 : 5" proportion (holder with 100 tokens is excluded)
-      const distributed = amount.divn(10 * 3);  // 1/3 of 10% fee
-      expect(await token.balanceOf(holder1)).to.bignumber.eq(toTokens('15').add(distributed.muln(15).divn(20)));
-      expect(await token.balanceOf(holder2)).to.bignumber.eq(toTokens('5').add(distributed.muln(5).divn(20)));
-      // unchanged
-      expect(await token.balanceOf(holder3)).to.bignumber.eq(toTokens('100'));
+      await sell(amount, alice);
+
+      const tokensDistributed = amount.muln(4).divn(100);
+      const balancesSum = aliceBalanceBefore.add(bobBalanceBefore).add(charlieBalanceBefore);
+      expect(await token.balanceOf(alice)).to.bignumber.closeTo(
+        aliceBalanceBefore.sub(amount).add(tokensDistributed.mul(aliceBalanceBefore).div(balancesSum)),
+        '1',
+        'Alice',
+      );
+      expect(await token.balanceOf(bob)).to.bignumber.closeTo(
+        bobBalanceBefore.add(tokensDistributed.mul(bobBalanceBefore).div(balancesSum)),
+        '1',
+        'Bob',
+      );
+      expect(await token.balanceOf(charlie)).to.bignumber.closeTo(
+        charlieBalanceBefore.add(tokensDistributed.mul(charlieBalanceBefore).div(balancesSum)),
+        '1',
+        'Charlie',
+      );
+    });
+
+    it.only('should charge 4% fee when buying', async () => {
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const usdcAmount = toTokens('10', await usdcToken.decimals());
+      const boughtAmount = await buy(usdcAmount, alice);
+      const reserves = await pair.getReserves();
+      const feeInTokens = boughtAmount.muln(4).divn(100);
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].sub(boughtAmount), 'token reserve');
+      expect(reserves[usdcIndex]).to.bignumber.eq(reservesBefore[usdcIndex].add(usdcAmount), 'USDC reserve');
+      expect(await token.balanceOf(alice)).to.bignumber.eq(aliceBalanceBefore.add(boughtAmount).sub(feeInTokens), 'Alice balance');
+      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
+    });
+
+    it('should NOT charge fee when buying from The Reserve', async () => {
+      // TODO
+      expect.fail();
     });
   });
 
   describe('Uniswap liquidity', () => {
     beforeEach(async () => {
-      // Add some token/USDC liquidity
-      const tokenAmount = toTokens('10');
-      const usdcAmount = toTokens('1', await usdcToken.decimals());
-      await token.approve(router.address, tokenAmount, { from: alice });
-      await usdcToken.mint(alice, usdcAmount);
-      await usdcToken.approve(router.address, usdcAmount, { from: alice });
-      await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, Math.floor(Date.now() / 1000) + 3600, { from: alice });
-
+      await addLiquidity('10', '1');
       expect(await token.balanceOf(token.address)).to.bignumber.eq('0', 'sanity check');
 
       // Transfer tokens to Bob, because the owner of the contract (Alice) is excluded from fees.
@@ -311,45 +281,42 @@ contract('Ledgity', (addresses) => {
       await token.transfer(alice, 1, { from: bob });
     }
 
-    it('should accumulate tokens for adding liquidity', async () => {
-      const amount = toTokens('1');
-      await token.transfer(alice, amount, { from: bob });
-      const feeInTokens = amount.mul(INITIAL_FEE).divn(100);
-      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens.divn(3));
+    it('should NOT add liquidity if swapAndLiquify is disabled', async () => {
+      expect.fail();
     });
 
-    it('should not add liquidity until the balance of the contract passes the predefined threshold', async () => {
+    it('should NOT add liquidity until the balance of the contract passes the predefined threshold', async () => {
       const pair = await getPair();
       const reservesBefore = await pair.getReserves();
 
-      // amount * fee / 100 / 3 = threshold
-      // amount = threshold / fee * 100 * 3
-      const amount = NUM_TOKENS_TO_SELL_LIQUIDITY.div(INITIAL_FEE).muln(300);
-      await token.transfer(alice, amount, { from: bob });
+      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.subn(1), { from: alice });
       await triggerLiquify();
 
       const reserves = await pair.getReserves();
-      expect(reserves[0]).to.bignumber.eq(reservesBefore[0], '0');
-      expect(reserves[1]).to.bignumber.eq(reservesBefore[1], '1');
+      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex], 'token reserve');
+      expect(reserves[usdcIndex]).to.bignumber.eq(reservesBefore[usdcIndex], 'USDC reserve');
     });
 
     it('should add liquidity when the balance of the contract passes the predefined threshold', async () => {
       const pair = await getPair();
       const reservesBefore = await pair.getReserves();
 
-      const amount = NUM_TOKENS_TO_SELL_LIQUIDITY.div(INITIAL_FEE).muln(300).addn(200);
-      await token.transfer(alice, amount, { from: bob });
+      await token.transfer(tokenReserve.address, NUM_TOKENS_TO_SELL_LIQUIDITY, { from: alice });
+      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY, { from: alice });
       const balanceBeforeLiquify = await token.balanceOf(token.address);
-      expect(balanceBeforeLiquify).to.bignumber.gte(NUM_TOKENS_TO_SELL_LIQUIDITY, 'not enough tokens');
       await triggerLiquify();
 
       const reserves = await pair.getReserves();
       const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.bignumber.gt(reservesBefore[tokenIndex].add(balanceBeforeLiquify.divn(2)), 'token');
-      expect(reserves[usdcIndex]).to.bignumber.eq(reservesBefore[usdcIndex], 'USDC');
-      // should not leave any extra USDC on the contract balance
-      expect(token.balanceOf(token.address)).to.bignumber.eq('0', 'token');
-      expect(usdcToken.balanceOf(token.address)).to.bignumber.eq('0', 'usdc');
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(balanceBeforeLiquify.muln(2)), 'token reserve');
+      // Swap and liquify does not change USDC reserves in the liquidity pool.
+      expect(reserves[usdcIndex]).to.bignumber.eq(reservesBefore[usdcIndex], 'USDC reserve');
+      // should not leave any extra USDC or tokens on the balances
+      expect(await token.balanceOf(token.address)).to.bignumber.eq('0', 'token token');
+      expect(await token.balanceOf(tokenReserve.address)).bignumber.eq('0', 'token The Reserve');
+      expect(await usdcToken.balanceOf(token.address)).to.bignumber.eq('0', 'USDC token');
+      expect(await usdcToken.balanceOf(tokenReserve.address)).bignumber.eq('0', 'USDC The Reserve');
     });
   });
 
