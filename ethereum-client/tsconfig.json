@@ -15,5 +15,6 @@
   "include": [
     "test/**/*",
     "types/**/*",
+    "migrations-ts/**/*",
   ],
 }
