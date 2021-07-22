@@ -1,9 +1,7 @@
 const Ledgity = artifacts.require('Ledgity');
-const UniswapV2Router02 = artifacts.require('UniswapV2Router02');
 
 const migration: Truffle.Migration = async function (deployer) {
-  const router = await UniswapV2Router02.deployed();
-  await deployer.deploy(Ledgity, router.address);
+  await deployer.deploy(Ledgity);
 };
 module.exports = migration;
 

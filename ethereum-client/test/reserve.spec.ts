@@ -36,7 +36,7 @@ contract.only('Reserve', (addresses) => {
   });
 
   beforeEach(async () => {
-    token = await Ledgity.new(router.address, { from: alice });
+    token = await Ledgity.new({ from: alice });
     reserve = await Reserve.new(router.address, token.address, usdcToken.address);
   });
 
@@ -123,13 +123,11 @@ contract.only('Reserve', (addresses) => {
       const pair = await getPair();
       const reservesBefore = await pair.getReserves();
       const totalSupplyBefore = await token.totalSupply();
-      const totalBurnBefore = await token.totalBurn();
 
       const usdcAmount = toTokens('10', await usdcToken.decimals());
       await reserve.buyAndBurn(usdcAmount, { from: alice });
 
       expect(await token.totalSupply()).to.bignumber.lt(totalSupplyBefore, 'supply');
-      expect(await token.totalBurn()).to.bignumber.gt(totalBurnBefore, 'burn');
       const reserves = await pair.getReserves();
       const [tokenIndex, usdcIndex] = await getPairIndices(pair);
       expect(reserves[tokenIndex]).to.bignumber.lt(reservesBefore[tokenIndex], 'token');
