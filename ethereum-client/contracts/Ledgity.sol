@@ -398,10 +398,12 @@ contract Ledgity is Context, IERC20, Ownable {
 
     function _getTValues(uint256 tAmount, address sender, address recipient) private view returns (uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) {
         if(_takeFee) {
-                if(_dexM[recipient] && _price < startPrice.mul(10)){
-                    tFeeLiquid = tAmount.mul(21).div(100);
-                } else {
+                if(_dexM[recipient]){
                     tFeeLiquid = tAmount.mul(6).div(100);
+                        if(_price < startPrice.mul(10))
+                            tFeeLiquid = tAmount.mul(21).div(100);
+                } else  {
+                    tFeeLiquid = 0;
                 }
             tFeeReflect = tAmount.mul(4).div(100);
         } else {
