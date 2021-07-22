@@ -32,6 +32,11 @@ contract Reserve is Ownable {
         usdc = IERC20(USDC);
     }
 
+    function getBalances() view public returns(uint256 LTYbalance, uint256 USDCbalance){
+        LTYbalance = token.balanceOf(address(this));
+        USDCbalance = usdc.balanceOf(address(this));
+    }
+
     function buyAndBurn(uint256 usdcAmount) public onlyOwner {
         address[] memory path = new address[](2);
         path[0] = address(usdc);
@@ -51,12 +56,12 @@ contract Reserve is Ownable {
         emit BuyAndBurn(tokensSwapped, usdcAmount);
     }
 
-    function swapAndCollect(uint256 tokenAmount) public onlyToken {
+    function swapAndCollect(uint256 tokenAmount) external onlyToken {
         uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
         emit SwapAndCollect(tokenAmount, usdcReceived);
     }
 
-    function swapAndLiquify(uint256 tokenAmount) public onlyToken {
+    function swapAndLiquify(uint256 tokenAmount) external onlyToken {
         uint256 tokenBalance = token.balanceOf(address(this));
         if (tokenBalance < tokenAmount.mul(2)) {
             tokenAmount = tokenBalance.div(2);

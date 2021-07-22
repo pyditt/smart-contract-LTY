@@ -8,6 +8,7 @@ import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/IReserve.sol";
 
 
 contract Ledgity is Context, IERC20, Ownable {
@@ -35,6 +36,7 @@ contract Ledgity is Context, IERC20, Ownable {
     IUniswapV2Router02 public uniswapV2Router;
     IUniswapV2Pair public uniswapV2Pair;
     address public uniswapV2PairAddress;
+    IReserve public reserve;
 
     address[] private _dex;
     address[] private _excluded;
@@ -45,7 +47,7 @@ contract Ledgity is Context, IERC20, Ownable {
     mapping (address => uint256) private _TxTime;
     mapping (address => bool) private _dexM;
     mapping (address => bool) private _isExcluded;
-    mapping (address => bool) private _ExcludedFromFee;
+    mapping (address => bool) private _ExcludedFromDexFee;
 
     modifier lockTheSwap {
         inSwapAndLiquify = true;
@@ -71,19 +73,20 @@ contract Ledgity is Context, IERC20, Ownable {
         _rOwned[_msgSender()] = _rTotal;
         excludeAccount(_msgSender());
         excludeAccount(address(this));
-        _ExcludedFromFee[address(this)]=true;
-        _ExcludedFromFee[_msgSender()]=true;
-        /*_ExcludedFromFee[RESERVE]=true;*/
+        _ExcludedFromDexFee[address(this)]=true;
+        _ExcludedFromDexFee[_msgSender()]=true;
+        /*_ExcludedFromDexFee[RESERVE]=true;*/
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
     receive() external payable {}
     
-    function initPair(address routerAddress) public onlyOwner {
+    function initPair(address routerAddress, address reserveAddress) public onlyOwner {
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
         address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
         uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
+        reserve = IReserve(reserveAddress);
         uniswapV2Router = _uniswapV2Router;
         uniswapV2PairAddress = _uniswapV2PairAddress;
         setDex(uniswapV2PairAddress);
@@ -301,7 +304,7 @@ contract Ledgity is Context, IERC20, Ownable {
             swapAndLiquify(contractTokenBalance);
         }
         bool takeFee = false;
-        if((!_ExcludedFromFee[sender] || !_ExcludedFromFee[recipient]) && (_dexM[recipient] || _dexM[sender])){
+        if((_dexM[recipient] || _dexM[sender]) && (!_ExcludedFromDexFee[sender] && !_ExcludedFromDexFee[recipient])){
             (uint256 reserve0,,) = uniswapV2Pair.getReserves();
             if (reserve0 > 100000*10e9) {
                 require(amount < reserve0.div(100), "Ledgity: transfer amount must be less than 0.1% of totalSupply");
@@ -438,7 +441,6 @@ contract Ledgity is Context, IERC20, Ownable {
     function getLiqValue() public view returns(uint256) {
         return _tOwned[address(this)];
     }
-
 
     function burn(uint256 tAmount) public onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
