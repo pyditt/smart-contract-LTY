@@ -4,14 +4,14 @@ import "./libraries/Address.sol";
 import "./libraries/Context.sol";
 import "./libraries/Ownable.sol";
 import "./libraries/SafeMath.sol";
-import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IReserve.sol";
+import "./interfaces/ILedgity.sol";
 
 
-contract Ledgity is Context, IERC20, Ownable {
+contract Ledgity is ILedgity, Context, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -80,7 +80,7 @@ contract Ledgity is Context, IERC20, Ownable {
     }
 
     receive() external payable {}
-    
+
     function initPair(address routerAddress, address reserveAddress) public onlyOwner {
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
         address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
@@ -164,7 +164,7 @@ contract Ledgity is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tAmount);
     }
     // [+] TODO
-    // можно объявить возвращаему переменную "function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256 rTransferAmount)" 
+    // можно объявить возвращаему переменную "function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256 rTransferAmount)"
     // (, rTransferAmount,,,) = _getValues(tAmount);
     // В остальных методах сделать нечто подобное
 
@@ -279,7 +279,7 @@ contract Ledgity is Context, IERC20, Ownable {
         if(!_takeFee) return;
         _takeFee = false;
     }
-    
+
     function restoreAllFee() private {
         if(_takeFee) return;
         _takeFee = true;
@@ -442,7 +442,7 @@ contract Ledgity is Context, IERC20, Ownable {
         return _tOwned[address(this)];
     }
 
-    function burn(uint256 tAmount) public onlyOwner returns(bool){
+    function burn(uint256 tAmount) public override onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
         uint256 rAmount = tAmount.mul(currentRate);
         require(rAmount <= _rOwned[msg.sender], "Ledgity: amount must be less than your balance");

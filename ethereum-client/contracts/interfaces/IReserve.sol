@@ -4,12 +4,12 @@ interface IReserve {
     /**
      * @dev Returns the amount of tokens in existence.
      */
-    function swapAndCollect(uint256 tokenAmount) public;
+    function swapAndCollect(uint256 tokenAmount) external;
 
     /**
      * @dev Returns the amount of tokens owned by `account`.
      */
-    function swapAndLiquify(uint256 tokenAmount) public;
+    function swapAndLiquify(uint256 tokenAmount) external;
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -18,7 +18,7 @@ interface IReserve {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function buyAndBurn(uint256 usdcAmount) public;
+    function buyAndBurn(uint256 usdcAmount) external;
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to

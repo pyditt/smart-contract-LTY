@@ -4,22 +4,16 @@ import "./libraries/Ownable.sol";
 import "./libraries/SafeMath.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/ILedgity.sol";
+import "./interfaces/IReserve.sol";
 
 
-contract Reserve is Ownable {
+contract Reserve is IReserve, Ownable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
-    IERC20 public immutable token;
+    ILedgity public immutable token;
     IERC20 public immutable usdc;
-
-    event BuyAndBurn(uint256 tokenAmount, uint256 usdcAmount);
-    event SwapAndCollect(uint256 tokenAmount, uint256 usdcAmount);
-    event SwapAndLiquify(
-        uint256 tokenSwapped,
-        uint256 usdcReceived,
-        uint256 tokensIntoLiqudity
-    );
 
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
@@ -28,16 +22,17 @@ contract Reserve is Ownable {
 
     constructor(address uniswapRouter, address TOKEN, address USDC) public {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
-        token = IERC20(TOKEN);
+        token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
     }
 
+    // TODO: remove this
     function getBalances() view public returns(uint256 LTYbalance, uint256 USDCbalance){
         LTYbalance = token.balanceOf(address(this));
         USDCbalance = usdc.balanceOf(address(this));
     }
 
-    function buyAndBurn(uint256 usdcAmount) public onlyOwner {
+    function buyAndBurn(uint256 usdcAmount) public override onlyOwner {
         address[] memory path = new address[](2);
         path[0] = address(usdc);
         path[1] = address(token);
@@ -51,17 +46,16 @@ contract Reserve is Ownable {
             block.timestamp
         );
         uint256 tokensSwapped = token.balanceOf(address(this)).sub(tokenBalanceBefore);
-        // TODO: burn tokens
-        // token.burn(tokensSwapped);
+        require(token.burn(tokensSwapped), "Reserve: burn failed");
         emit BuyAndBurn(tokensSwapped, usdcAmount);
     }
 
-    function swapAndCollect(uint256 tokenAmount) external onlyToken {
+    function swapAndCollect(uint256 tokenAmount) external override onlyToken {
         uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
         emit SwapAndCollect(tokenAmount, usdcReceived);
     }
 
-    function swapAndLiquify(uint256 tokenAmount) external onlyToken {
+    function swapAndLiquify(uint256 tokenAmount) external override onlyToken {
         uint256 tokenBalance = token.balanceOf(address(this));
         if (tokenBalance < tokenAmount.mul(2)) {
             tokenAmount = tokenBalance.div(2);
