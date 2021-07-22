@@ -19,7 +19,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 
-contract.only('Reserve', (addresses) => {
+contract('Reserve', (addresses) => {
   const [alice, bob] = addresses;
 
   /**
