@@ -90,10 +90,12 @@ contract Ledgity is ILedgity, Context, Ownable {
         reserve = IReserve(reserveAddress);
         uniswapV2Router = _uniswapV2Router;
         uniswapV2PairAddress = _uniswapV2PairAddress;
+        _ExcludedFromFee[address(reserve)]=true;
+        excludeAccount(address(reserve));
         setDex(uniswapV2PairAddress);
     }
 
-        
+
     function getReservesBalance() public view returns(uint256, uint256) {
         return reserve.getBalances();
     }
@@ -237,6 +239,7 @@ contract Ledgity is ILedgity, Context, Ownable {
         return true;
     }
 
+    // TODO: Remove
     function swapTokensForEth(uint256 tokenAmount) private{
         address[] memory path = new address[](2);
         path[0] = address(this);
@@ -251,6 +254,7 @@ contract Ledgity is ILedgity, Context, Ownable {
         );
     }
 
+    // TODO: Remove
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private{
         _approve(address(this), address(uniswapV2Router), tokenAmount);
         uniswapV2Router.addLiquidityETH{value: ethAmount}(
@@ -267,6 +271,7 @@ contract Ledgity is ILedgity, Context, Ownable {
         (reserve0, reserve1, blockTimestampLast) = uniswapV2Pair.getReserves();
     }
 
+    // TODO: Remove
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
         uint256 half = contractTokenBalance.div(2);
         uint256 otherHalf = contractTokenBalance.sub(half);
@@ -281,11 +286,13 @@ contract Ledgity is ILedgity, Context, Ownable {
         _tOwned[address(this)] = _tOwned[address(this)].add(tFee);
     }
 
+    // TODO: Remove
     function removeAllFee() private {
         if(!_takeFee) return;
         _takeFee = false;
     }
 
+    // TODO: Remove
     function restoreAllFee() private {
         if(_takeFee) return;
         _takeFee = true;
@@ -309,10 +316,10 @@ contract Ledgity is ILedgity, Context, Ownable {
         ) {
             if (_collectTaxTokens) {
               transfer(address(reserve), contractTokenBalance);
-              reserve.swapAndLiquify(contractTokenBalance);
+              reserve.swapAndCollect(contractTokenBalance);
             } else {
               transfer(address(reserve), contractTokenBalance);
-              reserve.swapAndCollect(contractTokenBalance);
+              reserve.swapAndLiquify(contractTokenBalance);
             }
         }
         bool takeFee = false;
@@ -326,11 +333,13 @@ contract Ledgity is ILedgity, Context, Ownable {
         _tokenTransfer(sender,recipient,amount,takeFee);
     }
 
+    // TODO: Remove
     function testSwapAndLiquidqwe(uint256 amount) public {
         transfer(address(reserve), amount);
         reserve.swapAndLiquify(amount);
     }
-    
+
+    // TODO: Remove
     function testSwapAndCollect(uint256 amount) public {
         transfer(address(reserve), amount);
         reserve.swapAndCollect(amount);
@@ -350,7 +359,9 @@ contract Ledgity is ILedgity, Context, Ownable {
         } else {
             _transferStandard(sender, recipient, amount);
         }
-        _TxTime[sender] = block.timestamp;
+        if(!_ExcludedFromFee[sender] && !_ExcludedFromFee[recipient]) {
+            _TxTime[sender] = block.timestamp;
+        }
         if(!takeFee)
             restoreAllFee();
     }
@@ -466,6 +477,7 @@ contract Ledgity is ILedgity, Context, Ownable {
         return _tOwned[address(this)];
     }
 
+    // TODO - Fix: if Excluded
     function burn(uint256 tAmount) public override onlyOwner returns(bool){
         uint256 currentRate =  _getRate();
         uint256 rAmount = tAmount.mul(currentRate);
