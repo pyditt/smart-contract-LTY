@@ -27,7 +27,7 @@ contract Reserve is IReserve, Ownable {
     }
 
     // TODO: remove this
-    function getBalances() view public returns(uint256 LTYbalance, uint256 USDCbalance){
+    function getBalances() view public override returns(uint256 LTYbalance, uint256 USDCbalance){
         LTYbalance = token.balanceOf(address(this));
         USDCbalance = usdc.balanceOf(address(this));
     }
@@ -57,8 +57,12 @@ contract Reserve is IReserve, Ownable {
 
     function swapAndLiquify(uint256 tokenAmount) external override onlyToken {
         uint256 tokenBalance = token.balanceOf(address(this));
+        uint256 half = tokenAmount;
+        uint256 otherHalf = tokenAmount;
+
         if (tokenBalance < tokenAmount.mul(2)) {
-            tokenAmount = tokenBalance.div(2);
+            half = tokenBalance.div(2);
+            otherhalf = tokenBalance.sub(half);
         }
 
         uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
