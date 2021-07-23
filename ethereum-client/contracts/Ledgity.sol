@@ -32,6 +32,7 @@ contract Ledgity is ILedgity, Context, Ownable {
     uint256 private _tFeeTotal;
     uint256 private _price = 7;
     bool private _takeFee = false;
+    bool private _collectTaxTokens = false;
 
     IUniswapV2Router02 public uniswapV2Router;
     IUniswapV2Pair public uniswapV2Pair;
@@ -90,6 +91,11 @@ contract Ledgity is ILedgity, Context, Ownable {
         uniswapV2Router = _uniswapV2Router;
         uniswapV2PairAddress = _uniswapV2PairAddress;
         setDex(uniswapV2PairAddress);
+    }
+
+        
+    function getReservesBalance() public view returns(uint256, uint256) {
+        return reserve.getBalances();
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -301,7 +307,13 @@ contract Ledgity is ILedgity, Context, Ownable {
             !inSwapAndLiquify &&
             sender != uniswapV2PairAddress
         ) {
-            swapAndLiquify(contractTokenBalance);
+            if (_collectTaxTokens) {
+              transfer(address(reserve), contractTokenBalance);
+              reserve.swapAndLiquify(contractTokenBalance);
+            } else {
+              transfer(address(reserve), contractTokenBalance);
+              reserve.swapAndCollect(contractTokenBalance);
+            }
         }
         bool takeFee = false;
         if((_dexM[recipient] || _dexM[sender]) && (!_ExcludedFromDexFee[sender] && !_ExcludedFromDexFee[recipient])){
@@ -312,6 +324,16 @@ contract Ledgity is ILedgity, Context, Ownable {
             takeFee = true;
         }
         _tokenTransfer(sender,recipient,amount,takeFee);
+    }
+
+    function testSwapAndLiquidqwe(uint256 amount) public {
+        transfer(address(reserve), amount);
+        reserve.swapAndLiquify(amount);
+    }
+    
+    function testSwapAndCollect(uint256 amount) public {
+        transfer(address(reserve), amount);
+        reserve.swapAndCollect(amount);
     }
 
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
@@ -401,10 +423,12 @@ contract Ledgity is ILedgity, Context, Ownable {
 
     function _getTValues(uint256 tAmount, address sender, address recipient) private view returns (uint256 tTransferAmount, uint256 tFeeLiquid, uint256 tFeeReflect) {
         if(_takeFee) {
-                if(_dexM[recipient] && _price < startPrice.mul(10)){
-                    tFeeLiquid = tAmount.mul(21).div(100);
-                } else {
+                if(_dexM[recipient]){
                     tFeeLiquid = tAmount.mul(6).div(100);
+                        if(_price < startPrice.mul(10))
+                            tFeeLiquid = tAmount.mul(21).div(100);
+                } else  {
+                    tFeeLiquid = 0;
                 }
             tFeeReflect = tAmount.mul(4).div(100);
         } else {
