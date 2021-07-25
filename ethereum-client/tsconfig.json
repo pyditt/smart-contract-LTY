@@ -11,9 +11,14 @@
     "noImplicitThis": true,
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
+    "resolveJsonModule": true,
   },
   "include": [
-    "test/**/*",
-    "types/**/*",
+    "./test",
+    "./scripts",
+    "./typechain",
+  ],
+  "files": [
+    "./hardhat.config.ts",
   ],
 }

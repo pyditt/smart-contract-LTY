@@ -37,10 +37,10 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address routerAddress, address reserveAddress) public onlyOwner {
+    function initialize(address routerAddress, address reserveAddress, address usdcAddress) public onlyOwner {
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
         address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+            .createPair(address(this), usdcAddress);
         uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
         // uniswapV2Router = _uniswapV2Router;
         setDex(address(uniswapV2Pair), true);

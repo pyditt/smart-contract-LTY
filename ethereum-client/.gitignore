@@ -3,3 +3,8 @@ build
 client/src/contracts
 migrations
 types/truffle-contracts
+
+# Hardhat files
+cache
+artifacts
+typechain
