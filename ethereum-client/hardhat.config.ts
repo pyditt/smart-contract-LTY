@@ -6,6 +6,9 @@ import { HardhatUserConfig, task, types } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
   solidity: '0.6.12',
+  paths: {
+    artifacts: './client/src/contracts',
+  },
   networks: {
     private: {
       url: 'http://52.12.224.224:8545',
