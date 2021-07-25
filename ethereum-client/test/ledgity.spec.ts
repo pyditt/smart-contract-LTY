@@ -44,6 +44,13 @@ contract('Ledgity', (addresses) => {
 
   beforeEach(async () => {
     token = await Ledgity.new({ from: alice });
+
+    // TODO: move this logic to the smart contract
+    await factory.createPair(token.address, usdcToken.address);
+    const pair = await getPair();
+    await token.setDex(pair.address, true);
+    await token.excludeAccount(pair.address);
+    // end TODO
   });
 
   async function getPair() {
@@ -126,11 +133,12 @@ contract('Ledgity', (addresses) => {
 
     it('should allow only one transfer per 15 minutes', async () => {
       await token.transfer(bob, toTokens('1'), { from: alice });
-      await expect(
-        token.transfer(charlie, toTokens('1'), { from: alice })
-      ).to.eventually.be.rejectedWith(Error);
       await blockchainTimeTravel(async travel => {
-        await travel(15 * 60 + 1);  // wait for >15 minutes
+        await travel(15 * 60 - 10);  // wait for <15 minutes
+        await expect(
+          token.transfer(charlie, toTokens('1'), { from: alice })
+        ).to.eventually.be.rejectedWith(Error);
+        await travel(30);  // wait for 30 more seconds. In total >15 minutes
         await token.transfer(charlie, toTokens('1'), { from: alice });
       });
     });
@@ -190,55 +198,67 @@ contract('Ledgity', (addresses) => {
     });
 
     it('should charge 6% fee when selling', async () => {
+      const contractBalanceBefore = await token.balanceOf(token.address);
       const amount = toTokens('10');
       await sell(amount, alice);
       const reserves = await pair.getReserves();
       const feeInTokens = amount.muln(6).divn(100);
-      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens), 'token reserve');
+      const distributionFeeInTokens = amount.muln(4).divn(100);
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens).sub(distributionFeeInTokens), 'token reserve');
       expect(reserves[usdcIndex]).to.bignumber.lt(reservesBefore[usdcIndex], 'USDC reserve');
-      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
+      expect(await token.balanceOf(token.address)).to.bignumber.gte(contractBalanceBefore.add(feeInTokens), 'token balance');
     });
 
     it('should charge 6% + 15% fee when selling if token price is less than x10 IDO price', async () => {
+      const contractBalanceBefore = await token.balanceOf(token.address);
       const amount = toTokens('10');
       await sell(amount, alice);
       const reserves = await pair.getReserves();
       const feeInTokens = amount.muln(6 + 15).divn(100);
-      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens), 'token reserve');
+      const distributionFeeInTokens = amount.muln(4).divn(100);
+      expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].add(amount).sub(feeInTokens).sub(distributionFeeInTokens), 'token reserve');
       expect(reserves[usdcIndex]).to.bignumber.lt(reservesBefore[usdcIndex], 'USDC reserve');
-      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
+      expect(await token.balanceOf(token.address)).to.bignumber.gte(contractBalanceBefore.add(feeInTokens), 'token balance');
     });
 
     it('should distribute 4% of transferred tokens among holders when selling', async () => {
-      await token.transfer(bob, toTokens('15'), { from: alice });
-      await token.transfer(charlie, toTokens('5'), { from: alice });
+      // Alice - 10/20, Bob - 7/20, Charlie - 3/20
+      const available = await token.balanceOf(alice);
+      await token.transfer(bob, available.muln(7).divn(20), { from: alice });
+      await token.transfer(charlie, available.muln(3).divn(20), { from: alice });
+      expect(await token.balanceOf(alice)).to.bignumber.eq(available.muln(10).divn(20), 'sanity check');
       const aliceBalanceBefore = await token.balanceOf(alice);
       const bobBalanceBefore = await token.balanceOf(bob);
       const charlieBalanceBefore = await token.balanceOf(charlie);
 
-      const amount = toTokens('10');
+      const amount = toTokens('10000');
       await sell(amount, alice);
 
       const tokensDistributed = amount.muln(4).divn(100);
       const balancesSum = aliceBalanceBefore.add(bobBalanceBefore).add(charlieBalanceBefore);
+      expect(await token.balanceOf(alice)).to.not.bignumber.eq(aliceBalanceBefore, 'Alice before');
       expect(await token.balanceOf(alice)).to.bignumber.closeTo(
         aliceBalanceBefore.sub(amount).add(tokensDistributed.mul(aliceBalanceBefore).div(balancesSum)),
         '1',
         'Alice',
       );
+      expect(await token.balanceOf(bob)).to.not.bignumber.eq(bobBalanceBefore, 'Bob before');
       expect(await token.balanceOf(bob)).to.bignumber.closeTo(
         bobBalanceBefore.add(tokensDistributed.mul(bobBalanceBefore).div(balancesSum)),
         '1',
         'Bob',
       );
+      expect(await token.balanceOf(charlie)).to.not.bignumber.eq(charlieBalanceBefore, 'Charlie before');
       expect(await token.balanceOf(charlie)).to.bignumber.closeTo(
         charlieBalanceBefore.add(tokensDistributed.mul(charlieBalanceBefore).div(balancesSum)),
         '1',
         'Charlie',
       );
+      expect(await token.balanceOf(token.address)).to.bignumber.eq(amount.muln(4 + 6).divn(100), 'token balance');
     });
 
     it('should charge 4% fee when buying', async () => {
+      const contractBalanceBefore = await token.balanceOf(token.address);
       const aliceBalanceBefore = await token.balanceOf(alice);
       const usdcAmount = toTokens('10', await usdcToken.decimals());
       const boughtAmount = await buy(usdcAmount, alice);
@@ -247,7 +267,7 @@ contract('Ledgity', (addresses) => {
       expect(reserves[tokenIndex]).to.bignumber.eq(reservesBefore[tokenIndex].sub(boughtAmount), 'token reserve');
       expect(reserves[usdcIndex]).to.bignumber.eq(reservesBefore[usdcIndex].add(usdcAmount), 'USDC reserve');
       expect(await token.balanceOf(alice)).to.bignumber.eq(aliceBalanceBefore.add(boughtAmount).sub(feeInTokens), 'Alice balance');
-      expect(await token.balanceOf(token.address)).to.bignumber.eq(feeInTokens, 'token balance');
+      expect(await token.balanceOf(token.address)).to.bignumber.eq(contractBalanceBefore.add(feeInTokens), 'token balance');
     });
 
     it('should NOT charge fee when buying from The Reserve', async () => {
@@ -259,14 +279,10 @@ contract('Ledgity', (addresses) => {
   describe('Uniswap liquidity', () => {
     beforeEach(async () => {
       await addLiquidity('10', '1');
-      expect(await token.balanceOf(token.address)).to.bignumber.eq('0', 'sanity check');
-
-      // Transfer tokens to Bob, because the owner of the contract (Alice) is excluded from fees.
-      await token.transfer(bob, (await token.maxTokenTx()).subn(1), { from: alice });
     });
 
     async function triggerLiquify() {
-      await token.transfer(alice, 1, { from: bob });
+      await token.transfer(bob, 1, { from: alice });
     }
 
     it('should NOT add liquidity if swapAndLiquify is disabled', async () => {
@@ -277,7 +293,7 @@ contract('Ledgity', (addresses) => {
       const pair = await getPair();
       const reservesBefore = await pair.getReserves();
 
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.subn(1), { from: alice });
+      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)).subn(1), { from: alice });
       await triggerLiquify();
 
       const reserves = await pair.getReserves();
@@ -291,7 +307,7 @@ contract('Ledgity', (addresses) => {
       const reservesBefore = await pair.getReserves();
 
       await token.transfer(tokenReserve.address, NUM_TOKENS_TO_SELL_LIQUIDITY, { from: alice });
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY, { from: alice });
+      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)), { from: alice });
       const balanceBeforeLiquify = await token.balanceOf(token.address);
       await triggerLiquify();
 
@@ -319,8 +335,8 @@ contract('Ledgity', (addresses) => {
       const amount = toTokens('10');
       await token.approve(charlie, amount, { from: alice });
       await token.transferFrom(alice, bob, amount, { from: charlie });
-      expect(await token.balanceOf(alice)).to.bignumber.gt(aliceBalanceBefore.sub(amount), 'Alice');  // token distribution
-      expect(await token.balanceOf(bob)).to.bignumber.gt(amount, 'Bob');
+      expect(await token.balanceOf(alice)).to.bignumber.eq(aliceBalanceBefore.sub(amount), 'Alice');
+      expect(await token.balanceOf(bob)).to.bignumber.eq(amount, 'Bob');
     });
 
     it('should not transfer tokens when not approved', async () => {
@@ -361,6 +377,7 @@ contract('Ledgity', (addresses) => {
     it('by default accounts must not be excluded', async () => {
       expect(await token.isExcluded(alice)).to.eq(false);
       expect(await token.isExcluded(bob)).to.eq(false);
+      expect(await token.isExcluded(token.address)).to.eq(false);
     });
 
     it('should exclude an account', async () => {
@@ -379,8 +396,8 @@ contract('Ledgity', (addresses) => {
     it('should only allow the owner to exclude and include an account', async () => {
       await token.excludeAccount(bob, { from: alice });
       await token.includeAccount(bob, { from: alice });
-      expect(token.excludeAccount(charlie, { from: bob })).to.eventually.be.rejectedWith(Error, undefined, 'Bob exclude');
-      expect(token.includeAccount(charlie, { from: bob })).to.eventually.be.rejectedWith(Error, undefined, 'Bob include');
+      await expect(token.excludeAccount(charlie, { from: bob })).to.eventually.be.rejectedWith(Error, undefined, 'Bob exclude');
+      await expect(token.includeAccount(charlie, { from: bob })).to.eventually.be.rejectedWith(Error, undefined, 'Bob include');
     });
   });
 });

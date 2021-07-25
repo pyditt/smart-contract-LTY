@@ -27,7 +27,7 @@ contract Reserve is IReserve, Ownable {
     }
 
     // TODO: remove this
-    function getBalances() view public returns(uint256 LTYbalance, uint256 USDCbalance){
+    function getBalances() view public override returns(uint256 LTYbalance, uint256 USDCbalance){
         LTYbalance = token.balanceOf(address(this));
         USDCbalance = usdc.balanceOf(address(this));
     }
