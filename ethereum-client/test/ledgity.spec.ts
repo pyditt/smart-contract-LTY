@@ -2,9 +2,9 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
+import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
 import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
-import { addLiquidityUtil, blockchainTimeTravel, getUniswapFactories, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from './utils';
 const { expect } = chai;
 
 const INITIAL_TOTAL_SUPPLY = BigNumber.from('10').pow(BigNumber.from('26'));
@@ -24,10 +24,7 @@ describe('Ledgity', () => {
   let usdcToken: MockUSDC;
   let router: UniswapV2Router02;
   before(async () => {
-    const { UniswapV2Factory, UniswapV2Router02, WETH9 } = getUniswapFactories(aliceAccount);
-    factory = await UniswapV2Factory.deploy(ZERO_ADDRESS);
-    const weth = await WETH9.deploy();
-    router = await UniswapV2Router02.deploy(factory.address, weth.address);
+    ({ factory, router } = await deployUniswap(aliceAccount));
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
   });
 

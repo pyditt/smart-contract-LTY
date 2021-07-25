@@ -17,6 +17,7 @@
     "./test",
     "./scripts",
     "./typechain",
+    "./shared",
   ],
   "files": [
     "./hardhat.config.ts",

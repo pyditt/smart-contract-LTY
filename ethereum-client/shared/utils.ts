@@ -50,10 +50,12 @@ export async function addLiquidityUtil(tokenAmountWithoutDecimals: BigNumberish,
   await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, Math.floor(Date.now() / 1000) + 3600, { from });
 }
 
-export function getUniswapFactories(signer: Signer) {
-  return {
-    UniswapV2Factory: new ethers.ContractFactory(UniswapV2FactoryArtifact.abi, UniswapV2FactoryArtifact.bytecode, signer) as UniswapV2Factory__factory,
-    UniswapV2Router02: new ethers.ContractFactory(UniswapV2Router02Artifact.abi, UniswapV2Router02Artifact.bytecode, signer) as UniswapV2Router02__factory,
-    WETH9: new ethers.ContractFactory(WETH9Artifact.abi, WETH9Artifact.bytecode, signer) as WETH9__factory,
-  };
+export async function deployUniswap(signer: Signer) {
+  const UniswapV2Factory = new ethers.ContractFactory(UniswapV2FactoryArtifact.abi, UniswapV2FactoryArtifact.bytecode, signer) as UniswapV2Factory__factory;
+  const UniswapV2Router02 = new ethers.ContractFactory(UniswapV2Router02Artifact.abi, UniswapV2Router02Artifact.bytecode, signer) as UniswapV2Router02__factory;
+  const WETH9 = new ethers.ContractFactory(WETH9Artifact.abi, WETH9Artifact.bytecode, signer) as WETH9__factory;
+  const factory = await UniswapV2Factory.deploy(ZERO_ADDRESS);
+  const weth = await WETH9.deploy();
+  const router = await UniswapV2Router02.deploy(factory.address, weth.address);
+  return { factory, router, weth };
 }
