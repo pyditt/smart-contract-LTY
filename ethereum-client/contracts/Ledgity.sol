@@ -23,6 +23,7 @@ contract Ledgity is ILedgity, ReflectToken {
 
 
     mapping(address => bool) _isDex;
+    mapping(address => uint256) public lastTransactionAt;
 
     // IUniswapV2Router02 public uniswapV2Router;
     IUniswapV2Pair public uniswapV2Pair;
@@ -87,6 +88,12 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
+        require(
+            sender == owner() || sender == address(uniswapV2Pair) || lastTransactionAt[sender] < block.timestamp.sub(15 minutes),
+            "Ledgity: only one transaction per 15 minutes"
+        );
+        lastTransactionAt[sender] = block.timestamp;
+
         uint256 contractTokenBalance = balanceOf(address(this));
         // TODO: uncomment
         // if(contractTokenBalance >= maxTokenTx())

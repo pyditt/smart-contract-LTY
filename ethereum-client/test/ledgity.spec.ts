@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
+import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
 import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -54,7 +54,7 @@ describe('Ledgity', () => {
       0, // accept any amount of USDC
       [token.address, usdcToken.address],
       from.address,
-      Math.floor(Date.now() / 1000) + 3600,
+      await getBlockTimestamp() + 3600,
     );
   }
 
@@ -69,7 +69,7 @@ describe('Ledgity', () => {
       0, // accept any amount of USDC
       [usdcToken.address, token.address],
       from.address,
-      Math.floor(Date.now() / 1000) + 3600,
+      await getBlockTimestamp() + 3600,
     );
     // How many tokens bought(without the fee)?
     return reservesBefore[tokenIndex].sub((await pair.getReserves())[tokenIndex]);
@@ -109,10 +109,11 @@ describe('Ledgity', () => {
 
   describe('transfer: time limit', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
-      await token.transfer(bob, 1);
+      await token.transfer(bob, 10);  // to allow transfers from Bob's account
+      await token.connect(bobAccount).transfer(alice, 1);
       await blockchainTimeTravel(async travel => {
         await travel(15 * 60 - 10);  // wait for <15 minutes
-        await expect(token.transfer(charlie, 1))
+        await expect(token.connect(bobAccount).transfer(charlie, 1))
           .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
       });
     });
@@ -131,13 +132,22 @@ describe('Ledgity', () => {
       await token.connect(charlieAccount).transfer(alice, 1);
     });
 
+    it('should not limit the owner', async () => {
+      await token.transfer(bob, 1);
+      await token.transfer(charlie, 1);
+    });
+
     it('should not limit uniswap', async () => {
       await usdcToken.mint(alice, toTokens('100000', await usdcToken.decimals()));
-      await addLiquidity('100', '100');
-      await usdcToken.approve(router.address, 1000);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
+      await addLiquidity('1000', '1000');
+      async function doSwap() {
+        const usdcAmount = toTokens(100, await usdcToken.decimals());
+        await usdcToken.approve(router.address, usdcAmount);
+        await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(usdcAmount, toTokens(10), [usdcToken.address, token.address], alice, await getBlockTimestamp() + 3600);
+      }
+      await doSwap();
+      await doSwap();
+      await doSwap();
     });
   });
 

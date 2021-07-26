@@ -1,38 +1,20 @@
 import { BigNumber, BigNumberish, Signer } from 'ethers';
-import { ethers, web3 } from 'hardhat';
-import { HttpProvider } from 'web3-core';
+import { ethers } from 'hardhat';
 import { ILedgity, MockUSDC, UniswapV2Factory__factory, UniswapV2Router02, UniswapV2Router02__factory, WETH9__factory } from '../typechain';
 import UniswapV2FactoryArtifact from '../uniswap_build/contracts/UniswapV2Factory.json';
 import UniswapV2Router02Artifact from '../uniswap_build/contracts/UniswapV2Router02.json';
 import WETH9Artifact from '../uniswap_build/contracts/WETH9.json';
 
-export async function blockchainTimeTravel(cb: (travel: (offset: number) => Promise<void>) => Promise<void>) {
-  function advanceBlockAtTime(time: number) {
-    return new Promise<void>((resolve, reject) => {
-      (web3.currentProvider as HttpProvider).send(
-        {
-          jsonrpc: "2.0",
-          method: "evm_mine",
-          params: [time],
-          id: new Date().getTime(),
-        },
-        (err, _) => {
-          if (err) {
-            return reject(err);
-          }
-          return resolve();
-        }
-      );
-    });
-  }
+export async function getBlockTimestamp() {
+  return (await ethers.provider.getBlock('latest')).timestamp;
+}
 
-  let time = Math.floor(Date.now() / 1000);
+export async function blockchainTimeTravel(cb: (travel: (offset: number) => Promise<void>) => Promise<void>) {
+  let time = await getBlockTimestamp();
   await cb(async offset => {
     time += offset;
-    await advanceBlockAtTime(time);
+    await ethers.provider.send('evm_mine', [time]);
   });
-  // Reset time
-  await advanceBlockAtTime(Math.floor(Date.now() / 1000));
 }
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -47,7 +29,7 @@ export async function addLiquidityUtil(tokenAmountWithoutDecimals: BigNumberish,
   await token.approve(router.address, tokenAmount, { from });
   await usdcToken.mint(from, usdcAmount);
   await usdcToken.approve(router.address, usdcAmount, { from });
-  await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, Math.floor(Date.now() / 1000) + 3600, { from });
+  await router.addLiquidity(token.address, usdcToken.address, tokenAmount, usdcAmount, 0, 0, ZERO_ADDRESS, await getBlockTimestamp() + 3600, { from });
 }
 
 export async function deployUniswap(signer: Signer) {
