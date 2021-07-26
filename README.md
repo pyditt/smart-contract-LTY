@@ -10,22 +10,27 @@ Install dependencies
 yarn install
 ```
 
+Additionally [install](https://hardhat.org/guides/shorthand.html) `hh` shortcut to save some typing.
+`hh` is equivalent to `yarn hardhat`.
+
+```sh
+yarn global add hardhat-shorthand
+```
+
+## Compile contracts
+
+```sh
+hh compile
+```
+
 ## Run tests
 
-Compile contracts
-
 ```sh
-yarn maid compile
+hh test
 ```
 
-Run ganache-cli
+To run tests faster(by skipping the typechecking step):
 
 ```sh
-yarn maid ganache-cli
-```
-
-Open another terminal and run tests
-
-```sh
-yarn maid test
+TS_NODE_TRANSPILE_ONLY=1 hh test
 ```

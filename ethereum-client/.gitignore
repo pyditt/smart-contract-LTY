@@ -1,5 +1,4 @@
-# Artifacts
-build
+# Hardhat files
+cache
 client/src/contracts
-migrations
-types/truffle-contracts
+typechain

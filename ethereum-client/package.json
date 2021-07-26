@@ -5,22 +5,22 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
-    "@truffle/hdwallet-provider": "^1.4.1",
-    "@typechain/truffle-v5": "^5.0.0",
-    "@types/bn.js": "^5.1.0",
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@typechain/ethers-v5": "^7.0.1",
+    "@typechain/hardhat": "^2.2.0",
     "@types/chai": "^4.2.21",
-    "@types/chai-as-promised": "^7.1.4",
     "@types/mocha": "^8.2.3",
     "@types/node": "^16.3.2",
     "chai": "^4.3.4",
-    "chai-as-promised": "^7.1.1",
-    "chai-bn": "^0.2.2",
-    "ganache-cli": "^6.12.2",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.2",
+    "hardhat": "^2.5.0",
     "maid": "^0.3.0",
-    "truffle": "^5.4.1",
-    "truffle-contract-size": "^2.0.1",
     "ts-node": "^10.1.0",
     "typechain": "^5.1.1",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "web3": "^1.4.0"
   }
 }

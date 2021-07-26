@@ -62,7 +62,7 @@ contract Reserve is IReserve, Ownable {
 
         if (tokenBalance < tokenAmount.mul(2)) {
             half = tokenBalance.div(2);
-            otherhalf = tokenBalance.sub(half);
+            otherHalf = tokenBalance.sub(half);
         }
 
         uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
