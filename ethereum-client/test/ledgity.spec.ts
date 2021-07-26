@@ -105,17 +105,39 @@ describe('Ledgity', () => {
         .to.emit(token, 'Transfer')
         .withArgs(alice, bob, amount);
     });
+  });
 
-    it('should allow only one transfer per 15 minutes', async () => {
-      await token.transfer(bob, toTokens('1'));
+  describe('transfer: time limit', () => {
+    it('should NOT allow two transfers from one account within 15 minutes', async () => {
+      await token.transfer(bob, 1);
       await blockchainTimeTravel(async travel => {
         await travel(15 * 60 - 10);  // wait for <15 minutes
-        await expect(
-          token.transfer(charlie, toTokens('1'))
-        ).to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
-        await travel(30);  // wait for 30 more seconds. In total >15 minutes
-        await token.transfer(charlie, toTokens('1'));
+        await expect(token.transfer(charlie, 1))
+          .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
       });
+    });
+
+    it('should allow two transfers from one account with interval greater than 15 minutes', async () => {
+      await token.transfer(bob, 1);
+      await blockchainTimeTravel(async travel => {
+        await travel(15 * 60 + 1);  // wait for >15 minutes
+        await token.transfer(charlie, 1);
+      });
+    });
+
+    it('should allow two transfers from different accounts within 15 minutes', async () => {
+      await token.transfer(bob, 1);
+      await token.connect(bobAccount).transfer(charlie, 1);
+      await token.connect(charlieAccount).transfer(alice, 1);
+    });
+
+    it('should not limit uniswap', async () => {
+      await usdcToken.mint(alice, toTokens('100000', await usdcToken.decimals()));
+      await addLiquidity('100', '100');
+      await usdcToken.approve(router.address, 1000);
+      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
+      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
+      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
     });
   });
 
