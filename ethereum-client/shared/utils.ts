@@ -18,7 +18,7 @@ export async function blockchainTimeTravel(cb: (travel: (offset: number) => Prom
 }
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-export const LEDGITY_DECIMALS = BigNumber.from('9');
+export const LEDGITY_DECIMALS = BigNumber.from('18');
 export function toTokens(amount: BigNumberish, decimals: BigNumberish = LEDGITY_DECIMALS) {
   return BigNumber.from(amount).mul(BigNumber.from('10').pow(decimals));
 }

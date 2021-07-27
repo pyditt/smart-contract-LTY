@@ -59,19 +59,18 @@ contract Reserve is IReserve, Ownable {
         uint256 tokenBalance = token.balanceOf(address(this));
         uint256 half = tokenAmount;
         uint256 otherHalf = tokenAmount;
-
         if (tokenBalance < tokenAmount.mul(2)) {
             half = tokenBalance.div(2);
             otherHalf = tokenBalance.sub(half);
         }
 
-        uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
-        token.approve(address(uniswapV2Router), tokenAmount);
+        uint256 usdcReceived = _swapTokensForUSDC(otherHalf);
+        token.approve(address(uniswapV2Router), half);
         usdc.approve(address(uniswapV2Router), usdcReceived);
         uniswapV2Router.addLiquidity(
             address(token),
             address(usdc),
-            tokenAmount,
+            half,
             usdcReceived,
             0,
             0,
@@ -79,7 +78,7 @@ contract Reserve is IReserve, Ownable {
             owner(),
             block.timestamp
         );
-        emit SwapAndLiquify(tokenAmount, usdcReceived, tokenAmount);
+        emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 
     function _swapTokensForUSDC(uint256 tokenAmount) private returns (uint256) {

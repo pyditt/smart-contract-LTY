@@ -8,7 +8,7 @@ import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json
 const { expect } = chai;
 
 const INITIAL_TOTAL_SUPPLY = BigNumber.from('10').pow(BigNumber.from('26'));
-const NUM_TOKENS_TO_SELL_LIQUIDITY = toTokens('5000');
+const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = toTokens('5000');
 
 describe('Ledgity', () => {
   let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
@@ -188,10 +188,11 @@ describe('Ledgity', () => {
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
     beforeEach(async () => {
-      await addLiquidity('1000', '100');
       pair = await getPair();
-      reservesBefore = await pair.getReserves();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
+      await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
+      await addLiquidity('1000', '100');
+      reservesBefore = await pair.getReserves();
     });
 
     it('should NOT charge fees when transferring tokens between users', async () => {
@@ -283,51 +284,90 @@ describe('Ledgity', () => {
     });
   });
 
-  describe('Uniswap liquidity', () => {
+  describe('fee destination', () => {
+    let pair: UniswapV2Pair;
+    let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
+    let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     beforeEach(async () => {
       await addLiquidity('10', '1');
+      await token.transfer(bob, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+      pair = await getPair();
+      [tokenIndex, usdcIndex] = await getPairIndices(pair);
+      reservesBefore = await pair.getReserves();
     });
 
-    async function triggerLiquify() {
-      await token.transfer(bob, 1);
-    }
-
-    it('should NOT add liquidity if swapAndLiquify is disabled', async () => {
-      expect.fail();
+    it('should be set to "liquify" by default', async () => {
+      expect(await token.feeDestination()).to.eq(0);
     });
 
-    it('should NOT add liquidity until the balance of the contract passes the predefined threshold', async () => {
-      const pair = await getPair();
-      const reservesBefore = await pair.getReserves();
+    it('should be changeable by the owner', async () => {
+      await token.setFeeDestination(1);
+      expect(await token.feeDestination()).to.eq(1);
+      await token.setFeeDestination(0);
+      expect(await token.feeDestination()).to.eq(0);
+      await expect(token.setFeeDestination(10)).to.be.reverted;
+    });
 
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)).sub(1));
-      await triggerLiquify();
+    it('should NOT be changeable by not the owner', async () => {
+      await expect(token.connect(bobAccount).setFeeDestination(1)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
 
+    it('should NOT do anything until the balance of the contract passes the predefined threshold', async () => {
+      const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT.sub(await token.balanceOf(token.address)).sub(1));
+      await expect(tx).not.to.emit(tokenReserve, 'SwapAndLiquify');
+      await expect(tx).not.to.emit(tokenReserve, 'SwapAndCollect');
       const reserves = await pair.getReserves();
-      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex], 'token reserve');
-      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex]);
+      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex]);
     });
 
-    it('should add liquidity when the balance of the contract passes the predefined threshold', async () => {
-      const pair = await getPair();
-      const reservesBefore = await pair.getReserves();
+    describe('swapAndLiquify', () => {
+      it('should swap and liquify if the fee destination is to liquify', async () => {
+        await token.transfer(tokenReserve.address, toTokens('10'));
+        await usdcToken.mint(tokenReserve.address, toTokens('10', await usdcToken.decimals()));
+        const reserveTokenBalanceBefore = await token.balanceOf(tokenReserve.address);
+        const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
 
-      await token.transfer(tokenReserve.address, NUM_TOKENS_TO_SELL_LIQUIDITY);
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)));
-      const balanceBeforeLiquify = await token.balanceOf(token.address);
-      await triggerLiquify();
+        await token.transfer(tokenReserve.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await expect(tx)
+          .to.emit(tokenReserve, 'SwapAndLiquify');
+        // TODO
+        // .withArgs()
 
-      const reserves = await pair.getReserves();
-      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(balanceBeforeLiquify.mul(2)), 'token reserve');
-      // Swap and liquify does not change USDC reserves in the liquidity pool.
-      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
-      // should not leave any extra USDC or tokens on the balances
-      expect(await token.balanceOf(token.address)).to.eq('0', 'token token');
-      expect(await token.balanceOf(tokenReserve.address)).eq('0', 'token The Reserve');
-      expect(await usdcToken.balanceOf(token.address)).to.eq('0', 'USDC token');
-      expect(await usdcToken.balanceOf(tokenReserve.address)).eq('0', 'USDC The Reserve');
+        const reserves = await pair.getReserves();
+        expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(NUM_TOKENS_TO_LIQUIFY_OR_COLLECT.mul(2)));
+        // Swap and liquify does not change USDC reserves in the liquidity pool.
+        expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
+        // should not leave any extra USDC or tokens on the balances
+        expect(await token.balanceOf(token.address)).to.eq('0', 'token token');
+        expect(await token.balanceOf(tokenReserve.address)).eq(reserveTokenBalanceBefore, 'token The Reserve');
+        expect(await usdcToken.balanceOf(token.address)).to.eq('0', 'USDC token');
+        expect(await usdcToken.balanceOf(tokenReserve.address)).eq(reserveUsdcBalanceBefore, 'USDC The Reserve');
+      });
+    });
+
+    describe('swapAndCollect', () => {
+      beforeEach(async () => {
+        await token.setFeeDestination(1);  // collect
+      });
+
+      it('should swap and collect if the fee destination is to collect', async () => {
+        const reserveTokenBalanceBefore = await token.balanceOf(tokenReserve.address);
+        const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
+        const tokenTokenBalanceBefore = await token.balanceOf(token.address);
+        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await expect(tx)
+          .to.emit(tokenReserve, 'SwapAndCollect');
+        // TODO
+        // .withArgs()
+        const reserves = await pair.getReserves();
+        expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(tokenTokenBalanceBefore).add(NUM_TOKENS_TO_LIQUIFY_OR_COLLECT));
+        expect(reserves[usdcIndex]).to.be.lt(reservesBefore[usdcIndex]);
+        expect(await token.balanceOf(token.address)).to.eq(0);
+        expect(await token.balanceOf(tokenReserve.address)).to.eq(reserveTokenBalanceBefore);
+        expect(await usdcToken.balanceOf(tokenReserve.address)).to.be.gt(reserveUsdcBalanceBefore);
+      });
     });
   });
 
@@ -421,6 +461,13 @@ describe('Ledgity', () => {
       await token.includeAccount(bob);
       await expect(token.connect(bobAccount).excludeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
       await expect(token.connect(bobAccount).includeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe('burn', () => {
+    it('should burn tokens', async () => {
+      // TODO
+      expect.fail();
     });
   });
 });

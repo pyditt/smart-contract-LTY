@@ -53,6 +53,10 @@ contract Ledgity is ILedgity, ReflectToken {
         _isDex[target] = isDex;
     }
 
+    function setFeeDestination(FeeDestination fd) public onlyOwner {
+        feeDestination = fd;
+    }
+
     function burn(uint256 amount) public override returns (bool) {
         // TODO
         revert("Ledgity: not implemented");
@@ -77,7 +81,7 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _swapAndLiquifyOrCollect(uint256 contractTokenBalance) private lockTheSwap {
-        require(transfer(address(reserve), contractTokenBalance), "Ledgity: transfer failed");
+        _transfer(address(this), address(reserve), contractTokenBalance);
         if (feeDestination == FeeDestination.Liquify) {
             reserve.swapAndLiquify(contractTokenBalance);
         } else if (feeDestination == FeeDestination.Collect) {
@@ -88,11 +92,13 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
+        // TODO: generalize this
         require(
-            sender == owner() || sender == address(uniswapV2Pair) || lastTransactionAt[sender] < block.timestamp.sub(15 minutes),
+            sender == owner() || sender == address(uniswapV2Pair) || sender == address(reserve) || lastTransactionAt[sender] < block.timestamp.sub(15 minutes),
             "Ledgity: only one transaction per 15 minutes"
         );
         lastTransactionAt[sender] = block.timestamp;
+        super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
         // TODO: uncomment
@@ -108,7 +114,5 @@ contract Ledgity is ILedgity, ReflectToken {
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
-
-        super._transfer(sender, recipient, amount);
     }
 }
