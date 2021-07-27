@@ -30,7 +30,7 @@ contract Ledgity is ILedgity, ReflectToken {
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
 
-    constructor() public ReflectToken("Ledgity", "LTY") {
+    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
     }
 
     modifier lockTheSwap {

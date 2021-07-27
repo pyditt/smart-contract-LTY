@@ -15,18 +15,20 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
 
-    uint256 private constant MAX = type(uint256).max;
     uint8 private _decimals = 18;
-    uint256 private _tTotal = 10 * 10**6 * uint256(10)**_decimals;
-    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tTotal;
+    uint256 private _rTotal;
     uint256 private _tFeeTotal;
 
     string private _name;
     string private _symbol;
 
-    constructor (string memory name_, string memory symbol_) public {
+    constructor (string memory name_, string memory symbol_, uint256 tTotal_) public {
         _name = name_;
         _symbol = symbol_;
+        _tTotal = tTotal_;
+        uint256 MAX = type(uint256).max;
+        _rTotal = (MAX - (MAX % _tTotal));
         _rOwned[_msgSender()] = _rTotal;
         emit Transfer(address(0), _msgSender(), _tTotal);
     }

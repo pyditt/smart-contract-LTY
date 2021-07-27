@@ -7,8 +7,8 @@ import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2R
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
 
-const INITIAL_TOTAL_SUPPLY = BigNumber.from('10').pow(BigNumber.from('26'));
-const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = toTokens('5000');
+const INITIAL_TOTAL_SUPPLY = toTokens('2760000000', 18);
+const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = toTokens('5000', 18);
 
 describe('Ledgity', () => {
   let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
