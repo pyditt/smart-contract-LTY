@@ -11,9 +11,7 @@ import "./interfaces/IReserve.sol";
 contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
 
-    // TODO: make this 10**18
-    uint256 public numTokensSellToAddToLiquidity = 5000 * 10**18;
-
+    uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
     enum FeeDestination {
         Liquify,
@@ -31,6 +29,9 @@ contract Ledgity is ILedgity, ReflectToken {
     IReserve public reserve;
 
     constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+        numTokensToSwap = totalSupply().mul(15).div(10000);
+        isExcludedFromDexFee[owner()] = true;
+        isExcludedFromDexFee[address(this)] = true;
     }
 
     modifier lockTheSwap {
@@ -48,8 +49,6 @@ contract Ledgity is ILedgity, ReflectToken {
         setDex(address(uniswapV2Pair), true);
 
         reserve = IReserve(reserveAddress);
-        isExcludedFromDexFee[owner()] = true;
-        isExcludedFromDexFee[address(this)] = true;
         isExcludedFromDexFee[address(reserve)] = true;
     }
 
@@ -63,6 +62,10 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function setIsExcludedFromDexFee(address account, bool isExcluded) public onlyOwner {
         isExcludedFromDexFee[account] = isExcluded;
+    }
+
+    function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
+        numTokensToSwap = _numTokensToSwap;
     }
 
     function burn(uint256 amount) public override returns (bool) {
@@ -114,7 +117,7 @@ contract Ledgity is ILedgity, ReflectToken {
         // {
         //     contractTokenBalance = maxTokenTx();
         // }
-        bool overMinTokenBalance = contractTokenBalance >= numTokensSellToAddToLiquidity;
+        bool overMinTokenBalance = contractTokenBalance >= numTokensToSwap;
         if (
             overMinTokenBalance &&
             !inSwapAndLiquify &&

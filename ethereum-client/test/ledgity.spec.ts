@@ -8,7 +8,7 @@ import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json
 const { expect } = chai;
 
 const INITIAL_TOTAL_SUPPLY = toTokens('2760000000', 18);
-const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = toTokens('5000', 18);
+const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = INITIAL_TOTAL_SUPPLY.mul(15).div(10000);
 
 describe('Ledgity', () => {
   let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
@@ -361,6 +361,21 @@ describe('Ledgity', () => {
 
     it('should NOT be changeable by not the owner', async () => {
       await expect(token.connect(bobAccount).setFeeDestination(1)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    describe('min number of tokens to swap and liquify/collect', () => {
+      it('should equal 0.15% of totalSupply', async () => {
+        expect(await token.numTokensToSwap()).to.eq(INITIAL_TOTAL_SUPPLY.mul(15).div(10000));
+      });
+
+      it('should change', async () => {
+        await token.setNumTokensToSwap(100);
+        expect(await token.numTokensToSwap()).to.eq(100);
+      });
+
+      it('should not allow not the owner to change', async () => {
+        await expect(token.connect(bobAccount).setNumTokensToSwap(100)).to.be.revertedWith('Ownable: caller is not the owner');
+      });
     });
 
     it('should NOT do anything until the balance of the contract passes the predefined threshold', async () => {
