@@ -8,11 +8,11 @@ import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json
 const { expect } = chai;
 
 describe('Reserve', () => {
-  let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
-  let alice: string, bob: string, charlie: string;
+  let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, timelockAccount: SignerWithAddress;
+  let alice: string, bob: string, timelock: string;
   before(async () => {
-    [aliceAccount, bobAccount, charlieAccount] = await ethers.getSigners();
-    [alice, bob, charlie] = [aliceAccount, bobAccount, charlieAccount].map(account => account.address);
+    [aliceAccount, bobAccount, timelockAccount] = await ethers.getSigners();
+    [alice, bob, timelock] = [aliceAccount, bobAccount, timelockAccount].map(account => account.address);
   });
 
   /**
@@ -32,7 +32,7 @@ describe('Reserve', () => {
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('MockLedgity')).deploy();
     await token.mint(alice, toTokens('100000000000000'));
-    reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address);
+    reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, timelock);
     await token.setReserve(reserve.address);
   });
 
@@ -93,6 +93,16 @@ describe('Reserve', () => {
 
     it('should swap and liquify only a portion of tokens, if the reserve does NOT have enough tokens on the balance', async () => {
       await testSwapAndLiquify(toTokens('5'), toTokens('10'));
+    });
+
+    it('should send LP tokens to the timelock', async () => {
+      const pair = await getPair();
+      const amount = toTokens(10);
+      await token.transfer(reserve.address, amount);
+      const timelockBalanceBefore = await pair.balanceOf(timelock);
+      await token.swapAndLiquify(amount);
+      // TODO: make a better expectation.
+      expect(await pair.balanceOf(timelock)).to.be.gt(timelockBalanceBefore);
     });
 
     it('should not allow anyone except the token contract to swap and liquify tokens', async () => {

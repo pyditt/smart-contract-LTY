@@ -14,16 +14,18 @@ contract Reserve is IReserve, Ownable {
     IUniswapV2Router02 public immutable uniswapV2Router;
     ILedgity public immutable token;
     IERC20 public immutable usdc;
+    address public immutable timelock;
 
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
         _;
     }
 
-    constructor(address uniswapRouter, address TOKEN, address USDC) public {
+    constructor(address uniswapRouter, address TOKEN, address USDC, address timelock_) public {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
+        timelock = timelock_;
     }
 
     // TODO: remove this
@@ -74,8 +76,7 @@ contract Reserve is IReserve, Ownable {
             usdcReceived,
             0,
             0,
-            // TODO: lock LP tokens for 5 years
-            owner(),
+            timelock,
             block.timestamp
         );
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
