@@ -191,6 +191,7 @@ describe('Ledgity', () => {
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
       await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
+      await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
       await addLiquidity('1000', '100');
       reservesBefore = await pair.getReserves();
     });
@@ -278,9 +279,59 @@ describe('Ledgity', () => {
       expect(await token.balanceOf(token.address)).to.eq(contractBalanceBefore.add(feeInTokens), 'token balance');
     });
 
-    it('should NOT charge fee when buying from The Reserve', async () => {
-      // TODO
-      expect.fail();
+    it('should NOT charge fee when buyer is excluded from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(alice, true);
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const usdcAmount = toTokens('10', await usdcToken.decimals());
+      const boughtAmount = await buy(usdcAmount, aliceAccount);
+      const reserves = await pair.getReserves();
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].sub(boughtAmount));
+      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex].add(usdcAmount));
+      expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.add(boughtAmount));
+    });
+
+    it('should NOT charge fee when seller is excluded from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(alice, true);
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const amount = toTokens('10');
+      await sell(amount, aliceAccount);
+      const reserves = await pair.getReserves();
+      expect(await token.balanceOf(alice)).to.be.gte(aliceBalanceBefore.sub(amount));
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(amount));
+      expect(reserves[usdcIndex]).to.be.lt(reservesBefore[usdcIndex]);
+    });
+  });
+
+  describe('exclusion from dex fee', () => {
+    it('should exclude the owner by default', async () => {
+      expect(await token.isExcludedFromDexFee(alice)).to.eq(true);
+    });
+
+    it('should exclude the contract by default', async () => {
+      expect(await token.isExcludedFromDexFee(token.address)).to.eq(true);
+    });
+
+    it('should exclude The Reserve by default', async () => {
+      expect(await token.isExcludedFromDexFee(tokenReserve.address)).to.eq(true);
+    });
+
+    it('should NOT exclude any other account by default', async () => {
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(false);
+    });
+
+    it('should exclude an account from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(bob, true);
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(true);
+    });
+
+    it('should re-include an account in dex fee', async () => {
+      await token.setIsExcludedFromDexFee(bob, true);
+      await token.setIsExcludedFromDexFee(bob, false);
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(false);
+    });
+
+    it('should not allow not the owner to exclude or include an account from dex fee', async () => {
+      await expect(token.connect(bobAccount).setIsExcludedFromDexFee(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 

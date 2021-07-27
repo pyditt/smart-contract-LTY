@@ -23,6 +23,7 @@ contract Ledgity is ILedgity, ReflectToken {
 
 
     mapping(address => bool) _isDex;
+    mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
 
     // IUniswapV2Router02 public uniswapV2Router;
@@ -47,6 +48,9 @@ contract Ledgity is ILedgity, ReflectToken {
         setDex(address(uniswapV2Pair), true);
 
         reserve = IReserve(reserveAddress);
+        isExcludedFromDexFee[owner()] = true;
+        isExcludedFromDexFee[address(this)] = true;
+        isExcludedFromDexFee[address(reserve)] = true;
     }
 
     function setDex(address target, bool isDex) public onlyOwner {
@@ -57,6 +61,10 @@ contract Ledgity is ILedgity, ReflectToken {
         feeDestination = fd;
     }
 
+    function setIsExcludedFromDexFee(address account, bool isExcluded) public onlyOwner {
+        isExcludedFromDexFee[account] = isExcluded;
+    }
+
     function burn(uint256 amount) public override returns (bool) {
         // TODO
         revert("Ledgity: not implemented");
@@ -64,17 +72,17 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[recipient]) {
+        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
             return amount.mul(4).div(100);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[sender]) {
+        if (_isDex[sender] && !isExcludedFromDexFee[recipient]) {
             return amount.mul(4).div(100);
         }
-        if (_isDex[recipient]) {
+        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
             return amount.mul(6).div(100);
         }
         return 0;
