@@ -2,7 +2,10 @@ pragma solidity ^0.6.12;
 
 import "./libraries/Ownable.sol";
 import "./libraries/SafeMath.sol";
+import "./libraries/SafeERC20.sol";
 import "./interfaces/IERC20.sol";
+import "./interfaces/IUniswapV2Factory.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
@@ -65,19 +68,15 @@ contract Reserve is IReserve, Ownable {
         }
 
         uint256 usdcReceived = _swapTokensForUSDC(otherHalf);
-        token.approve(address(uniswapV2Router), half);
-        usdc.approve(address(uniswapV2Router), usdcReceived);
-        uniswapV2Router.addLiquidity(
-            address(token),
-            address(usdc),
-            half,
-            usdcReceived,
-            0,
-            0,
-            // TODO: lock LP tokens for 5 years
-            owner(),
-            block.timestamp
-        );
+        // Add liquidity mannualy instead of using the router.
+        // This allows us to add liquidity in proportion we want, regardless of current pool reserves.
+        // Adding liquidity must:
+        //   1. Transfer both tokens to the pair
+        //   2. Mint LP tokens to some address.
+        IUniswapV2Pair pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
+        SafeERC20.safeTransfer(address(token), address(pair), half);
+        SafeERC20.safeTransfer(address(usdc), address(pair), usdcReceived);
+        pair.mint(owner());
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 

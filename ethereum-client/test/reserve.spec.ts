@@ -63,6 +63,12 @@ describe('Reserve', () => {
       expect(await usdcToken.balanceOf(reserve.address)).to.be.gt(usdcBalanceBefore, 'reserve usdc balance');
     });
 
+    it('should emit SwapAndCollect event', async () => {
+      const amount = toTokens('10');
+      await token.transfer(reserve.address, amount);
+      await expect(token.swapAndCollect(amount)).to.emit(reserve, 'SwapAndCollect');
+    });
+
     it('should not allow anyone except the token contract to swap the tokens', async () => {
       for (const sender of [aliceAccount, bobAccount]) {
         await expect(reserve.connect(sender).swapAndCollect('10')).to.be.revertedWith('Reserve: caller is not the token');
@@ -75,7 +81,7 @@ describe('Reserve', () => {
       await addLiquidity('10000', '1000');
     });
 
-    async function testSwapAndLiquify(reserveBalance: BigNumber, amount: BigNumber) {
+    async function testSwapAndLiquify({ reserveBalance, amount, liquified }: { reserveBalance: BigNumber; amount: BigNumber; liquified: BigNumber; }) {
       const pair = await getPair();
       const reservesBefore = await pair.getReserves();
       await token.transfer(reserve.address, reserveBalance.add(amount));
@@ -83,16 +89,39 @@ describe('Reserve', () => {
 
       const reserves = await pair.getReserves();
       const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(reserveBalance.add(amount)), 'token');
-      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'usdc');  // USDC reserves unchanged
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(liquified));
+      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex]);  // USDC reserves unchanged
     }
 
     it('should swap and liquify all tokens, if the reserve has enough tokens on the balance', async () => {
-      await testSwapAndLiquify(toTokens('30'), toTokens('10'));
+      await testSwapAndLiquify({
+        reserveBalance: toTokens('30'),
+        amount: toTokens('10'),
+        liquified: toTokens('20'),
+      });
     });
 
     it('should swap and liquify only a portion of tokens, if the reserve does NOT have enough tokens on the balance', async () => {
-      await testSwapAndLiquify(toTokens('5'), toTokens('10'));
+      await testSwapAndLiquify({
+        reserveBalance: toTokens('2'),
+        amount: toTokens('10'),
+        liquified: toTokens('12'),
+      });
+    });
+
+    it('should emit SwapAndLiquify event', async () => {
+      const amount = toTokens('10');
+      await token.transfer(reserve.address, amount.mul(2));
+      await expect(token.swapAndLiquify(amount)).to.emit(reserve, 'SwapAndLiquify');
+    });
+
+    it('should mint LP tokens', async () => {
+      const pair = await getPair();
+      const lpBalanceBefore = await pair.balanceOf(alice);
+      const amount = toTokens('10');
+      await token.transfer(reserve.address, amount.mul(2));
+      await token.swapAndLiquify(amount);
+      expect(await pair.balanceOf(alice)).to.be.gt(lpBalanceBefore);
     });
 
     it('should not allow anyone except the token contract to swap and liquify tokens', async () => {
