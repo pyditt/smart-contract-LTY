@@ -152,34 +152,21 @@ describe('Ledgity', () => {
   });
 
   describe('transfer: max size', () => {
-    beforeEach(async () => {
-      await addLiquidity('10000', '1000');
-    });
-
     it('should allow owner to transfer any amount of tokens', async () => {
       await token.transfer(bob, await token.balanceOf(alice));
     });
 
-    it('should not allow transfers over 0.1% of the liquidity pool reserves if the sender is not the owner', async () => {
+    it('should not allow transfers over 0.05% of the total supply if the sender is not the owner', async () => {
+      const totalSupply = await token.totalSupply();
       await token.transfer(bob, await token.balanceOf(alice));
-
-      const pair = await getPair();
-      const [tokenIndex] = await getPairIndices(pair);
-      for (const divisor of [10, 100, 1000]) {  // 10%, 1%, 0.1%
-        const tokenReserve = (await pair.getReserves())[tokenIndex];
-        await expect(
-          token.connect(bobAccount).transfer(alice, tokenReserve.div(divisor))
-        ).to.be.revertedWith('Ledgity: transaction size exceeded');
-      }
+      await expect(token.connect(bobAccount).transfer(alice, totalSupply.mul(5).div(10000).add(1)))
+        .to.be.revertedWith('Ledgity: max transaction size exceeded');
     });
 
-    it('should allow transfers less than 0.1% of the liquidity pool reserves', async () => {
+    it('should allow transfers less than 0.05% of the liquidity pool reserves', async () => {
+      const totalSupply = await token.totalSupply();
       await token.transfer(bob, await token.balanceOf(alice));
-
-      const pair = await getPair();
-      const [tokenIndex] = await getPairIndices(pair);
-      const tokenReserve = (await pair.getReserves())[tokenIndex];
-      await token.connect(bobAccount).transfer(alice, tokenReserve.div(1001));
+      await token.connect(bobAccount).transfer(alice, totalSupply.mul(5).div(10000));
     });
   });
 

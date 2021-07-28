@@ -107,6 +107,10 @@ contract Ledgity is ILedgity, ReflectToken {
             "Ledgity: only one transaction per 15 minutes"
         );
         lastTransactionAt[sender] = block.timestamp;
+        require(
+            sender == owner() || sender == address(uniswapV2Pair) || sender == address(this) || sender == address(reserve) || amount <= _maxTransactionSize(),
+            "Ledgity: max transaction size exceeded"
+        );
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
@@ -123,5 +127,9 @@ contract Ledgity is ILedgity, ReflectToken {
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+    }
+
+    function _maxTransactionSize() private view returns (uint256) {
+        return totalSupply().mul(5).div(10000);
     }
 }
