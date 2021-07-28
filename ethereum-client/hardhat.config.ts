@@ -1,6 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
-import '@nomiclabs/hardhat-web3'; // for tests only
 import '@typechain/hardhat';
 import { HardhatUserConfig, task, types } from 'hardhat/config';
 

@@ -2,13 +2,13 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
+import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
 import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
 
-const INITIAL_TOTAL_SUPPLY = BigNumber.from('10').pow(BigNumber.from('26'));
-const NUM_TOKENS_TO_SELL_LIQUIDITY = toTokens('5000');
+const INITIAL_TOTAL_SUPPLY = toTokens('2760000000', 18);
+const NUM_TOKENS_TO_LIQUIFY_OR_COLLECT = INITIAL_TOTAL_SUPPLY.mul(15).div(10000);
 
 describe('Ledgity', () => {
   let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
@@ -54,7 +54,7 @@ describe('Ledgity', () => {
       0, // accept any amount of USDC
       [token.address, usdcToken.address],
       from.address,
-      Math.floor(Date.now() / 1000) + 3600,
+      await getBlockTimestamp() + 3600,
     );
   }
 
@@ -69,7 +69,7 @@ describe('Ledgity', () => {
       0, // accept any amount of USDC
       [usdcToken.address, token.address],
       from.address,
-      Math.floor(Date.now() / 1000) + 3600,
+      await getBlockTimestamp() + 3600,
     );
     // How many tokens bought(without the fee)?
     return reservesBefore[tokenIndex].sub((await pair.getReserves())[tokenIndex]);
@@ -109,10 +109,11 @@ describe('Ledgity', () => {
 
   describe('transfer: time limit', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
-      await token.transfer(bob, 1);
+      await token.transfer(bob, 10);  // to allow transfers from Bob's account
+      await token.connect(bobAccount).transfer(alice, 1);
       await blockchainTimeTravel(async travel => {
         await travel(15 * 60 - 10);  // wait for <15 minutes
-        await expect(token.transfer(charlie, 1))
+        await expect(token.connect(bobAccount).transfer(charlie, 1))
           .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
       });
     });
@@ -131,13 +132,22 @@ describe('Ledgity', () => {
       await token.connect(charlieAccount).transfer(alice, 1);
     });
 
+    it('should not limit the owner', async () => {
+      await token.transfer(bob, 1);
+      await token.transfer(charlie, 1);
+    });
+
     it('should not limit uniswap', async () => {
       await usdcToken.mint(alice, toTokens('100000', await usdcToken.decimals()));
-      await addLiquidity('100', '100');
-      await usdcToken.approve(router.address, 1000);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
-      await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(100, 1, [usdcToken.address, token.address], alice, Math.floor(Date.now() / 1000) + 3600);
+      await addLiquidity('1000', '1000');
+      async function doSwap() {
+        const usdcAmount = toTokens(100, await usdcToken.decimals());
+        await usdcToken.approve(router.address, usdcAmount);
+        await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(usdcAmount, toTokens(10), [usdcToken.address, token.address], alice, await getBlockTimestamp() + 3600);
+      }
+      await doSwap();
+      await doSwap();
+      await doSwap();
     });
   });
 
@@ -178,10 +188,12 @@ describe('Ledgity', () => {
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
     beforeEach(async () => {
-      await addLiquidity('1000', '100');
       pair = await getPair();
-      reservesBefore = await pair.getReserves();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
+      await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
+      await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
+      await addLiquidity('1000', '100');
+      reservesBefore = await pair.getReserves();
     });
 
     it('should NOT charge fees when transferring tokens between users', async () => {
@@ -267,57 +279,161 @@ describe('Ledgity', () => {
       expect(await token.balanceOf(token.address)).to.eq(contractBalanceBefore.add(feeInTokens), 'token balance');
     });
 
-    it('should NOT charge fee when buying from The Reserve', async () => {
-      // TODO
-      expect.fail();
+    it('should NOT charge fee when buyer is excluded from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(alice, true);
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const usdcAmount = toTokens('10', await usdcToken.decimals());
+      const boughtAmount = await buy(usdcAmount, aliceAccount);
+      const reserves = await pair.getReserves();
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].sub(boughtAmount));
+      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex].add(usdcAmount));
+      expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.add(boughtAmount));
+    });
+
+    it('should NOT charge fee when seller is excluded from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(alice, true);
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const amount = toTokens('10');
+      await sell(amount, aliceAccount);
+      const reserves = await pair.getReserves();
+      expect(await token.balanceOf(alice)).to.be.gte(aliceBalanceBefore.sub(amount));
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(amount));
+      expect(reserves[usdcIndex]).to.be.lt(reservesBefore[usdcIndex]);
     });
   });
 
-  describe('Uniswap liquidity', () => {
+  describe('exclusion from dex fee', () => {
+    it('should exclude the owner by default', async () => {
+      expect(await token.isExcludedFromDexFee(alice)).to.eq(true);
+    });
+
+    it('should exclude the contract by default', async () => {
+      expect(await token.isExcludedFromDexFee(token.address)).to.eq(true);
+    });
+
+    it('should exclude The Reserve by default', async () => {
+      expect(await token.isExcludedFromDexFee(tokenReserve.address)).to.eq(true);
+    });
+
+    it('should NOT exclude any other account by default', async () => {
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(false);
+    });
+
+    it('should exclude an account from dex fee', async () => {
+      await token.setIsExcludedFromDexFee(bob, true);
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(true);
+    });
+
+    it('should re-include an account in dex fee', async () => {
+      await token.setIsExcludedFromDexFee(bob, true);
+      await token.setIsExcludedFromDexFee(bob, false);
+      expect(await token.isExcludedFromDexFee(bob)).to.eq(false);
+    });
+
+    it('should not allow not the owner to exclude or include an account from dex fee', async () => {
+      await expect(token.connect(bobAccount).setIsExcludedFromDexFee(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe('fee destination', () => {
+    let pair: UniswapV2Pair;
+    let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
+    let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     beforeEach(async () => {
       await addLiquidity('10', '1');
+      await token.transfer(bob, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+      pair = await getPair();
+      [tokenIndex, usdcIndex] = await getPairIndices(pair);
+      reservesBefore = await pair.getReserves();
     });
 
-    async function triggerLiquify() {
-      await token.transfer(bob, 1);
-    }
-
-    it('should NOT add liquidity if swapAndLiquify is disabled', async () => {
-      expect.fail();
+    it('should be set to "liquify" by default', async () => {
+      expect(await token.feeDestination()).to.eq(0);
     });
 
-    it('should NOT add liquidity until the balance of the contract passes the predefined threshold', async () => {
-      const pair = await getPair();
-      const reservesBefore = await pair.getReserves();
+    it('should be changeable by the owner', async () => {
+      await token.setFeeDestination(1);
+      expect(await token.feeDestination()).to.eq(1);
+      await token.setFeeDestination(0);
+      expect(await token.feeDestination()).to.eq(0);
+      await expect(token.setFeeDestination(10)).to.be.reverted;
+    });
 
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)).sub(1));
-      await triggerLiquify();
+    it('should NOT be changeable by not the owner', async () => {
+      await expect(token.connect(bobAccount).setFeeDestination(1)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
 
+    describe('min number of tokens to swap and liquify/collect', () => {
+      it('should equal 0.15% of totalSupply', async () => {
+        expect(await token.numTokensToSwap()).to.eq(INITIAL_TOTAL_SUPPLY.mul(15).div(10000));
+      });
+
+      it('should change', async () => {
+        await token.setNumTokensToSwap(100);
+        expect(await token.numTokensToSwap()).to.eq(100);
+      });
+
+      it('should not allow not the owner to change', async () => {
+        await expect(token.connect(bobAccount).setNumTokensToSwap(100)).to.be.revertedWith('Ownable: caller is not the owner');
+      });
+    });
+
+    it('should NOT do anything until the balance of the contract passes the predefined threshold', async () => {
+      const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT.sub(await token.balanceOf(token.address)).sub(1));
+      await expect(tx).not.to.emit(tokenReserve, 'SwapAndLiquify');
+      await expect(tx).not.to.emit(tokenReserve, 'SwapAndCollect');
       const reserves = await pair.getReserves();
-      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex], 'token reserve');
-      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
+      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex]);
+      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex]);
     });
 
-    it('should add liquidity when the balance of the contract passes the predefined threshold', async () => {
-      const pair = await getPair();
-      const reservesBefore = await pair.getReserves();
+    describe('swapAndLiquify', () => {
+      it('should swap and liquify if the fee destination is to liquify', async () => {
+        await token.transfer(tokenReserve.address, toTokens('10'));
+        await usdcToken.mint(tokenReserve.address, toTokens('10', await usdcToken.decimals()));
+        const reserveTokenBalanceBefore = await token.balanceOf(tokenReserve.address);
+        const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
 
-      await token.transfer(tokenReserve.address, NUM_TOKENS_TO_SELL_LIQUIDITY);
-      await token.transfer(token.address, NUM_TOKENS_TO_SELL_LIQUIDITY.sub(await token.balanceOf(token.address)));
-      const balanceBeforeLiquify = await token.balanceOf(token.address);
-      await triggerLiquify();
+        await token.transfer(tokenReserve.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await expect(tx)
+          .to.emit(tokenReserve, 'SwapAndLiquify');
+        // TODO
+        // .withArgs()
 
-      const reserves = await pair.getReserves();
-      const [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(balanceBeforeLiquify.mul(2)), 'token reserve');
-      // Swap and liquify does not change USDC reserves in the liquidity pool.
-      expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
-      // should not leave any extra USDC or tokens on the balances
-      expect(await token.balanceOf(token.address)).to.eq('0', 'token token');
-      expect(await token.balanceOf(tokenReserve.address)).eq('0', 'token The Reserve');
-      expect(await usdcToken.balanceOf(token.address)).to.eq('0', 'USDC token');
-      expect(await usdcToken.balanceOf(tokenReserve.address)).eq('0', 'USDC The Reserve');
+        const reserves = await pair.getReserves();
+        expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(NUM_TOKENS_TO_LIQUIFY_OR_COLLECT.mul(2)));
+        // Swap and liquify does not change USDC reserves in the liquidity pool.
+        expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
+        // should not leave any extra USDC or tokens on the balances
+        expect(await token.balanceOf(token.address)).to.eq('0', 'token token');
+        expect(await token.balanceOf(tokenReserve.address)).eq(reserveTokenBalanceBefore, 'token The Reserve');
+        expect(await usdcToken.balanceOf(token.address)).to.eq('0', 'USDC token');
+        expect(await usdcToken.balanceOf(tokenReserve.address)).eq(reserveUsdcBalanceBefore, 'USDC The Reserve');
+      });
+    });
+
+    describe('swapAndCollect', () => {
+      beforeEach(async () => {
+        await token.setFeeDestination(1);  // collect
+      });
+
+      it('should swap and collect if the fee destination is to collect', async () => {
+        const reserveTokenBalanceBefore = await token.balanceOf(tokenReserve.address);
+        const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
+        const tokenTokenBalanceBefore = await token.balanceOf(token.address);
+        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await expect(tx)
+          .to.emit(tokenReserve, 'SwapAndCollect');
+        // TODO
+        // .withArgs()
+        const reserves = await pair.getReserves();
+        expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(tokenTokenBalanceBefore).add(NUM_TOKENS_TO_LIQUIFY_OR_COLLECT));
+        expect(reserves[usdcIndex]).to.be.lt(reservesBefore[usdcIndex]);
+        expect(await token.balanceOf(token.address)).to.eq(0);
+        expect(await token.balanceOf(tokenReserve.address)).to.eq(reserveTokenBalanceBefore);
+        expect(await usdcToken.balanceOf(tokenReserve.address)).to.be.gt(reserveUsdcBalanceBefore);
+      });
     });
   });
 
@@ -411,6 +527,13 @@ describe('Ledgity', () => {
       await token.includeAccount(bob);
       await expect(token.connect(bobAccount).excludeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
       await expect(token.connect(bobAccount).includeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe('burn', () => {
+    it('should burn tokens', async () => {
+      // TODO
+      expect.fail();
     });
   });
 });
