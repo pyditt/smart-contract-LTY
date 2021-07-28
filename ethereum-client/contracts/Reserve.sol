@@ -14,9 +14,10 @@ import "./interfaces/IReserve.sol";
 contract Reserve is IReserve, Ownable {
     using SafeMath for uint256;
 
-    IUniswapV2Router02 public immutable uniswapV2Router;
-    ILedgity public immutable token;
-    IERC20 public immutable usdc;
+    IUniswapV2Router02 public uniswapV2Router;
+    IUniswapV2Pair public uniswapV2Pair;
+    ILedgity public token;
+    IERC20 public usdc;
 
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
@@ -27,6 +28,8 @@ contract Reserve is IReserve, Ownable {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
+        uniswapV2Pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
+        require(address(uniswapV2Pair) != address(0), "Reserve: pair not created yet");
     }
 
     // TODO: remove this
@@ -73,10 +76,9 @@ contract Reserve is IReserve, Ownable {
         // Adding liquidity must:
         //   1. Transfer both tokens to the pair
         //   2. Mint LP tokens to some address.
-        IUniswapV2Pair pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
-        SafeERC20.safeTransfer(address(token), address(pair), half);
-        SafeERC20.safeTransfer(address(usdc), address(pair), usdcReceived);
-        pair.mint(owner());
+        SafeERC20.safeTransfer(address(token), address(uniswapV2Pair), half);
+        SafeERC20.safeTransfer(address(usdc), address(uniswapV2Pair), usdcReceived);
+        uniswapV2Pair.mint(owner());
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 

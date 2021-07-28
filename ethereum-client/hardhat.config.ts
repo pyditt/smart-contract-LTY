@@ -27,9 +27,9 @@ task('deploy-ledgity')
   .addParam('uniswapRouter', 'Uniswap V2 router address', undefined, types.string)
   .addParam('usdc', 'USDC token address', undefined, types.string)
   .setAction(async (args, { ethers }) => {
-    const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy();
+    const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy(args.uniswapRouter, args.usdc);
     const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc);
-    await ledgity.initialize(args.uniswapRouter, reserve.address, args.usdc);
+    await ledgity.initialize(reserve.address);
     console.log('Ledgity:', ledgity.address);
     console.log('Reserve:', reserve.address);
   });

@@ -29,9 +29,9 @@ describe('Ledgity', () => {
   });
 
   beforeEach(async () => {
-    token = await (await ethers.getContractFactory('Ledgity')).deploy();
+    token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address);
-    await token.initialize(router.address, tokenReserve.address, usdcToken.address);
+    await token.initialize(tokenReserve.address);
   });
 
   async function getPair() {

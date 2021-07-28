@@ -31,6 +31,7 @@ describe('Reserve', () => {
 
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('MockLedgity')).deploy();
+    await factory.createPair(token.address, usdcToken.address);
     await token.mint(alice, toTokens('100000000000000'));
     reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address);
     await token.setReserve(reserve.address);
