@@ -2,7 +2,10 @@ pragma solidity ^0.6.12;
 
 import "./libraries/Ownable.sol";
 import "./libraries/SafeMath.sol";
+import "./libraries/SafeERC20.sol";
 import "./interfaces/IERC20.sol";
+import "./interfaces/IUniswapV2Factory.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
@@ -11,9 +14,10 @@ import "./interfaces/IReserve.sol";
 contract Reserve is IReserve, Ownable {
     using SafeMath for uint256;
 
-    IUniswapV2Router02 public immutable uniswapV2Router;
-    ILedgity public immutable token;
-    IERC20 public immutable usdc;
+    IUniswapV2Router02 public uniswapV2Router;
+    IUniswapV2Pair public uniswapV2Pair;
+    ILedgity public token;
+    IERC20 public usdc;
 
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
@@ -24,6 +28,8 @@ contract Reserve is IReserve, Ownable {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
+        uniswapV2Pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
+        require(address(uniswapV2Pair) != address(0), "Reserve: pair not created yet");
     }
 
     // TODO: remove this
@@ -65,19 +71,14 @@ contract Reserve is IReserve, Ownable {
         }
 
         uint256 usdcReceived = _swapTokensForUSDC(otherHalf);
-        token.approve(address(uniswapV2Router), half);
-        usdc.approve(address(uniswapV2Router), usdcReceived);
-        uniswapV2Router.addLiquidity(
-            address(token),
-            address(usdc),
-            half,
-            usdcReceived,
-            0,
-            0,
-            // TODO: lock LP tokens for 5 years
-            owner(),
-            block.timestamp
-        );
+        // Add liquidity mannualy instead of using the router.
+        // This allows us to add liquidity in proportion we want, regardless of current pool reserves.
+        // Adding liquidity must:
+        //   1. Transfer both tokens to the pair
+        //   2. Mint LP tokens to some address.
+        SafeERC20.safeTransfer(address(token), address(uniswapV2Pair), half);
+        SafeERC20.safeTransfer(address(usdc), address(uniswapV2Pair), usdcReceived);
+        uniswapV2Pair.mint(owner());
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 

@@ -24,14 +24,19 @@ contract Ledgity is ILedgity, ReflectToken {
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
 
-    // IUniswapV2Router02 public uniswapV2Router;
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
 
-    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+    constructor(address routerAddress, address usdcAddress) public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
+
+        uniswapV2Pair = IUniswapV2Pair(
+            IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
+                .createPair(address(this), usdcAddress)
+        );
+        setDex(address(uniswapV2Pair), true);
     }
 
     modifier lockTheSwap {
@@ -40,14 +45,7 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address routerAddress, address reserveAddress, address usdcAddress) public onlyOwner {
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
-        address _uniswapV2PairAddress = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), usdcAddress);
-        uniswapV2Pair = IUniswapV2Pair(_uniswapV2PairAddress);
-        // uniswapV2Router = _uniswapV2Router;
-        setDex(address(uniswapV2Pair), true);
-
+    function initialize(address reserveAddress) public onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
     }
