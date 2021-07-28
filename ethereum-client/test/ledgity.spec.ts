@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens } from '../shared/utils';
+import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -30,7 +30,7 @@ describe('Ledgity', () => {
 
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
-    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address);
+    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
     await token.initialize(tokenReserve.address);
   });
 

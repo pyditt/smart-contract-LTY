@@ -18,18 +18,20 @@ contract Reserve is IReserve, Ownable {
     IUniswapV2Pair public uniswapV2Pair;
     ILedgity public token;
     IERC20 public usdc;
+    address public immutable timelock;
 
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
         _;
     }
 
-    constructor(address uniswapRouter, address TOKEN, address USDC) public {
+    constructor(address uniswapRouter, address TOKEN, address USDC, address timelock_) public {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
         uniswapV2Pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
         require(address(uniswapV2Pair) != address(0), "Reserve: pair not created yet");
+        timelock = timelock_;
     }
 
     // TODO: remove this
@@ -78,7 +80,7 @@ contract Reserve is IReserve, Ownable {
         //   2. Mint LP tokens to some address.
         SafeERC20.safeTransfer(address(token), address(uniswapV2Pair), half);
         SafeERC20.safeTransfer(address(usdc), address(uniswapV2Pair), usdcReceived);
-        uniswapV2Pair.mint(owner());
+        uniswapV2Pair.mint(timelock);
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 

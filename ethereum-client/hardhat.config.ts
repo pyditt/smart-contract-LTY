@@ -26,11 +26,14 @@ export default config;
 task('deploy-ledgity')
   .addParam('uniswapRouter', 'Uniswap V2 router address', undefined, types.string)
   .addParam('usdc', 'USDC token address', undefined, types.string)
+  .addParam('timelockDelay', 'For how long to lock LP tokens? (in seconds)', undefined, types.int)
   .setAction(async (args, { ethers }) => {
     const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy(args.uniswapRouter, args.usdc);
-    const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc);
+    const timelock = await (await ethers.getContractFactory('Timelock')).deploy(args.timelockDelay);
+    const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc, timelock.address);
     await ledgity.initialize(reserve.address);
     console.log('Ledgity:', ledgity.address);
+    console.log('Timelock', timelock.address);
     console.log('Reserve:', reserve.address);
   });
 

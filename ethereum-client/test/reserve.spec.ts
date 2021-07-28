@@ -8,11 +8,11 @@ import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json
 const { expect } = chai;
 
 describe('Reserve', () => {
-  let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, charlieAccount: SignerWithAddress;
-  let alice: string, bob: string, charlie: string;
+  let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress, timelockAccount: SignerWithAddress;
+  let alice: string, bob: string, timelock: string;
   before(async () => {
-    [aliceAccount, bobAccount, charlieAccount] = await ethers.getSigners();
-    [alice, bob, charlie] = [aliceAccount, bobAccount, charlieAccount].map(account => account.address);
+    [aliceAccount, bobAccount, timelockAccount] = await ethers.getSigners();
+    [alice, bob, timelock] = [aliceAccount, bobAccount, timelockAccount].map(account => account.address);
   });
 
   /**
@@ -33,7 +33,7 @@ describe('Reserve', () => {
     token = await (await ethers.getContractFactory('MockLedgity')).deploy();
     await factory.createPair(token.address, usdcToken.address);
     await token.mint(alice, toTokens('100000000000000'));
-    reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address);
+    reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, timelock);
     await token.setReserve(reserve.address);
   });
 
@@ -116,13 +116,14 @@ describe('Reserve', () => {
       await expect(token.swapAndLiquify(amount)).to.emit(reserve, 'SwapAndLiquify');
     });
 
-    it('should mint LP tokens', async () => {
+    it('should mint LP tokens to the timelock', async () => {
       const pair = await getPair();
-      const lpBalanceBefore = await pair.balanceOf(alice);
       const amount = toTokens('10');
       await token.transfer(reserve.address, amount.mul(2));
+      const timelockBalanceBefore = await pair.balanceOf(timelock);
       await token.swapAndLiquify(amount);
-      expect(await pair.balanceOf(alice)).to.be.gt(lpBalanceBefore);
+      // TODO: make a better expectation.
+      expect(await pair.balanceOf(timelock)).to.be.gt(timelockBalanceBefore);
     });
 
     it('should not allow anyone except the token contract to swap and liquify tokens', async () => {
