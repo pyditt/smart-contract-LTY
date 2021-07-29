@@ -39,10 +39,10 @@ contract LedgityPriceOracle {
     mapping(address => Observation[]) public pairObservations;
 
     constructor(address factory_, uint windowSize_, uint8 granularity_) public {
-        require(granularity_ > 1, 'SlidingWindowOracle: GRANULARITY');
+        require(granularity_ > 1, 'LedgityPriceOracle: GRANULARITY');
         require(
             (periodSize = windowSize_ / granularity_) * granularity_ == windowSize_,
-            'SlidingWindowOracle: WINDOW_NOT_EVENLY_DIVISIBLE'
+            'LedgityPriceOracle: WINDOW_NOT_EVENLY_DIVISIBLE'
         );
         factory = factory_;
         windowSize = windowSize_;
@@ -108,9 +108,9 @@ contract LedgityPriceOracle {
         Observation storage firstObservation = getFirstObservationInWindow(pair);
 
         uint timeElapsed = block.timestamp - firstObservation.timestamp;
-        require(timeElapsed <= windowSize, 'SlidingWindowOracle: MISSING_HISTORICAL_OBSERVATION');
+        require(timeElapsed <= windowSize, 'LedgityPriceOracle: MISSING_HISTORICAL_OBSERVATION');
         // should never happen.
-        require(timeElapsed >= windowSize - periodSize * 2, 'SlidingWindowOracle: UNEXPECTED_TIME_ELAPSED');
+        require(timeElapsed >= windowSize - periodSize * 2, 'LedgityPriceOracle: UNEXPECTED_TIME_ELAPSED');
 
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
         (address token0,) = UniswapV2Library.sortTokens(tokenIn, tokenOut);
