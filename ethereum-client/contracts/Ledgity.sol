@@ -23,6 +23,8 @@ contract Ledgity is ILedgity, ReflectToken {
     mapping(address => bool) _isDex;
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
+    uint256 public maxTransactionSizePercentNumerator = 5;
+    uint256 public maxTransactionSizePercentDenominator = 10000;
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -64,6 +66,11 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
         numTokensToSwap = _numTokensToSwap;
+    }
+
+    function setMaxTransactionSizePercent(uint256 numerator, uint256 denominator) public onlyOwner {
+        maxTransactionSizePercentNumerator = numerator;
+        maxTransactionSizePercentDenominator = denominator;
     }
 
     function burn(uint256 amount) public override returns (bool) {
@@ -114,14 +121,8 @@ contract Ledgity is ILedgity, ReflectToken {
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
-        // TODO: uncomment
-        // if(contractTokenBalance >= maxTokenTx())
-        // {
-        //     contractTokenBalance = maxTokenTx();
-        // }
-        bool overMinTokenBalance = contractTokenBalance >= numTokensToSwap;
         if (
-            overMinTokenBalance &&
+            contractTokenBalance >= numTokensToSwap &&
             !inSwapAndLiquify &&
             sender != address(uniswapV2Pair)
         ) {
@@ -130,6 +131,6 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _maxTransactionSize() private view returns (uint256) {
-        return totalSupply().mul(5).div(10000);
+        return totalSupply().mul(maxTransactionSizePercentNumerator).div(maxTransactionSizePercentDenominator);
     }
 }

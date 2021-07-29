@@ -168,6 +168,23 @@ describe('Ledgity', () => {
       await token.transfer(bob, await token.balanceOf(alice));
       await token.connect(bobAccount).transfer(alice, totalSupply.mul(5).div(10000));
     });
+
+    it('should allow the owner to change max transaction size', async () => {
+      await token.setMaxTransactionSizePercent(20, 100);
+      expect(await token.maxTransactionSizePercentNumerator()).to.eq(20);
+      expect(await token.maxTransactionSizePercentDenominator()).to.eq(100);
+      const totalSupply = await token.totalSupply();
+      await expect(token.connect(bobAccount).transfer(alice, totalSupply.mul(20).div(100).add(1)))
+        .to.be.revertedWith('Ledgity: max transaction size exceeded');
+
+      await token.transfer(bob, await token.balanceOf(alice));
+      await token.connect(bobAccount).transfer(alice, totalSupply.mul(20).div(100));  // should not revert
+    });
+
+    it('should NOT allow not the owner to change max transaction size', async () => {
+      await expect(token.connect(bobAccount).setMaxTransactionSizePercent(20, 100))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+    });
   });
 
   describe('transfer: fees', () => {
