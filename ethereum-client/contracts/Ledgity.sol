@@ -69,6 +69,7 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function setMaxTransactionSizePercent(uint256 numerator, uint256 denominator) public onlyOwner {
+        _ensurePercentage(numerator, denominator);
         maxTransactionSizePercentNumerator = numerator;
         maxTransactionSizePercentDenominator = denominator;
     }
@@ -132,5 +133,9 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function _maxTransactionSize() private view returns (uint256) {
         return totalSupply().mul(maxTransactionSizePercentNumerator).div(maxTransactionSizePercentDenominator);
+    }
+
+    function _ensurePercentage(uint256 numerator, uint256 denominator) private pure {
+        require(numerator <= denominator, "Ledgity: invalid percentage");
     }
 }

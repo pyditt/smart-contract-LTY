@@ -185,6 +185,11 @@ describe('Ledgity', () => {
       await expect(token.connect(bobAccount).setMaxTransactionSizePercent(20, 100))
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    it('should NOT allow invalid percentages', async () => {
+      await expect(token.setMaxTransactionSizePercent(101, 100))
+        .to.be.revertedWith('Ledgity: invalid percentage');
+    });
   });
 
   describe('transfer: fees', () => {
