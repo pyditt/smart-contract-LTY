@@ -1,6 +1,8 @@
 pragma solidity ^0.6.12;
 
 import "./libraries/ReflectToken.sol";
+import "./libraries/Percent.sol";
+import "./libraries/Math.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
@@ -10,6 +12,7 @@ import "./interfaces/IReserve.sol";
 
 contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
+    using Percent for Percent.Percent;
 
     uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
@@ -18,6 +21,10 @@ contract Ledgity is ILedgity, ReflectToken {
         Collect
     }
     FeeDestination public feeDestination = FeeDestination.Liquify;
+    Percent.Percent public sellAccumulationFee = Percent.encode(6, 100);
+    Percent.Percent public sellAtSmallPriceAccumulationFee = Percent.encode(6 + 15, 100);
+    Percent.Percent public sellReflectionFee = Percent.encode(4, 100);
+    Percent.Percent public buyAccumulationFee = Percent.encode(4, 100);
 
 
     mapping(address => bool) _isDex;
@@ -66,6 +73,25 @@ contract Ledgity is ILedgity, ReflectToken {
         numTokensToSwap = _numTokensToSwap;
     }
 
+    function setSellAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellAccumulationFee = Percent.encode(numerator, denominator);
+        _ensureSellFeesValid();
+    }
+
+    function setSellAtSmallPriceAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellAtSmallPriceAccumulationFee = Percent.encode(numerator, denominator);
+        _ensureSellFeesValid();
+    }
+
+    function setSellReflectionFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellReflectionFee = Percent.encode(numerator, denominator);
+        _ensureSellFeesValid();
+    }
+
+    function setBuyAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        buyAccumulationFee = Percent.encode(numerator, denominator);
+    }
+
     function burn(uint256 amount) public override returns (bool) {
         // TODO
         revert("Ledgity: not implemented");
@@ -74,17 +100,17 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            return amount.mul(4).div(100);
+            return sellReflectionFee.mul(amount);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
         if (_isDex[sender] && !isExcludedFromDexFee[recipient]) {
-            return amount.mul(4).div(100);
+            return buyAccumulationFee.mul(amount);
         }
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            return amount.mul(6).div(100);
+            return sellAccumulationFee.mul(amount);
         }
         return 0;
     }
@@ -123,5 +149,11 @@ contract Ledgity is ILedgity, ReflectToken {
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+    }
+
+    function _ensureSellFeesValid() private view {
+        uint256 x = Math.max(Math.max(sellAccumulationFee.denominator, sellAtSmallPriceAccumulationFee.denominator), sellReflectionFee.denominator);
+        uint256 maxAccumulation = Math.max(sellAccumulationFee.mul(x), sellAtSmallPriceAccumulationFee.mul(x));
+        require(maxAccumulation.add(sellReflectionFee.mul(x)) <= x, "Ledgity: accumulation + reflection fees exceed 100%");
     }
 }
