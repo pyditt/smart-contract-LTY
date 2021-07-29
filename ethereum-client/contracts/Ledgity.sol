@@ -67,9 +67,8 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function burn(uint256 amount) public override returns (bool) {
-        // TODO
-        revert("Ledgity: not implemented");
-        return false;
+        _burn(_msgSender(), amount);
+        return true;
     }
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {

@@ -532,8 +532,43 @@ describe('Ledgity', () => {
 
   describe('burn', () => {
     it('should burn tokens', async () => {
-      // TODO
-      expect.fail();
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const totalSupplyBefore = await token.totalSupply();
+      const amount = toTokens('10');
+      await token.burn(amount);
+      expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
+      expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+    });
+
+    it('should burn from an excluded account', async () => {
+      const aliceBalanceBefore = await token.balanceOf(alice);
+      const totalSupplyBefore = await token.totalSupply();
+      const amount = toTokens('10');
+      await token.excludeAccount(alice);
+      await token.burn(amount);
+      expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
+      expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+    });
+
+    it('should allow anyone to burn tokens', async () => {
+      await token.transfer(bob, toTokens('1000'));
+      const bobBalanceBefore = await token.balanceOf(bob);
+      const totalSupplyBefore = await token.totalSupply();
+      const amount = toTokens('10');
+      await token.connect(bobAccount).burn(amount);
+      expect(await token.balanceOf(bob)).to.eq(bobBalanceBefore.sub(amount));
+      expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+    });
+
+    it('should NOT burn if the balance is insufficient', async () => {
+      await token.transfer(bob, 10);
+      await expect(token.connect(bobAccount).burn(11)).to.be.revertedWith('ReflectToken: burn amount is more than the balance');
+    });
+
+    it('should NOT burn from an excluded account if the balance is insufficient', async () => {
+      await token.excludeAccount(bob);
+      await token.transfer(bob, 10);
+      await expect(token.connect(bobAccount).burn(11)).to.be.revertedWith('ReflectToken: burn amount is more than the balance');
     });
   });
 });
