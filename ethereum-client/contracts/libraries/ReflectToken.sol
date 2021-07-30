@@ -159,6 +159,16 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         emit Approval(owner, spender, amount);
     }
 
+    function _burn(address from, uint256 tAmount) internal {
+        uint256 rAmount = tAmount.mul(_getRate());
+        _rOwned[from] = _rOwned[from].sub(rAmount, "ReflectToken: burn amount is more than the balance");
+        if (_isExcluded[from]) {
+            _tOwned[from] = _tOwned[from].sub(tAmount, "ReflectToken: burn amount is more than the balance");
+        }
+		_rTotal = _rTotal.sub(rAmount);
+		_tTotal = _tTotal.sub(tAmount);
+    }
+
     function _transfer(address sender, address recipient, uint256 tAmount) internal virtual {
         require(sender != address(0), "ReflectToken: transfer from the zero address");
         require(recipient != address(0), "ReflectToken: transfer to the zero address");
