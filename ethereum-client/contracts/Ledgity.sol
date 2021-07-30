@@ -33,6 +33,7 @@ contract Ledgity is ILedgity, ReflectToken {
     mapping(address => bool) _isDex;
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
+    Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -74,6 +75,10 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
         numTokensToSwap = _numTokensToSwap;
+    }
+
+    function setMaxTransactionSizePercent(uint128 numerator, uint128 denominator) public onlyOwner {
+        maxTransactionSizePercent = Percent.encode(numerator, denominator);
     }
 
     function setSellAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
@@ -136,21 +141,23 @@ contract Ledgity is ILedgity, ReflectToken {
             "Ledgity: only one transaction per 15 minutes"
         );
         lastTransactionAt[sender] = block.timestamp;
+        require(
+            sender == owner() || sender == address(uniswapV2Pair) || sender == address(this) || sender == address(reserve) || amount <= _maxTransactionSize(),
+            "Ledgity: max transaction size exceeded"
+        );
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
-        // TODO: uncomment
-        // if(contractTokenBalance >= maxTokenTx())
-        // {
-        //     contractTokenBalance = maxTokenTx();
-        // }
-        bool overMinTokenBalance = contractTokenBalance >= numTokensToSwap;
         if (
-            overMinTokenBalance &&
+            contractTokenBalance >= numTokensToSwap &&
             !inSwapAndLiquify &&
             sender != address(uniswapV2Pair)
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+    }
+
+    function _maxTransactionSize() private view returns (uint256) {
+        return maxTransactionSizePercent.mul(totalSupply());
     }
 }
