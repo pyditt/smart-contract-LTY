@@ -6,6 +6,7 @@ import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
+import "./interfaces/ILedgityPriceOracle.sol";
 
 
 contract Ledgity is ILedgity, ReflectToken {
@@ -26,6 +27,9 @@ contract Ledgity is ILedgity, ReflectToken {
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
+    ILedgityPriceOracle public priceOracle;
+
+    // TODO: init priceOracel; set Oracle address, set Reserve address...
 
     constructor(address routerAddress, address usdcAddress) public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
@@ -36,6 +40,7 @@ contract Ledgity is ILedgity, ReflectToken {
             IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
                 .createPair(address(this), usdcAddress)
         );
+        priceOracle = ILedgityPriceOracle(address(uniswapV2Pair));
         setDex(address(uniswapV2Pair), true);
     }
 
@@ -84,7 +89,13 @@ contract Ledgity is ILedgity, ReflectToken {
             return amount.mul(4).div(100);
         }
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            return amount.mul(6).div(100);
+            // uint startPrice = 40000;
+            // uint price = priceOracle.consult(address(this), 1 * 10e18);
+            // if(price < startPrice.mul(10)) {
+                return amount.mul(6).div(100);
+            // } else {
+            //     return amount.mul(6 + 15).div(100);
+            // }
         }
         return 0;
     }
