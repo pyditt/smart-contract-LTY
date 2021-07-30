@@ -33,8 +33,7 @@ contract Ledgity is ILedgity, ReflectToken {
     mapping(address => bool) _isDex;
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
-    uint256 public maxTransactionSizePercentNumerator = 5;
-    uint256 public maxTransactionSizePercentDenominator = 10000;
+    Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -78,10 +77,8 @@ contract Ledgity is ILedgity, ReflectToken {
         numTokensToSwap = _numTokensToSwap;
     }
 
-    function setMaxTransactionSizePercent(uint256 numerator, uint256 denominator) public onlyOwner {
-        _ensurePercentage(numerator, denominator);
-        maxTransactionSizePercentNumerator = numerator;
-        maxTransactionSizePercentDenominator = denominator;
+    function setMaxTransactionSizePercent(uint128 numerator, uint128 denominator) public onlyOwner {
+        maxTransactionSizePercent = Percent.encode(numerator, denominator);
     }
 
     function setSellAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
@@ -161,10 +158,6 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _maxTransactionSize() private view returns (uint256) {
-        return totalSupply().mul(maxTransactionSizePercentNumerator).div(maxTransactionSizePercentDenominator);
-    }
-
-    function _ensurePercentage(uint256 numerator, uint256 denominator) private pure {
-        require(numerator <= denominator, "Ledgity: invalid percentage");
+        return maxTransactionSizePercent.mul(totalSupply());
     }
 }

@@ -171,8 +171,8 @@ describe('Ledgity', () => {
 
     it('should allow the owner to change max transaction size', async () => {
       await token.setMaxTransactionSizePercent(20, 100);
-      expect(await token.maxTransactionSizePercentNumerator()).to.eq(20);
-      expect(await token.maxTransactionSizePercentDenominator()).to.eq(100);
+      expect((await token.maxTransactionSizePercent()).numerator).to.eq(20);
+      expect((await token.maxTransactionSizePercent()).denominator).to.eq(100);
       const totalSupply = await token.totalSupply();
       await expect(token.connect(bobAccount).transfer(alice, totalSupply.mul(20).div(100).add(1)))
         .to.be.revertedWith('Ledgity: max transaction size exceeded');
@@ -188,7 +188,7 @@ describe('Ledgity', () => {
 
     it('should NOT allow invalid percentages', async () => {
       await expect(token.setMaxTransactionSizePercent(101, 100))
-        .to.be.revertedWith('Ledgity: invalid percentage');
+        .to.be.revertedWith('Percent: invalid percentage');
     });
   });
 
