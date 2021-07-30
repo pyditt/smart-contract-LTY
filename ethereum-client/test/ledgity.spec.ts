@@ -223,8 +223,8 @@ describe('Ledgity', () => {
     });
 
     it('should charge changed fee when selling', async () => {
-      await token.setSellAccumulationFee(20, 100);
-      await testSellFee(20, 100);
+      await token.setSellAccumulationFee(3, 100);
+      await testSellFee(3, 100);
     });
 
     it('should NOT charge fee when selling if it is set to 0%', async () => {
@@ -237,8 +237,8 @@ describe('Ledgity', () => {
     });
 
     it('should charge changed fee when selling if token price is less than x10 IDO price', async () => {
-      await token.setSellAtSmallPriceAccumulationFee(50, 100);
-      await testSellFee(50, 100);
+      await token.setSellAtSmallPriceAccumulationFee(14, 100);
+      await testSellFee(14, 100);
     });
 
     it('should charge fee when selling if token price is less than x10 IDO price and fee is set to 0%', async () => {
@@ -300,8 +300,8 @@ describe('Ledgity', () => {
     });
 
     it('should charge changed fee when buying', async () => {
-      await token.setBuyAccumulationFee(20, 100);
-      await testBuyFee(20, 100);
+      await token.setBuyAccumulationFee(2, 100);
+      await testBuyFee(2, 100);
     });
 
     it('should NOT charge fee when buying if it is set to 0%', async () => {
@@ -311,27 +311,38 @@ describe('Ledgity', () => {
 
     describe('change fees', () => {
       it('should change sell fee', async () => {
-        await token.setSellAccumulationFee(60, 77);
-        expect((await token.sellAccumulationFee()).numerator).to.eq(60);
+        await token.setSellAccumulationFee(3, 77);
+        expect((await token.sellAccumulationFee()).numerator).to.eq(3);
         expect((await token.sellAccumulationFee()).denominator).to.eq(77);
       });
 
       it('should change sell when price is < x10 IDO price fee', async () => {
-        await token.setSellAtSmallPriceAccumulationFee(15, 18);
-        expect((await token.sellAtSmallPriceAccumulationFee()).numerator).to.eq(15);
+        await token.setSellAtSmallPriceAccumulationFee(1, 18);
+        expect((await token.sellAtSmallPriceAccumulationFee()).numerator).to.eq(1);
         expect((await token.sellAtSmallPriceAccumulationFee()).denominator).to.eq(18);
       });
 
       it('should change sell reflection fee', async () => {
-        await token.setSellReflectionFee(20, 30);
-        expect((await token.sellReflectionFee()).numerator).to.eq(20);
+        await token.setSellReflectionFee(1, 30);
+        expect((await token.sellReflectionFee()).numerator).to.eq(1);
         expect((await token.sellReflectionFee()).denominator).to.eq(30);
       });
 
       it('should change buy fee', async () => {
-        await token.setBuyAccumulationFee(40, 50);
-        expect((await token.buyAccumulationFee()).numerator).to.eq(40);
-        expect((await token.buyAccumulationFee()).denominator).to.eq(50);
+        await token.setBuyAccumulationFee(1, 51);
+        expect((await token.buyAccumulationFee()).numerator).to.eq(1);
+        expect((await token.buyAccumulationFee()).denominator).to.eq(51);
+      });
+
+      it('should NOT allow to set fees higher than initial', async () => {
+        await expect(token.setSellAccumulationFee(7, 100)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setSellAccumulationFee(4, 51)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setSellAtSmallPriceAccumulationFee(22, 100)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setSellAtSmallPriceAccumulationFee(11, 51)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setSellReflectionFee(5, 100)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setSellReflectionFee(3, 51)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setBuyAccumulationFee(5, 100)).to.be.revertedWith('Ledgity: fee too high');
+        await expect(token.setBuyAccumulationFee(3, 51)).to.be.revertedWith('Ledgity: fee too high');
       });
 
       it('should NOT allow not allow not the owner to change fees', async () => {
@@ -348,14 +359,14 @@ describe('Ledgity', () => {
         await expect(token.setBuyAccumulationFee(101, 100)).to.be.revertedWith('Percent: invalid percentage');
       });
 
-      it('should NOT allow sell + reflection fees to be more than 100%', async () => {
+      it.skip('should NOT allow sell + reflection fees to be more than 100%', async () => {
         await token.setSellReflectionFee(0, 100);  // reset
         await token.setSellAccumulationFee(99, 100);
         await token.setSellReflectionFee(1, 100);  // OK
         await expect(token.setSellReflectionFee(2, 100)).to.be.revertedWith('Ledgity: accumulation + reflection fees exceed 100%');
       });
 
-      it('should NOT allow sell small price + reflection fee to be more than 100%', async () => {
+      it.skip('should NOT allow sell small price + reflection fee to be more than 100%', async () => {
         await token.setSellReflectionFee(0, 100);  // reset
         await token.setSellAtSmallPriceAccumulationFee(99, 100);
         await token.setSellReflectionFee(1, 100);  // OK
@@ -363,7 +374,7 @@ describe('Ledgity', () => {
       });
 
       // Symmetric test to the tests above. Just to make sure checks are made in all setters
-      it('should NOT allow reflection + sell fee to be more than 100%', async () => {
+      it.skip('should NOT allow reflection + sell fee to be more than 100%', async () => {
         await token.setSellAccumulationFee(0, 100);  // reset
         await token.setSellAtSmallPriceAccumulationFee(0, 100);  // reset
         await token.setSellReflectionFee(99, 100);

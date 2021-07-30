@@ -19,4 +19,8 @@ library Percent {
     function mul(Percent memory self, uint256 value) internal pure returns (uint256) {
         return value.mul(uint256(self.numerator)).div(uint256(self.denominator));
     }
+
+    function lte(Percent memory self, Percent memory other) internal pure returns (bool) {
+        return uint256(self.numerator).mul(other.denominator) <= uint256(other.numerator).mul(self.denominator);
+    }
 }
