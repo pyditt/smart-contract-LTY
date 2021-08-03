@@ -45,7 +45,7 @@ contract Reserve is IReserve, Ownable {
         path[0] = address(usdc);
         path[1] = address(token);
         uint256 tokenBalanceBefore = token.balanceOf(address(this));
-        usdc.approve(address(uniswapV2Router), usdcAmount);
+        SafeERC20.safeApprove(address(usdc) ,address(uniswapV2Router), usdcAmount);
         uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             usdcAmount,
             0, // accept any amount of token
@@ -89,7 +89,7 @@ contract Reserve is IReserve, Ownable {
         path[0] = address(token);
         path[1] = address(usdc);
         uint256 usdcBalanceBefore = usdc.balanceOf(address(this));
-        token.approve(address(uniswapV2Router), tokenAmount);
+        SafeERC20.safeApprove(address(token) ,address(uniswapV2Router), tokenAmount);
         uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             tokenAmount,
             0, // accept any amount of USDC
