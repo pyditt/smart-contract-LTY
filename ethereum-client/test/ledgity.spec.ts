@@ -31,7 +31,7 @@ describe('Ledgity', () => {
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
-    await token.initialize(tokenReserve.address);
+    await token.initialize(tokenReserve.address, ZERO_ADDRESS);
   });
 
   async function getPair() {
@@ -445,6 +445,39 @@ describe('Ledgity', () => {
 
     it('should not allow not the owner to exclude or include an account from dex fee', async () => {
       await expect(token.connect(bobAccount).setIsExcludedFromDexFee(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe('exclusion from limits', () => {
+    it('should exclude the owner by default', async () => {
+      expect(await token.isExcludedFromLimits(alice)).to.eq(true);
+    });
+
+    it('should exclude the contract by default', async () => {
+      expect(await token.isExcludedFromLimits(token.address)).to.eq(true);
+    });
+
+    it('should exclude The Reserve by default', async () => {
+      expect(await token.isExcludedFromLimits(tokenReserve.address)).to.eq(true);
+    });
+
+    it('should NOT exclude any other account by default', async () => {
+      expect(await token.isExcludedFromLimits(bob)).to.eq(false);
+    });
+
+    it('should exclude an account from limits', async () => {
+      await token.setIsExcludedFromLimits(bob, true);
+      expect(await token.isExcludedFromLimits(bob)).to.eq(true);
+    });
+
+    it('should re-include an account in limits', async () => {
+      await token.setIsExcludedFromLimits(bob, true);
+      await token.setIsExcludedFromLimits(bob, false);
+      expect(await token.isExcludedFromLimits(bob)).to.eq(false);
+    });
+
+    it('should not allow not the owner to exclude or include an account from limits', async () => {
+      await expect(token.connect(bobAccount).setIsExcludedFromLimits(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 
