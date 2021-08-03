@@ -2,6 +2,7 @@ pragma solidity =0.6.12;
 
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Pair.sol';
+import './interfaces/ILedgityPriceOracle.sol';
 import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 import './libraries/SafeMath.sol';
 import './libraries/UniswapV2Library.sol';
@@ -9,7 +10,7 @@ import './libraries/UniswapV2OracleLibrary.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period
 // note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
-contract LedgityPriceOracle {
+contract LedgityPriceOracle is ILedgityPriceOracle {
     using FixedPoint for *;
 
     uint public constant PERIOD = 12 hours;
@@ -39,10 +40,16 @@ contract LedgityPriceOracle {
         price1Average = FixedPoint.encode(reserve0).divuq(FixedPoint.encode(reserve1));
     }
 
-    function update() external {
+    function update() external override {
+        require(tryUpdate(), 'LedgityPriceOracle: PERIOD_NOT_ELAPSED');
+    }
+
+    function tryUpdate() public override returns (bool) {
         uint32 timeElapsed = UniswapV2OracleLibrary.currentBlockTimestamp() - blockTimestampLast; // overflow is desired
         // ensure that at least one full period has passed since the last update
-        require(timeElapsed >= PERIOD, 'LedgityPriceOracle: PERIOD_NOT_ELAPSED');
+        if (timeElapsed < PERIOD) {
+            return false;
+        }
 
         (uint price0Cumulative, uint price1Cumulative, uint32 blockTimestamp) = UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
 
@@ -54,10 +61,11 @@ contract LedgityPriceOracle {
         price0CumulativeLast = price0Cumulative;
         price1CumulativeLast = price1Cumulative;
         blockTimestampLast = blockTimestamp;
+        return true;
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
-    function consult(address token, uint amountIn) external view returns (uint amountOut) {
+    function consult(address token, uint amountIn) external view override returns (uint amountOut) {
         if (token == token0) {
             amountOut = price0Average.mul(amountIn).decode144();
         } else {

@@ -28,8 +28,7 @@ contract Ledgity is ILedgity, ReflectToken {
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
     ILedgityPriceOracle public priceOracle;
-
-    // TODO: init priceOracel; set Oracle address, set Reserve address...
+    uint256 public initialPrice;
 
     constructor(address routerAddress, address usdcAddress) public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
@@ -40,7 +39,6 @@ contract Ledgity is ILedgity, ReflectToken {
             IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
                 .createPair(address(this), usdcAddress)
         );
-        priceOracle = ILedgityPriceOracle(address(uniswapV2Pair));
         setDex(address(uniswapV2Pair), true);
     }
 
@@ -50,9 +48,13 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address reserveAddress) public onlyOwner {
+    function initialize(address reserveAddress, address priceOracleAddress) public onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
+        priceOracle = ILedgityPriceOracle(priceOracleAddress);
+        if (initialPrice == 0) {
+            initialPrice = _getPrice();
+        }
     }
 
     function setDex(address target, bool isDex) public onlyOwner {
@@ -89,13 +91,11 @@ contract Ledgity is ILedgity, ReflectToken {
             return amount.mul(4).div(100);
         }
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            // uint startPrice = 40000;
-            // uint price = priceOracle.consult(address(this), 1 * 10e18);
-            // if(price < startPrice.mul(10)) {
+            if (_getPrice() >= initialPrice.mul(10)) {
                 return amount.mul(6).div(100);
-            // } else {
-            //     return amount.mul(6 + 15).div(100);
-            // }
+            } else {
+                return amount.mul(6 + 15).div(100);
+            }
         }
         return 0;
     }
@@ -118,6 +118,11 @@ contract Ledgity is ILedgity, ReflectToken {
             "Ledgity: only one transaction per 15 minutes"
         );
         lastTransactionAt[sender] = block.timestamp;
+
+        if (address(priceOracle) != address(0)) {
+            priceOracle.tryUpdate();
+        }
+
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
@@ -134,5 +139,12 @@ contract Ledgity is ILedgity, ReflectToken {
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+    }
+
+    function _getPrice() private view returns (uint256) {
+        if (address(priceOracle) == address(0)) {
+            return 0;
+        }
+        return priceOracle.consult(address(this), 1e18);
     }
 }
