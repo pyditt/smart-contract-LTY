@@ -51,22 +51,22 @@ describe('LedgityRouter', () => {
     await token.setIsExcludedFromDexFee(alice, wasExcluded);
   }
 
-  async function addLiquidityLedgityRouter(tokenA: IERC20, tokenB: IERC20, amountA: BigNumberish, amountB: BigNumberish, from: SignerWithAddress) {
+  async function addLiquidityLedgityRouter(tokenA: IERC20, tokenB: IERC20, amountA: BigNumberish, amountB: BigNumberish, from: SignerWithAddress, to: address) {
     await tokenA.connect(from).approve(ledgityRouter.address, amountA);
     await tokenB.connect(from).approve(ledgityRouter.address, amountB);
     await ledgityRouter.connect(from).addLiquidityBypassingFee(
       tokenA.address, tokenB.address,
       amountA, amountB, 0, 0,
-      from.address, await getBlockTimestamp() + 3600,
+      to, await getBlockTimestamp() + 3600,
     );
   }
 
-  async function removeLiquidityLedgityRouter(liquidity: BigNumberish, from: SignerWithAddress) {
+  async function removeLiquidityLedgityRouter(liquidity: BigNumberish, from: SignerWithAddress, to: string) {
     await pair.connect(from).approve(ledgityRouter.address, liquidity);
     await ledgityRouter.connect(from).removeLiquidityBypassingFee(
       token.address, usdcToken.address,
       liquidity, 0, 0,
-      from.address, await getBlockTimestamp() + 3600,
+      to, await getBlockTimestamp() + 3600,
     );
   }
 
@@ -84,7 +84,7 @@ describe('LedgityRouter', () => {
       const usdcBalanceBefore = await usdcToken.balanceOf(alice);
       const tokenAmount = toTokens('100');
       const usdcAmount = toTokens('10');
-      await addLiquidityLedgityRouter(token, usdcToken, tokenAmount, usdcAmount, aliceAccount);
+      await addLiquidityLedgityRouter(token, usdcToken, tokenAmount, usdcAmount, aliceAccount, bob);
       const reserves = await pair.getReserves();
       expect(await token.balanceOf(alice)).to.eq(tokenBalanceBefore.sub(tokenAmount));
       expect(await usdcToken.balanceOf(alice)).to.eq(usdcBalanceBefore.sub(usdcAmount));
@@ -93,16 +93,16 @@ describe('LedgityRouter', () => {
     });
 
     it('should mint LP tokens', async () => {
-      const lpBalanceBefore = await pair.balanceOf(alice);
-      await addLiquidityLedgityRouter(token, usdcToken, toTokens('1000'), toTokens('10'), aliceAccount);
-      expect(await pair.balanceOf(alice)).to.be.gt(lpBalanceBefore);
+      const lpBalanceBefore = await pair.balanceOf(bob);
+      await addLiquidityLedgityRouter(token, usdcToken, toTokens('1000'), toTokens('10'), aliceAccount, bob);
+      expect(await pair.balanceOf(bob)).to.be.gt(lpBalanceBefore);
     });
 
     it('should refund any remaining tokens', async () => {
       await addInitialLiquidity(toTokens('1000'), toTokens('100'));
       const tokenBalanceBefore = await token.balanceOf(alice);
       const usdcBalanceBefore = await usdcToken.balanceOf(alice);
-      await addLiquidityLedgityRouter(token, usdcToken, toTokens('1500'), toTokens('100'), aliceAccount);
+      await addLiquidityLedgityRouter(token, usdcToken, toTokens('1500'), toTokens('100'), aliceAccount, bob);
       expect(await token.balanceOf(alice)).to.eq(tokenBalanceBefore.sub(toTokens('1000')));  // refunded
       expect(await usdcToken.balanceOf(alice)).to.eq(usdcBalanceBefore.sub(toTokens('100')));
     });
@@ -116,8 +116,8 @@ describe('LedgityRouter', () => {
       const tokenAmount = toTokens('100');
       const usdcAmount = toTokens('10');
       // TODO: make a symmetric test where tokenA = usdcToken, tokenB = token
-      await addLiquidityLedgityRouter(token, usdcToken, tokenAmount, usdcAmount, aliceAccount);
-      await removeLiquidityLedgityRouter(await pair.balanceOf(alice), aliceAccount);
+      await addLiquidityLedgityRouter(token, usdcToken, tokenAmount, usdcAmount, aliceAccount, alice);
+      await removeLiquidityLedgityRouter(await pair.balanceOf(alice), aliceAccount, alice);
       const reserves = await pair.getReserves();
       // IDK why, but uniswap does not return all provided tokens when burning LP tokens.
       // I tested it with the UniswapRouter02 and it worked exactly the same.
@@ -126,6 +126,16 @@ describe('LedgityRouter', () => {
       expect(await usdcToken.balanceOf(alice)).to.eq(usdcBalanceBefore.sub(usdcRemaining));
       expect(reserves[tokenIndex]).to.be.eq(reservesBefore[tokenIndex].add(tokenRemaining));
       expect(reserves[usdcIndex]).to.be.eq(reservesBefore[usdcIndex].add(usdcRemaining));
+    });
+
+    it('should withdraw liquidity to the specified address', async () => {
+      await token.setIsExcludedFromDexFee(alice, false);
+      const tokenAmount = toTokens('100');
+      const usdcAmount = toTokens('10');
+      await addLiquidityLedgityRouter(token, usdcToken, tokenAmount, usdcAmount, aliceAccount, alice);
+      await removeLiquidityLedgityRouter(await pair.balanceOf(alice), aliceAccount, bob);  // withdraw to Bob's account
+      expect(await token.balanceOf(bob)).to.eq(tokenAmount.sub(3163));
+      expect(await usdcToken.balanceOf(bob)).to.eq(usdcAmount.sub(317));
     });
   });
 });
