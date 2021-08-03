@@ -9,12 +9,8 @@ export async function getBlockTimestamp() {
   return (await ethers.provider.getBlock('latest')).timestamp;
 }
 
-export async function blockchainTimeTravel(cb: (travel: (offset: number) => Promise<void>) => Promise<void>) {
-  let time = await getBlockTimestamp();
-  await cb(async offset => {
-    time += offset;
-    await ethers.provider.send('evm_mine', [time]);
-  });
+export async function evmIncreaseTime(offset: number) {
+  await ethers.provider.send('evm_mine', [await getBlockTimestamp() + offset]);
 }
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';

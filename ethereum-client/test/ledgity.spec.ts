@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, evmIncreaseTime, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -111,19 +111,15 @@ describe('Ledgity', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
       await token.transfer(bob, 10);  // to allow transfers from Bob's account
       await token.connect(bobAccount).transfer(alice, 1);
-      await blockchainTimeTravel(async travel => {
-        await travel(15 * 60 - 10);  // wait for <15 minutes
-        await expect(token.connect(bobAccount).transfer(charlie, 1))
-          .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
-      });
+      await evmIncreaseTime(15 * 60 - 10);  // wait for <15 minutes
+      await expect(token.connect(bobAccount).transfer(charlie, 1))
+        .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
     });
 
     it('should allow two transfers from one account with interval greater than 15 minutes', async () => {
       await token.transfer(bob, 1);
-      await blockchainTimeTravel(async travel => {
-        await travel(15 * 60 + 1);  // wait for >15 minutes
-        await token.transfer(charlie, 1);
-      });
+      await evmIncreaseTime(15 * 60 + 1);  // wait for >15 minutes
+      await token.transfer(charlie, 1);
     });
 
     it('should allow two transfers from different accounts within 15 minutes', async () => {

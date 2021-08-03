@@ -24,7 +24,7 @@ contract LedgityPriceOracle {
     FixedPoint.uq112x112 public price0Average;
     FixedPoint.uq112x112 public price1Average;
 
-    constructor(address pair_, address tokenA, address tokenB) public {
+    constructor(address pair_) public {
         IUniswapV2Pair _pair = IUniswapV2Pair(pair_);
         pair = _pair;
         token0 = _pair.token0();
@@ -34,7 +34,7 @@ contract LedgityPriceOracle {
         uint112 reserve0;
         uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = _pair.getReserves();
-        // require(reserve0 != 0 && reserve1 != 0, 'LedgityPriceOracle: NO_RESERVES'); // ensure that there's liquidity in the pair
+        require(reserve0 != 0 && reserve1 != 0, 'LedgityPriceOracle: NO_RESERVES'); // ensure that there's liquidity in the pair
     }
 
     function update() external {
