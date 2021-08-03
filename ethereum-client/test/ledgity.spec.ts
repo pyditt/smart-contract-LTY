@@ -99,6 +99,12 @@ describe('Ledgity', () => {
       expect(await token.balanceOf(bob)).to.eq(bobBalanceBefore.add(amount), 'Bob');
     });
 
+    it('should NOT transfer more tokens than an account has on its balance', async () => {
+      await token.transfer(bob, 10);
+      await expect(token.connect(bobAccount).transfer(charlie, 11))
+        .to.be.revertedWith('SafeMath: subtraction overflow');
+    });
+
     it('should emit Transfer event', async () => {
       const amount = toTokens('10');
       await expect(await token.transfer(bob, amount))
