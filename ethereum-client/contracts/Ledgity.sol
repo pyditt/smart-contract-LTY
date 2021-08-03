@@ -30,7 +30,7 @@ contract Ledgity is ILedgity, ReflectToken {
     Percent.Percent public initialBuyAccumulationFee = buyAccumulationFee;
 
 
-    mapping(address => bool) _isDex;
+    mapping(address => bool) public isDex;
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => uint256) public lastTransactionAt;
     Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
@@ -61,8 +61,8 @@ contract Ledgity is ILedgity, ReflectToken {
         isExcludedFromDexFee[address(reserve)] = true;
     }
 
-    function setDex(address target, bool isDex) public onlyOwner {
-        _isDex[target] = isDex;
+    function setDex(address target, bool dex) public onlyOwner {
+        isDex[target] = dex;
     }
 
     function setFeeDestination(FeeDestination fd) public onlyOwner {
@@ -107,17 +107,17 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
             return sellReflectionFee.mul(amount);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[sender] && !isExcludedFromDexFee[recipient]) {
+        if (isDex[sender] && !isExcludedFromDexFee[recipient]) {
             return buyAccumulationFee.mul(amount);
         }
-        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
             return sellAccumulationFee.mul(amount);
         }
         return 0;

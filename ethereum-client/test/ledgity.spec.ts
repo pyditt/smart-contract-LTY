@@ -643,6 +643,19 @@ describe('Ledgity', () => {
     });
   });
 
+  describe('setDex', () => {
+    it('should change isDex', async () => {
+      expect(await token.isDex(bob)).to.eq(false);  // sanity check
+      await token.setDex(bob, true);
+      expect(await token.isDex(bob)).to.eq(true);
+    });
+
+    it('should NOT allow not the owner to call it', async () => {
+      await expect(token.connect(bobAccount).setDex(alice, true))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
   describe('burn', () => {
     it('should burn tokens', async () => {
       const aliceBalanceBefore = await token.balanceOf(alice);
