@@ -32,6 +32,7 @@ contract Ledgity is ILedgity, ReflectToken {
 
     mapping(address => bool) _isDex;
     mapping(address => bool) public isExcludedFromDexFee;
+    mapping(address => bool) public isExcludedFromLimits;
     mapping(address => uint256) public lastTransactionAt;
     Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
@@ -42,6 +43,8 @@ contract Ledgity is ILedgity, ReflectToken {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
+        isExcludedFromLimits[owner()] = true;
+        isExcludedFromLimits[address(this)] = true;
 
         uniswapV2Pair = IUniswapV2Pair(
             IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
@@ -56,9 +59,12 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address reserveAddress) public onlyOwner {
+    function initialize(address reserveAddress, address ledgityRouterAddress) public onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
+        isExcludedFromLimits[address(reserve)] = true;
+        isExcludedFromDexFee[ledgityRouterAddress] = true;
+        isExcludedFromLimits[ledgityRouterAddress] = true;
     }
 
     function setDex(address target, bool isDex) public onlyOwner {
@@ -71,6 +77,10 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function setIsExcludedFromDexFee(address account, bool isExcluded) public onlyOwner {
         isExcludedFromDexFee[account] = isExcluded;
+    }
+
+    function setIsExcludedFromLimits(address account, bool isExcluded) public onlyOwner {
+        isExcludedFromLimits[account] = isExcluded;
     }
 
     function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
@@ -135,16 +145,11 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        // TODO: generalize this
-        require(
-            sender == owner() || sender == address(uniswapV2Pair) || sender == address(reserve) || lastTransactionAt[sender] < block.timestamp.sub(15 minutes),
-            "Ledgity: only one transaction per 15 minutes"
-        );
+        if (!isExcludedFromLimits[sender] && !_isDex[sender]) {
+            require(lastTransactionAt[sender] < block.timestamp.sub(15 minutes), "Ledgity: only one transaction per 15 minutes");
+            require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
+        }
         lastTransactionAt[sender] = block.timestamp;
-        require(
-            sender == owner() || sender == address(uniswapV2Pair) || sender == address(this) || sender == address(reserve) || amount <= _maxTransactionSize(),
-            "Ledgity: max transaction size exceeded"
-        );
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));

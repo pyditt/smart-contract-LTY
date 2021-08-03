@@ -31,10 +31,12 @@ task('deploy-ledgity')
     const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy(args.uniswapRouter, args.usdc);
     const timelock = await (await ethers.getContractFactory('Timelock')).deploy(args.timelockDelay);
     const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc, timelock.address);
-    await ledgity.initialize(reserve.address);
+    const ledgityRouter = await (await ethers.getContractFactory('LedgityRouter')).deploy(args.uniswapRouter);
+    await ledgity.initialize(reserve.address, ledgityRouter.address);
     console.log('Ledgity:', ledgity.address);
     console.log('Timelock', timelock.address);
     console.log('Reserve:', reserve.address);
+    console.log('LedgityRouter:', ledgityRouter.address);
   });
 
 task('deploy-test-environment', 'Setup test environment for testing purposes', async (args, { ethers }) => {
