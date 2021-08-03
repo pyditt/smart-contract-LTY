@@ -66,6 +66,10 @@ describe('LedgityPriceOracle', () => {
       expect(await oracle.PERIOD()).to.eq(PERIOD);
     });
 
+    it('should set initial price', async () => {
+      expect(await oracle.consult(token0.address, toTokens(1))).to.eq(toTokens(10));
+    });
+
     it('should NOT be created when there is no liquidity', async () => {
       const tokenA = await (await ethers.getContractFactory('MockUSDC')).deploy();
       const tokenB = await (await ethers.getContractFactory('MockUSDC')).deploy();
@@ -77,14 +81,7 @@ describe('LedgityPriceOracle', () => {
   });
 
   describe('update and consult', () => {
-    beforeEach(async () => {
-      await evmIncreaseTime(PERIOD);
-    });
-
     async function testPriceDecreases(tokenA: MockERC20, tokenB: MockERC20) {
-      await swap(toTokens(10), tokenA, tokenB, aliceAccount);
-      await oracle.update();
-
       const priceABefore = await oracle.consult(tokenA.address, toTokens(1));
       const priceBBefore = await oracle.consult(tokenB.address, toTokens(1));
       await swap(toTokens(10), tokenA, tokenB, aliceAccount);
@@ -103,9 +100,6 @@ describe('LedgityPriceOracle', () => {
     });
 
     async function testPriceIncreases(tokenA: MockERC20, tokenB: MockERC20) {
-      await swap(toTokens(10), tokenA, tokenB, aliceAccount);
-      await oracle.update();
-
       const priceABefore = await oracle.consult(tokenA.address, toTokens(1));
       const priceBBefore = await oracle.consult(tokenB.address, toTokens(1));
       await swap(toTokens(10), tokenB, tokenA, aliceAccount);
@@ -124,12 +118,14 @@ describe('LedgityPriceOracle', () => {
     });
 
     it('should NOT update more than once per period', async () => {
+      await evmIncreaseTime(PERIOD);
       await oracle.update();
       await evmIncreaseTime(PERIOD - 10);
       await expect(oracle.update()).to.be.revertedWith('LedgityPriceOracle: PERIOD_NOT_ELAPSED');
     });
 
     it('should update after period elapsed', async () => {
+      await evmIncreaseTime(PERIOD);
       await oracle.update();
       await evmIncreaseTime(PERIOD);
       await oracle.update();  // OK

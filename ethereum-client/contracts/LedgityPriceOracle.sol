@@ -35,6 +35,8 @@ contract LedgityPriceOracle {
         uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = _pair.getReserves();
         require(reserve0 != 0 && reserve1 != 0, 'LedgityPriceOracle: NO_RESERVES'); // ensure that there's liquidity in the pair
+        price0Average = FixedPoint.encode(reserve1).divuq(FixedPoint.encode(reserve0));
+        price1Average = FixedPoint.encode(reserve0).divuq(FixedPoint.encode(reserve1));
     }
 
     function update() external {
