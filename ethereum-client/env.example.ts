@@ -1,0 +1,1 @@
+export const PRIVATE_NETWORK_PRIVATE_KEY = ''

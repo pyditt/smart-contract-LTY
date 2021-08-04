@@ -1,6 +1,11 @@
 pragma solidity ^0.6.12;
 
+import "./IUniswapV2Pair.sol";
+
+
 interface IReserve {
+    function uniswapV2Pair() external returns (IUniswapV2Pair);
+
     /**
      * @dev Returns the amount of tokens in existence.
      */
