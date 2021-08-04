@@ -1,6 +1,7 @@
 pragma solidity ^0.6.12;
 
 import "./libraries/ReflectToken.sol";
+import "./libraries/Percent.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
@@ -11,6 +12,7 @@ import "./interfaces/ILedgityPriceOracle.sol";
 
 contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
+    using Percent for Percent.Percent;
 
     uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
@@ -19,11 +21,21 @@ contract Ledgity is ILedgity, ReflectToken {
         Collect
     }
     FeeDestination public feeDestination = FeeDestination.Liquify;
+    Percent.Percent public sellAccumulationFee = Percent.encode(6, 100);
+    Percent.Percent public initialSellAccumulationFee = sellAccumulationFee;
+    Percent.Percent public sellAtSmallPriceAccumulationFee = Percent.encode(6 + 15, 100);
+    Percent.Percent public initialSellAtSmallPriceAccumulationFee = sellAtSmallPriceAccumulationFee;
+    Percent.Percent public sellReflectionFee = Percent.encode(4, 100);
+    Percent.Percent public initialSellReflectionFee = sellReflectionFee;
+    Percent.Percent public buyAccumulationFee = Percent.encode(4, 100);
+    Percent.Percent public initialBuyAccumulationFee = buyAccumulationFee;
 
 
     mapping(address => bool) _isDex;
     mapping(address => bool) public isExcludedFromDexFee;
+    mapping(address => bool) public isExcludedFromLimits;
     mapping(address => uint256) public lastTransactionAt;
+    Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -34,6 +46,8 @@ contract Ledgity is ILedgity, ReflectToken {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
+        isExcludedFromLimits[owner()] = true;
+        isExcludedFromLimits[address(this)] = true;
 
         uniswapV2Pair = IUniswapV2Pair(
             IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
@@ -48,9 +62,12 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address reserveAddress, address priceOracleAddress) public onlyOwner {
+    function initialize(address reserveAddress, address priceOracleAddress, address ledgityRouterAddress) public onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
+        isExcludedFromLimits[address(reserve)] = true;
+        isExcludedFromDexFee[ledgityRouterAddress] = true;
+        isExcludedFromLimits[ledgityRouterAddress] = true;
         priceOracle = ILedgityPriceOracle(priceOracleAddress);
         if (initialPrice == 0) {
             initialPrice = _getPrice();
@@ -69,32 +86,59 @@ contract Ledgity is ILedgity, ReflectToken {
         isExcludedFromDexFee[account] = isExcluded;
     }
 
+    function setIsExcludedFromLimits(address account, bool isExcluded) public onlyOwner {
+        isExcludedFromLimits[account] = isExcluded;
+    }
+
     function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
         numTokensToSwap = _numTokensToSwap;
     }
 
+    function setMaxTransactionSizePercent(uint128 numerator, uint128 denominator) public onlyOwner {
+        maxTransactionSizePercent = Percent.encode(numerator, denominator);
+    }
+
+    function setSellAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellAccumulationFee = Percent.encode(numerator, denominator);
+        require(sellAccumulationFee.lte(initialSellAccumulationFee), "Ledgity: fee too high");
+    }
+
+    function setSellAtSmallPriceAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellAtSmallPriceAccumulationFee = Percent.encode(numerator, denominator);
+        require(sellAtSmallPriceAccumulationFee.lte(initialSellAtSmallPriceAccumulationFee), "Ledgity: fee too high");
+    }
+
+    function setSellReflectionFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        sellReflectionFee = Percent.encode(numerator, denominator);
+        require(sellReflectionFee.lte(initialSellReflectionFee), "Ledgity: fee too high");
+    }
+
+    function setBuyAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+        buyAccumulationFee = Percent.encode(numerator, denominator);
+        require(buyAccumulationFee.lte(initialBuyAccumulationFee), "Ledgity: fee too high");
+    }
+
     function burn(uint256 amount) public override returns (bool) {
-        // TODO
-        revert("Ledgity: not implemented");
-        return false;
+        _burn(_msgSender(), amount);
+        return true;
     }
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            return amount.mul(4).div(100);
+            return sellReflectionFee.mul(amount);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
         if (_isDex[sender] && !isExcludedFromDexFee[recipient]) {
-            return amount.mul(4).div(100);
+            return buyAccumulationFee.mul(amount);
         }
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
             if (_getPrice() >= initialPrice.mul(10)) {
-                return amount.mul(6).div(100);
+                return sellAccumulationFee.mul(amount);
             } else {
-                return amount.mul(6 + 15).div(100);
+                return sellAtSmallPriceAccumulationFee.mul(amount);
             }
         }
         return 0;
@@ -112,11 +156,10 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        // TODO: generalize this
-        require(
-            sender == owner() || sender == address(uniswapV2Pair) || sender == address(reserve) || lastTransactionAt[sender] < block.timestamp.sub(15 minutes),
-            "Ledgity: only one transaction per 15 minutes"
-        );
+        if (!isExcludedFromLimits[sender] && !_isDex[sender]) {
+            require(lastTransactionAt[sender] < block.timestamp.sub(15 minutes), "Ledgity: only one transaction per 15 minutes");
+            require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
+        }
         lastTransactionAt[sender] = block.timestamp;
 
         if (address(priceOracle) != address(0)) {
@@ -126,14 +169,8 @@ contract Ledgity is ILedgity, ReflectToken {
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
-        // TODO: uncomment
-        // if(contractTokenBalance >= maxTokenTx())
-        // {
-        //     contractTokenBalance = maxTokenTx();
-        // }
-        bool overMinTokenBalance = contractTokenBalance >= numTokensToSwap;
         if (
-            overMinTokenBalance &&
+            contractTokenBalance >= numTokensToSwap &&
             !inSwapAndLiquify &&
             sender != address(uniswapV2Pair)
         ) {
@@ -146,5 +183,9 @@ contract Ledgity is ILedgity, ReflectToken {
             return 0;
         }
         return priceOracle.consult(address(this), 1e18);
+    }
+
+    function _maxTransactionSize() private view returns (uint256) {
+        return maxTransactionSizePercent.mul(totalSupply());
     }
 }
