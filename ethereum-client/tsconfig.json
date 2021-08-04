@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitThis": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+  },
+  "include": [
+    "./test",
+    "./scripts",
+    "./typechain",
+    "./shared",
+  ],
+  "files": [
+    "./hardhat.config.ts",
+  ],
+}
