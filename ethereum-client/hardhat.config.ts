@@ -31,7 +31,8 @@ task('deploy-ledgity')
     const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy(args.uniswapRouter, args.usdc);
     const timelock = await (await ethers.getContractFactory('Timelock')).deploy(args.timelockDelay);
     const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc, timelock.address);
-    await ledgity.initialize(reserve.address);
+    const priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await ledgity.uniswapV2Pair());
+    await ledgity.initialize(reserve.address, priceOracle.address);
     console.log('Ledgity:', ledgity.address);
     console.log('Timelock', timelock.address);
     console.log('Reserve:', reserve.address);

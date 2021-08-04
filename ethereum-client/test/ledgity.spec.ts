@@ -2,8 +2,8 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, blockchainTimeTravel, deployUniswap, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
-import { Ledgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
+import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { Ledgity, LedgityPriceOracle, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
 
@@ -20,6 +20,7 @@ describe('Ledgity', () => {
 
   let token: Ledgity;
   let tokenReserve: Reserve;
+  let priceOracle: LedgityPriceOracle;
   let factory: UniswapV2Factory;
   let usdcToken: MockUSDC;
   let router: UniswapV2Router02;
@@ -30,8 +31,10 @@ describe('Ledgity', () => {
 
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
+    await addLiquidityUtil('1000', '100', token, usdcToken, router, alice);
+    priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await token.uniswapV2Pair());
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
-    await token.initialize(tokenReserve.address);
+    await token.initialize(tokenReserve.address, priceOracle.address);
   });
 
   async function getPair() {
@@ -41,10 +44,6 @@ describe('Ledgity', () => {
 
   async function getPairIndices(pair: UniswapV2Pair) {
     return await pair.token0() === token.address ? [0, 1] as const : [1, 0] as const;
-  }
-
-  async function addLiquidity(tokenAmount: BigNumberish, usdcAmount: BigNumberish) {
-    await addLiquidityUtil(tokenAmount, usdcAmount, token, usdcToken, router, alice);
   }
 
   async function sell(tokenAmount: BigNumberish, from: SignerWithAddress) {
@@ -66,7 +65,7 @@ describe('Ledgity', () => {
     await usdcToken.connect(from).approve(router.address, usdcAmount);
     await router.connect(from).swapExactTokensForTokensSupportingFeeOnTransferTokens(
       usdcAmount,
-      0, // accept any amount of USDC
+      0, // accept any amount of tokens
       [usdcToken.address, token.address],
       from.address,
       await getBlockTimestamp() + 3600,
@@ -84,8 +83,28 @@ describe('Ledgity', () => {
     });
 
     it('should send all supply to the owner', async () => {
+      token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
       const balance = await token.balanceOf(alice);
       expect(balance).to.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
+    });
+  });
+
+  describe('initialize', () => {
+    it('should not allow not the owner to call it', async () => {
+      await expect(token.connect(bobAccount).initialize(ZERO_ADDRESS, ZERO_ADDRESS))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('should set initial price', async () => {
+      expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
+    });
+
+    it('should NOT update initial price on another initialize', async () => {
+      await buy(toTokens('500'), aliceAccount);
+      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await priceOracle.update();
+      await token.initialize(ZERO_ADDRESS, priceOracle.address);
+      expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
     });
   });
 
@@ -111,19 +130,15 @@ describe('Ledgity', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
       await token.transfer(bob, 10);  // to allow transfers from Bob's account
       await token.connect(bobAccount).transfer(alice, 1);
-      await blockchainTimeTravel(async travel => {
-        await travel(15 * 60 - 10);  // wait for <15 minutes
-        await expect(token.connect(bobAccount).transfer(charlie, 1))
-          .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
-      });
+      await evmIncreaseTime(15 * 60 - 10);  // wait for <15 minutes
+      await expect(token.connect(bobAccount).transfer(charlie, 1))
+        .to.be.revertedWith('Ledgity: only one transaction per 15 minutes');
     });
 
     it('should allow two transfers from one account with interval greater than 15 minutes', async () => {
       await token.transfer(bob, 1);
-      await blockchainTimeTravel(async travel => {
-        await travel(15 * 60 + 1);  // wait for >15 minutes
-        await token.transfer(charlie, 1);
-      });
+      await evmIncreaseTime(15 * 60 + 1);  // wait for >15 minutes
+      await token.transfer(charlie, 1);
     });
 
     it('should allow two transfers from different accounts within 15 minutes', async () => {
@@ -139,7 +154,6 @@ describe('Ledgity', () => {
 
     it('should not limit uniswap', async () => {
       await usdcToken.mint(alice, toTokens('100000', await usdcToken.decimals()));
-      await addLiquidity('1000', '1000');
       async function doSwap() {
         const usdcAmount = toTokens(100, await usdcToken.decimals());
         await usdcToken.approve(router.address, usdcAmount);
@@ -152,10 +166,6 @@ describe('Ledgity', () => {
   });
 
   describe('transfer: max size', () => {
-    beforeEach(async () => {
-      await addLiquidity('10000', '1000');
-    });
-
     it('should allow owner to transfer any amount of tokens', async () => {
       await token.transfer(bob, await token.balanceOf(alice));
     });
@@ -192,7 +202,6 @@ describe('Ledgity', () => {
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
       await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
       await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
-      await addLiquidity('1000', '100');
       reservesBefore = await pair.getReserves();
     });
 
@@ -206,7 +215,25 @@ describe('Ledgity', () => {
       expect(await token.balanceOf(charlie)).to.eq(amount2);
     });
 
+    it('should update oracle prices to calculate fees', async () => {
+      await buy(toTokens(10), aliceAccount);
+      // Price update is reflected only in the next transfer.
+      const priceBefore = await priceOracle.consult(token.address, toTokens(1));
+      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await buy(toTokens(10), aliceAccount);
+      await buy(toTokens(10), aliceAccount);  // transfer tokens twice to test that updating the price oracle does not revert
+      expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gt(priceBefore);
+    });
+
     it('should charge 6% fee when selling', async () => {
+      // Raise price by x10
+      const priceBefore = await priceOracle.consult(token.address, toTokens(1));
+      await buy(toTokens('217'), aliceAccount);
+      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await priceOracle.update();
+      expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gte(priceBefore.mul(10));  // sanity check
+
+      reservesBefore = await pair.getReserves();
       const contractBalanceBefore = await token.balanceOf(token.address);
       const amount = toTokens('10');
       await sell(amount, aliceAccount);
@@ -219,6 +246,14 @@ describe('Ledgity', () => {
     });
 
     it('should charge 6% + 15% fee when selling if token price is less than x10 IDO price', async () => {
+      // Raise price by x9
+      const priceBefore = await priceOracle.consult(token.address, toTokens(1));
+      await buy(toTokens('216'), aliceAccount);
+      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await priceOracle.update();
+      expect(await priceOracle.consult(token.address, toTokens(1))).to.be.lt(priceBefore.mul(10));  // sanity check
+
+      reservesBefore = await pair.getReserves();
       const contractBalanceBefore = await token.balanceOf(token.address);
       const amount = toTokens('10');
       await sell(amount, aliceAccount);
@@ -340,7 +375,6 @@ describe('Ledgity', () => {
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     beforeEach(async () => {
-      await addLiquidity('10', '1');
       await token.transfer(bob, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
