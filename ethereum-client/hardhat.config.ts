@@ -6,7 +6,15 @@ import { HardhatUserConfig, task } from 'hardhat/config';
 import { PRIVATE_NETWORK_PRIVATE_KEY } from './env';
 
 const config: HardhatUserConfig = {
-  solidity: '0.6.12',
+  solidity: {
+    version: '0.6.12',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   paths: {
     artifacts: './client/src/contracts',
   },

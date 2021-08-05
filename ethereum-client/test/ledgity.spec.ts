@@ -222,7 +222,6 @@ describe('Ledgity', () => {
     beforeEach(async () => {
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
       await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
       reservesBefore = await pair.getReserves();
     });
@@ -740,9 +739,35 @@ describe('Ledgity', () => {
       expect(await token.isDex(bob)).to.eq(true);
     });
 
+    it('should also exclude an account from RFI', async () => {
+      await token.setDex(bob, true);
+      expect(await token.isExcluded(bob)).to.eq(true);
+    });
+
+    it('should re-include an account in RFI', async () => {
+      await token.setDex(bob, true);
+      expect(await token.isExcluded(bob)).to.eq(true);  // sanity check
+      await token.setDex(bob, false);
+      expect(await token.isExcluded(bob)).to.eq(false);
+    });
+
+    it('should NOT revert when called twice', async () => {
+      await token.setDex(bob, true);
+      await token.setDex(bob, true);
+
+      await token.setDex(bob, false);
+      await token.setDex(bob, false);
+    });
+
     it('should NOT allow not the owner to call it', async () => {
       await expect(token.connect(bobAccount).setDex(alice, true))
         .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('should NOT set any account as a DEX by default', async () => {
+      expect(await token.isDex(token.address)).to.eq(false);
+      expect(await token.isDex(alice)).to.eq(false);
+      expect(await token.isDex(bob)).to.eq(false);
     });
   });
 

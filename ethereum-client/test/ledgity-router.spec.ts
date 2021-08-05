@@ -75,7 +75,6 @@ describe('LedgityRouter', () => {
 
   let reservesBefore: { 0: BigNumber, 1: BigNumber; };
   beforeEach(async () => {
-    await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
     await token.excludeAccount(alice);
     await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
     reservesBefore = await pair.getReserves();

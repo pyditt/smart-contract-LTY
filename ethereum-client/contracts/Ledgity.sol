@@ -73,6 +73,12 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function setDex(address target, bool dex) public onlyOwner {
         isDex[target] = dex;
+        if (dex && !isExcluded(target)) {
+            excludeAccount(target);
+        }
+        if (!dex && isExcluded(target)) {
+            includeAccount(target);
+        }
     }
 
     function setFeeDestination(FeeDestination fd) public onlyOwner {

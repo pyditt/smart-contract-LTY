@@ -133,7 +133,7 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         return rAmount.div(currentRate);
     }
 
-    function excludeAccount(address account) external onlyOwner() {
+    function excludeAccount(address account) public onlyOwner() {
         require(!_isExcluded[account], "ReflectToken: account is already excluded");
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
@@ -142,7 +142,7 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         _excluded.push(account);
     }
 
-    function includeAccount(address account) external onlyOwner() {
+    function includeAccount(address account) public onlyOwner() {
         require(_isExcluded[account], "ReflectToken: account is already included");
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
