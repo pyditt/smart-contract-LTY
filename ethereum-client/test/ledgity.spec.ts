@@ -30,11 +30,12 @@ describe('Ledgity', () => {
   });
 
   beforeEach(async () => {
-    token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
+    token = await (await ethers.getContractFactory('Ledgity')).deploy();
+    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
+    await token.initializeReserve(tokenReserve.address);
     await addLiquidityUtil('1000', '100', token, usdcToken, router, alice);
     priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await token.uniswapV2Pair());
-    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
-    await token.initialize(tokenReserve.address, priceOracle.address, ZERO_ADDRESS);
+    await token.initializePriceOracle(priceOracle.address);
   });
 
   async function getPair() {
@@ -83,7 +84,7 @@ describe('Ledgity', () => {
     });
 
     it('should send all supply to the owner', async () => {
-      token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
+      token = await (await ethers.getContractFactory('Ledgity')).deploy();
       const balance = await token.balanceOf(alice);
       expect(balance).to.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
     });
@@ -91,7 +92,9 @@ describe('Ledgity', () => {
 
   describe('initialize', () => {
     it('should not allow not the owner to call it', async () => {
-      await expect(token.connect(bobAccount).initialize(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS))
+      await expect(token.connect(bobAccount).initializeReserve(ZERO_ADDRESS))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(token.connect(bobAccount).initializePriceOracle(ZERO_ADDRESS))
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
 
@@ -103,7 +106,7 @@ describe('Ledgity', () => {
       await buy(toTokens('500'), aliceAccount);
       await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
       await priceOracle.update();
-      await token.initialize(ZERO_ADDRESS, priceOracle.address, ZERO_ADDRESS);
+      await token.initializePriceOracle(priceOracle.address);
       expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
     });
   });

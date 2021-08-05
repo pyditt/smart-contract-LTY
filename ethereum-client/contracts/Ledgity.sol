@@ -42,18 +42,12 @@ contract Ledgity is ILedgity, ReflectToken {
     ILedgityPriceOracle public priceOracle;
     uint256 public initialPrice;
 
-    constructor(address routerAddress, address usdcAddress) public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
         isExcludedFromLimits[owner()] = true;
         isExcludedFromLimits[address(this)] = true;
-
-        uniswapV2Pair = IUniswapV2Pair(
-            IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
-                .createPair(address(this), usdcAddress)
-        );
-        setDex(address(uniswapV2Pair), true);
     }
 
     modifier lockTheSwap {
@@ -62,12 +56,15 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address reserveAddress, address priceOracleAddress, address ledgityRouterAddress) public onlyOwner {
+    function initializeReserve(address reserveAddress) external onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
         isExcludedFromLimits[address(reserve)] = true;
-        isExcludedFromDexFee[ledgityRouterAddress] = true;
-        isExcludedFromLimits[ledgityRouterAddress] = true;
+        uniswapV2Pair = reserve.uniswapV2Pair();
+        setDex(address(uniswapV2Pair), true);
+    }
+
+    function initializePriceOracle(address priceOracleAddress) external onlyOwner {
         priceOracle = ILedgityPriceOracle(priceOracleAddress);
         if (initialPrice == 0) {
             initialPrice = _getPrice();

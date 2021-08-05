@@ -15,7 +15,7 @@ contract Reserve is IReserve, Ownable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public uniswapV2Router;
-    IUniswapV2Pair public uniswapV2Pair;
+    IUniswapV2Pair public override uniswapV2Pair;
     ILedgity public token;
     IERC20 public usdc;
     address public immutable timelock;
@@ -29,8 +29,10 @@ contract Reserve is IReserve, Ownable {
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
-        uniswapV2Pair = IUniswapV2Pair(IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(token), address(usdc)));
-        require(address(uniswapV2Pair) != address(0), "Reserve: pair not created yet");
+        uniswapV2Pair = IUniswapV2Pair(
+            IUniswapV2Factory(IUniswapV2Router02(uniswapRouter).factory())
+                .createPair(TOKEN, USDC)
+        );
         timelock = timelock_;
     }
 
