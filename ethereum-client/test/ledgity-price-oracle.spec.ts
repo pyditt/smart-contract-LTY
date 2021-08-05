@@ -11,11 +11,11 @@ const PERIOD = 12 * 60 * 60;  // 12 hours
 const INITIAL_LIQUIDITY = [toTokens('100000000'), toTokens('1000000000')] as const;  // 1 : 10 price
 
 describe('LedgityPriceOracle', () => {
-  let aliceAccount: SignerWithAddress;
-  let alice: string;
+  let aliceAccount: SignerWithAddress, bobAccount: SignerWithAddress;
+  let alice: string, bob: string;
   before(async () => {
-    [aliceAccount] = await ethers.getSigners();
-    [alice] = [aliceAccount].map(account => account.address);
+    [aliceAccount, bobAccount] = await ethers.getSigners();
+    [alice, bob] = [aliceAccount].map(account => account.address);
   });
 
   let oracle: LedgityPriceOracle;
@@ -63,7 +63,7 @@ describe('LedgityPriceOracle', () => {
 
   describe('constructor', () => {
     it('should be created with 12h period', async () => {
-      expect(await oracle.PERIOD()).to.eq(PERIOD);
+      expect(await oracle.period()).to.eq(PERIOD);
     });
 
     it('should set initial price', async () => {
@@ -129,6 +129,21 @@ describe('LedgityPriceOracle', () => {
       await oracle.update();
       await evmIncreaseTime(PERIOD);
       await oracle.update();  // OK
+    });
+  });
+
+  describe('changePeriod', () => {
+    it('should change period', async () => {
+      await oracle.changePeriod(120);
+      expect(await oracle.period()).to.eq(120);
+    });
+
+    it('should NOT allow not the owner to call it', async () => {
+      await expect(oracle.connect(bobAccount).changePeriod(1)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('should not allow 0 period', async () => {
+      await expect(oracle.changePeriod(0)).to.be.revertedWith('LedgityPriceOracle: INVALID_PERIOD');
     });
   });
 });

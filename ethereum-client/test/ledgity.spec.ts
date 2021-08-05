@@ -104,7 +104,7 @@ describe('Ledgity', () => {
 
     it('should NOT update initial price on another initialize', async () => {
       await buy(toTokens('500'), aliceAccount);
-      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await evmIncreaseTime((await priceOracle.period()).toNumber());
       await priceOracle.update();
       await token.initializePriceOracle(priceOracle.address);
       expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
@@ -241,7 +241,7 @@ describe('Ledgity', () => {
       await buy(toTokens(10), aliceAccount);
       // Price update is reflected only in the next transfer.
       const priceBefore = await priceOracle.consult(token.address, toTokens(1));
-      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await evmIncreaseTime((await priceOracle.period()).toNumber());
       await buy(toTokens(10), aliceAccount);
       await buy(toTokens(10), aliceAccount);  // transfer tokens twice to test that updating the price oracle does not revert
       expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gt(priceBefore);
@@ -265,7 +265,7 @@ describe('Ledgity', () => {
         // Raise price by x10
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('217'), aliceAccount);
-        await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+        await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gte(priceBefore.mul(10));  // sanity check
       });
@@ -290,7 +290,7 @@ describe('Ledgity', () => {
         // Raise price by x9
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('216'), aliceAccount);
-        await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+        await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.lt(priceBefore.mul(10));  // sanity check
       });
