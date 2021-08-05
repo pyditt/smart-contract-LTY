@@ -26,7 +26,7 @@ contract Reserve is IReserve, Ownable {
     }
 
     constructor(address uniswapRouter, address TOKEN, address USDC, address timelock_) public {
-        require(timelock_ != address(0), "timelock_ not address ZERO");
+        require(timelock_ != address(0), "Reserve: invalid timelock address");
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
