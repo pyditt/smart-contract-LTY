@@ -6,7 +6,6 @@ import './interfaces/ILedgityPriceOracle.sol';
 import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 import './libraries/SafeMath.sol';
 import './libraries/Ownable.sol';
-import './libraries/UniswapV2Library.sol';
 import './libraries/UniswapV2OracleLibrary.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period

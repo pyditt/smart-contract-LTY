@@ -450,6 +450,15 @@ describe('Ledgity', () => {
     });
   });
 
+  describe('totalFees', () => {
+    it('should record fees', async () => {
+      await token.setIsExcludedFromDexFee(alice, false);
+      const amount = toTokens(10);
+      await sell(amount, aliceAccount);
+      expect(await token.totalFees()).to.eq(amount.mul(4).div(100));
+    });
+  });
+
   describe('exclusion from dex fee', () => {
     it('should exclude the owner by default', async () => {
       expect(await token.isExcludedFromDexFee(alice)).to.eq(true);

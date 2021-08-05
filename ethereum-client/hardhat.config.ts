@@ -3,6 +3,7 @@ import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'hardhat-deploy';
 import { HardhatUserConfig, task } from 'hardhat/config';
+import 'solidity-coverage';
 import { PRIVATE_NETWORK_PRIVATE_KEY } from './env';
 
 const config: HardhatUserConfig = {
