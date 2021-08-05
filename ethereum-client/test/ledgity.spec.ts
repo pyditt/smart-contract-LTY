@@ -705,10 +705,15 @@ describe('Ledgity', () => {
   });
 
   describe('account exclusion', () => {
-    it('by default accounts must not be excluded', async () => {
+    it('should exclude token, reserve, and uniswap pair from RFI by default', async () => {
+      expect(await token.isExcluded(token.address)).to.eq(true);
+      expect(await token.isExcluded(tokenReserve.address)).to.eq(true);
+      expect(await token.isExcluded((await getPair()).address)).to.eq(true);
+    });
+
+    it('should not exclude user accounts by default', async () => {
       expect(await token.isExcluded(alice)).to.eq(false);
       expect(await token.isExcluded(bob)).to.eq(false);
-      expect(await token.isExcluded(token.address)).to.eq(false);
     });
 
     it('should exclude an account', async () => {
