@@ -555,7 +555,7 @@ describe('Ledgity', () => {
       expect(await token.feeDestination()).to.eq(1);
       await token.setFeeDestination(0);
       expect(await token.feeDestination()).to.eq(0);
-      await expect(token.setFeeDestination(10)).to.be.reverted;
+      await expect(token.setFeeDestination(2)).to.be.reverted;
     });
 
     it('should NOT be changeable by not the owner', async () => {
@@ -584,6 +584,13 @@ describe('Ledgity', () => {
       const reserves = await pair.getReserves();
       expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex]);
       expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex]);
+    });
+
+    it('should swap and liquify/collect exactly numTokensToSwap', async () => {
+      const excess = toTokens('100');
+      await token.transfer(token.address, excess);
+      await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+      expect(await token.balanceOf(token.address)).to.eq(excess);
     });
 
     describe('swapAndLiquify', () => {

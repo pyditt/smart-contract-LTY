@@ -179,6 +179,9 @@ contract Ledgity is ILedgity, ReflectToken {
             !inSwapAndLiquify &&
             sender != address(uniswapV2Pair)
         ) {
+            if (contractTokenBalance > numTokensToSwap) {
+                contractTokenBalance = numTokensToSwap;
+            }
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
     }
