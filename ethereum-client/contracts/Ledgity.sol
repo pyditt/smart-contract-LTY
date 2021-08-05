@@ -31,7 +31,7 @@ contract Ledgity is ILedgity, ReflectToken {
     Percent.Percent public initialBuyAccumulationFee = buyAccumulationFee;
 
 
-    mapping(address => bool) _isDex;
+    mapping(address => bool) public isDex;
     mapping(address => bool) public isExcludedFromDexFee;
     mapping(address => bool) public isExcludedFromLimits;
     mapping(address => uint256) public lastTransactionAt;
@@ -71,8 +71,8 @@ contract Ledgity is ILedgity, ReflectToken {
         }
     }
 
-    function setDex(address target, bool isDex) public onlyOwner {
-        _isDex[target] = isDex;
+    function setDex(address target, bool dex) public onlyOwner {
+        isDex[target] = dex;
     }
 
     function setFeeDestination(FeeDestination fd) public onlyOwner {
@@ -121,17 +121,17 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
             return sellReflectionFee.mul(amount);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (_isDex[sender] && !isExcludedFromDexFee[recipient]) {
+        if (isDex[sender] && !isExcludedFromDexFee[recipient]) {
             return buyAccumulationFee.mul(amount);
         }
-        if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
             if (_getPrice() >= initialPrice.mul(10)) {
                 return sellAccumulationFee.mul(amount);
             } else {
@@ -153,7 +153,7 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        if (!isExcludedFromLimits[sender] && !_isDex[sender]) {
+        if (!isExcludedFromLimits[sender] && !isDex[sender]) {
             require(lastTransactionAt[sender] < block.timestamp.sub(15 minutes), "Ledgity: only one transaction per 15 minutes");
             require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
         }
