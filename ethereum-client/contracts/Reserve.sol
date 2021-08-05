@@ -26,17 +26,18 @@ contract Reserve is IReserve, Ownable {
     }
 
     constructor(address uniswapRouter, address TOKEN, address USDC, address timelock_) public {
+        require(timelock_ != address(0), "timelock_ not address ZERO");
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
         token = ILedgity(TOKEN);
         usdc = IERC20(USDC);
+        timelock = timelock_;
         uniswapV2Pair = IUniswapV2Pair(
             IUniswapV2Factory(IUniswapV2Router02(uniswapRouter).factory())
                 .createPair(TOKEN, USDC)
         );
-        timelock = timelock_;
     }
 
-    function buyAndBurn(uint256 usdcAmount) public override onlyOwner {
+    function buyAndBurn(uint256 usdcAmount) external override onlyOwner {
         address[] memory path = new address[](2);
         path[0] = address(usdc);
         path[1] = address(token);

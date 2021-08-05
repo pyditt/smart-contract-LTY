@@ -87,43 +87,43 @@ contract Ledgity is ILedgity, ReflectToken {
         feeDestination = fd;
     }
 
-    function setIsExcludedFromDexFee(address account, bool isExcluded) public onlyOwner {
+    function setIsExcludedFromDexFee(address account, bool isExcluded) external onlyOwner {
         isExcludedFromDexFee[account] = isExcluded;
     }
 
-    function setIsExcludedFromLimits(address account, bool isExcluded) public onlyOwner {
+    function setIsExcludedFromLimits(address account, bool isExcluded) external onlyOwner {
         isExcludedFromLimits[account] = isExcluded;
     }
 
-    function setNumTokensToSwap(uint256 _numTokensToSwap) public onlyOwner {
+    function setNumTokensToSwap(uint256 _numTokensToSwap) external onlyOwner {
         numTokensToSwap = _numTokensToSwap;
     }
 
-    function setMaxTransactionSizePercent(uint128 numerator, uint128 denominator) public onlyOwner {
+    function setMaxTransactionSizePercent(uint128 numerator, uint128 denominator) external onlyOwner {
         maxTransactionSizePercent = Percent.encode(numerator, denominator);
     }
 
-    function setSellAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+    function setSellAccumulationFee(uint128 numerator, uint128 denominator) external onlyOwner {
         sellAccumulationFee = Percent.encode(numerator, denominator);
         require(sellAccumulationFee.lte(initialSellAccumulationFee), "Ledgity: fee too high");
     }
 
-    function setSellAtSmallPriceAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+    function setSellAtSmallPriceAccumulationFee(uint128 numerator, uint128 denominator) external onlyOwner {
         sellAtSmallPriceAccumulationFee = Percent.encode(numerator, denominator);
         require(sellAtSmallPriceAccumulationFee.lte(initialSellAtSmallPriceAccumulationFee), "Ledgity: fee too high");
     }
 
-    function setSellReflectionFee(uint128 numerator, uint128 denominator) public onlyOwner {
+    function setSellReflectionFee(uint128 numerator, uint128 denominator) external onlyOwner {
         sellReflectionFee = Percent.encode(numerator, denominator);
         require(sellReflectionFee.lte(initialSellReflectionFee), "Ledgity: fee too high");
     }
 
-    function setBuyAccumulationFee(uint128 numerator, uint128 denominator) public onlyOwner {
+    function setBuyAccumulationFee(uint128 numerator, uint128 denominator) external onlyOwner {
         buyAccumulationFee = Percent.encode(numerator, denominator);
         require(buyAccumulationFee.lte(initialBuyAccumulationFee), "Ledgity: fee too high");
     }
 
-    function burn(uint256 amount) public override returns (bool) {
+    function burn(uint256 amount) external override returns (bool) {
         _burn(_msgSender(), amount);
         return true;
     }

@@ -1,4 +1,4 @@
-pragma solidity =0.6.12;
+pragma solidity ^0.6.12;
 
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Pair.sol';
@@ -6,7 +6,6 @@ import './interfaces/ILedgityPriceOracle.sol';
 import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 import './libraries/SafeMath.sol';
 import './libraries/Ownable.sol';
-import './libraries/UniswapV2Library.sol';
 import './libraries/UniswapV2OracleLibrary.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period
