@@ -36,12 +36,6 @@ contract Reserve is IReserve, Ownable {
         timelock = timelock_;
     }
 
-    // TODO: remove this
-    function getBalances() view public override returns(uint256 LTYbalance, uint256 USDCbalance){
-        LTYbalance = token.balanceOf(address(this));
-        USDCbalance = usdc.balanceOf(address(this));
-    }
-
     function buyAndBurn(uint256 usdcAmount) public override onlyOwner {
         address[] memory path = new address[](2);
         path[0] = address(usdc);
