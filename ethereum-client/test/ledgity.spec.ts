@@ -648,9 +648,8 @@ describe('Ledgity', () => {
       await expect(await token.approve(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 10);
       await expect(await token.approve(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 20);
       await expect(await token.connect(bobAccount).transferFrom(alice, charlie, 5)).to.emit(token, 'Approval').withArgs(alice, bob, 15);
-      // TODO: uncomment
-      // await expect(await token.increaseAllowance(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 25);
-      // await expect(await token.decreaseAllowance(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 5);
+      await expect(await token.increaseAllowance(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 25);
+      await expect(await token.decreaseAllowance(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 5);
     });
 
 
@@ -689,19 +688,17 @@ describe('Ledgity', () => {
       expect(await token.allowance(alice, charlie)).to.eq('3');
     });
 
-    // TODO: uncomment
-    // it('should increase allowance', async () => {
-    //   await token.approve(charlie, 10);
-    //   await token.increaseAllowance(charlie, 5);
-    //   expect(await token.allowance(alice, charlie)).to.eq('15');
-    // });
+    it('should increase allowance', async () => {
+      await token.approve(charlie, 10);
+      await token.increaseAllowance(charlie, 5);
+      expect(await token.allowance(alice, charlie)).to.eq('15');
+    });
 
-    // TODO: uncomment
-    // it('should decrease allowance', async () => {
-    //   await token.approve(charlie, 10);
-    //   await token.decreaseAllowance(charlie, 5);
-    //   expect(await token.allowance(alice, charlie)).to.eq('5');
-    // });
+    it('should decrease allowance', async () => {
+      await token.approve(charlie, 10);
+      await token.decreaseAllowance(charlie, 5);
+      expect(await token.allowance(alice, charlie)).to.eq('5');
+    });
   });
 
   describe('account exclusion', () => {

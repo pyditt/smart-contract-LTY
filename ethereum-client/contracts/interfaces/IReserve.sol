@@ -25,8 +25,6 @@ interface IReserve {
      */
     function buyAndBurn(uint256 usdcAmount) external;
 
-    function getBalances() view external returns(uint256 LTYbalance, uint256 USDCbalance);
-
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
