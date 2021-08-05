@@ -7,6 +7,7 @@ import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
+import "./interfaces/ILedgityPriceOracle.sol";
 
 
 contract Ledgity is ILedgity, ReflectToken {
@@ -38,19 +39,15 @@ contract Ledgity is ILedgity, ReflectToken {
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
+    ILedgityPriceOracle public priceOracle;
+    uint256 public initialPrice;
 
-    constructor(address routerAddress, address usdcAddress) public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
         isExcludedFromLimits[owner()] = true;
         isExcludedFromLimits[address(this)] = true;
-
-        uniswapV2Pair = IUniswapV2Pair(
-            IUniswapV2Factory(IUniswapV2Router02(routerAddress).factory())
-                .createPair(address(this), usdcAddress)
-        );
-        setDex(address(uniswapV2Pair), true);
     }
 
     modifier lockTheSwap {
@@ -59,12 +56,19 @@ contract Ledgity is ILedgity, ReflectToken {
         inSwapAndLiquify = false;
     }
 
-    function initialize(address reserveAddress, address ledgityRouterAddress) public onlyOwner {
+    function initializeReserve(address reserveAddress) external onlyOwner {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
         isExcludedFromLimits[address(reserve)] = true;
-        isExcludedFromDexFee[ledgityRouterAddress] = true;
-        isExcludedFromLimits[ledgityRouterAddress] = true;
+        uniswapV2Pair = reserve.uniswapV2Pair();
+        setDex(address(uniswapV2Pair), true);
+    }
+
+    function initializePriceOracle(address priceOracleAddress) external onlyOwner {
+        priceOracle = ILedgityPriceOracle(priceOracleAddress);
+        if (initialPrice == 0) {
+            initialPrice = _getPrice();
+        }
     }
 
     function setDex(address target, bool isDex) public onlyOwner {
@@ -128,7 +132,11 @@ contract Ledgity is ILedgity, ReflectToken {
             return buyAccumulationFee.mul(amount);
         }
         if (_isDex[recipient] && !isExcludedFromDexFee[sender]) {
-            return sellAccumulationFee.mul(amount);
+            if (_getPrice() >= initialPrice.mul(10)) {
+                return sellAccumulationFee.mul(amount);
+            } else {
+                return sellAtSmallPriceAccumulationFee.mul(amount);
+            }
         }
         return 0;
     }
@@ -150,6 +158,11 @@ contract Ledgity is ILedgity, ReflectToken {
             require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
         }
         lastTransactionAt[sender] = block.timestamp;
+
+        if (address(priceOracle) != address(0)) {
+            priceOracle.tryUpdate();
+        }
+
         super._transfer(sender, recipient, amount);
 
         uint256 contractTokenBalance = balanceOf(address(this));
@@ -160,6 +173,13 @@ contract Ledgity is ILedgity, ReflectToken {
         ) {
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+    }
+
+    function _getPrice() private view returns (uint256) {
+        if (address(priceOracle) == address(0)) {
+            return 0;
+        }
+        return priceOracle.consult(address(this), 1e18);
     }
 
     function _maxTransactionSize() private view returns (uint256) {

@@ -30,9 +30,12 @@ describe('LedgityRouter', () => {
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
     await usdcToken.mint(alice, toTokens('100000000000'));
 
-    token = await (await ethers.getContractFactory('Ledgity')).deploy(uniswapRouter.address, usdcToken.address);
+    token = await (await ethers.getContractFactory('Ledgity')).deploy();
+    const tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(uniswapRouter.address, token.address, usdcToken.address, ZERO_ADDRESS);
+    token.initializeReserve(tokenReserve.address);
     ledgityRouter = await (await ethers.getContractFactory('LedgityRouter')).deploy(uniswapRouter.address);
-    await token.initialize(ZERO_ADDRESS, ledgityRouter.address);
+    await token.setIsExcludedFromDexFee(ledgityRouter.address, true);
+    await token.setIsExcludedFromLimits(ledgityRouter.address, true);
 
     pair = await ethers.getContractAt(UniswapV2PairArtifact.abi, await factory.getPair(token.address, usdcToken.address)) as UniswapV2Pair;
     [tokenIndex, usdcIndex] = await pair.token0() === token.address ? [0, 1] : [1, 0];
@@ -51,7 +54,7 @@ describe('LedgityRouter', () => {
     await token.setIsExcludedFromDexFee(alice, wasExcluded);
   }
 
-  async function addLiquidityLedgityRouter(tokenA: IERC20, tokenB: IERC20, amountA: BigNumberish, amountB: BigNumberish, from: SignerWithAddress, to: address) {
+  async function addLiquidityLedgityRouter(tokenA: IERC20, tokenB: IERC20, amountA: BigNumberish, amountB: BigNumberish, from: SignerWithAddress, to: string) {
     await tokenA.connect(from).approve(ledgityRouter.address, amountA);
     await tokenB.connect(from).approve(ledgityRouter.address, amountB);
     await ledgityRouter.connect(from).addLiquidityBypassingFee(

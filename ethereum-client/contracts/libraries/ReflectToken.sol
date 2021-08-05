@@ -84,15 +84,17 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
-        return true;
-    }
+    // TODO: we removed this functions because contract is too big.
+    //  should we return them?
+    // function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    //     _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+    //     return true;
+    // }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ReflectToken: decreased allowance below zero"));
-        return true;
-    }
+    // function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    //     _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ReflectToken: decreased allowance below zero"));
+    //     return true;
+    // }
 
     function isExcluded(address account) public view returns (bool) {
         return _isExcluded[account];
@@ -102,14 +104,16 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         return _tFeeTotal;
     }
 
-    function reflect(uint256 tAmount) public {
-        address sender = _msgSender();
-        require(!_isExcluded[sender], "ReflectToken: excluded addresses cannot call this function");
-        (uint256 rAmount,,,,,,) = _getValues(sender, address(0), tAmount);
-        _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rTotal = _rTotal.sub(rAmount);
-        _tFeeTotal = _tFeeTotal.add(tAmount);
-    }
+    // TODO: we removed this function because contract is too big.
+    //  should we return it?
+    // function reflect(uint256 tAmount) public {
+    //     address sender = _msgSender();
+    //     require(!_isExcluded[sender], "ReflectToken: excluded addresses cannot call this function");
+    //     (uint256 rAmount,,,,,,) = _getValues(sender, address(0), tAmount);
+    //     _rOwned[sender] = _rOwned[sender].sub(rAmount);
+    //     _rTotal = _rTotal.sub(rAmount);
+    //     _tFeeTotal = _tFeeTotal.add(tAmount);
+    // }
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
         require(tAmount <= _tTotal, "ReflectToken: amount must be less than supply");
