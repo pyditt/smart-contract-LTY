@@ -4,6 +4,8 @@ Working directory: `ethereum-client`.
 
 ## Setup project
 
+Copy `env.example.ts` and rename it to `env.ts`. Fill in all the variables there.
+
 Install dependencies
 
 ```sh
