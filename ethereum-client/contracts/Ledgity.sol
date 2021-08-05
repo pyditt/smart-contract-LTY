@@ -48,6 +48,7 @@ contract Ledgity is ILedgity, ReflectToken {
         isExcludedFromDexFee[address(this)] = true;
         isExcludedFromLimits[owner()] = true;
         isExcludedFromLimits[address(this)] = true;
+        excludeAccount(address(this));
     }
 
     modifier lockTheSwap {
@@ -60,6 +61,7 @@ contract Ledgity is ILedgity, ReflectToken {
         reserve = IReserve(reserveAddress);
         isExcludedFromDexFee[address(reserve)] = true;
         isExcludedFromLimits[address(reserve)] = true;
+        excludeAccount(address(reserve));
         uniswapV2Pair = reserve.uniswapV2Pair();
         setDex(address(uniswapV2Pair), true);
     }
