@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
-import { deployUniswap, getBlockTimestamp, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { deployUniswap, getBlockTimestamp, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { IERC20, Ledgity, LedgityRouter, MockUSDC, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 
@@ -31,7 +31,7 @@ describe('LedgityRouter', () => {
     await usdcToken.mint(alice, toTokens('100000000000'));
 
     token = await (await ethers.getContractFactory('Ledgity')).deploy();
-    const tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(uniswapRouter.address, token.address, usdcToken.address, ZERO_ADDRESS);
+    const tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(uniswapRouter.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
     token.initializeReserve(tokenReserve.address);
     ledgityRouter = await (await ethers.getContractFactory('LedgityRouter')).deploy(uniswapRouter.address);
     await token.setIsExcludedFromDexFee(ledgityRouter.address, true);
