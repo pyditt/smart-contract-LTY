@@ -1,4 +1,4 @@
-pragma solidity =0.6.12;
+pragma solidity ^0.6.12;
 
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Pair.sol';

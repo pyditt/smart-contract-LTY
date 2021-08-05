@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, LedgityPriceOracle, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -31,7 +31,7 @@ describe('Ledgity', () => {
 
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy();
-    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
+    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
     await token.initializeReserve(tokenReserve.address);
     await addLiquidityUtil('1000', '100', token, usdcToken, router, alice);
     priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await token.uniswapV2Pair());

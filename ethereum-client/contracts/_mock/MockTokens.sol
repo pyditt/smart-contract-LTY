@@ -12,19 +12,19 @@ contract MockLedgity is MockERC20 {
 
     constructor() public MockERC20("MockLedgity", "MLTY") { }
 
-    function setReserve(address _reserve) public {
+    function setReserve(address _reserve) external {
         reserve = IReserve(_reserve);
     }
 
-    function swapAndCollect(uint256 tokenAmount) public {
+    function swapAndCollect(uint256 tokenAmount) external {
         reserve.swapAndCollect(tokenAmount);
     }
 
-    function swapAndLiquify(uint256 tokenAmount) public {
+    function swapAndLiquify(uint256 tokenAmount) external {
         reserve.swapAndLiquify(tokenAmount);
     }
 
-    function burn(uint256 amount) public returns (bool) {
+    function burn(uint256 amount) external returns (bool) {
         require(balanceOf[msg.sender] >= amount, "MockLedgity: non enough tokens to burn");
         totalSupply -= amount;
         balanceOf[msg.sender] -= amount;

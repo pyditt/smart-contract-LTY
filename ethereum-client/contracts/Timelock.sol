@@ -20,11 +20,11 @@ contract Timelock is Ownable {
         unlockAt = block.timestamp.add(delay);
     }
 
-    function withdraw(address token, uint256 amount) public onlyOwner unlocked {
+    function withdraw(address token, uint256 amount) external onlyOwner unlocked {
         SafeERC20.safeTransfer(token, msg.sender, amount);
     }
 
-    function setDelay(uint256 delay) public onlyOwner unlocked {
+    function setDelay(uint256 delay) external onlyOwner unlocked {
         unlockAt = block.timestamp.add(delay);
     }
 }
