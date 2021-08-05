@@ -5,3 +5,7 @@ typechain
 
 # Environment
 env.ts
+
+# Tests
+coverage
+coverage.json
