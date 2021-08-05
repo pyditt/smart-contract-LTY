@@ -36,3 +36,11 @@ To run tests faster(by skipping the typechecking step):
 ```sh
 TS_NODE_TRANSPILE_ONLY=1 hh test
 ```
+
+## Run tests with coverage
+
+```sh
+hh coverage
+```
+
+Open `coverage/index.html` in the browser.
