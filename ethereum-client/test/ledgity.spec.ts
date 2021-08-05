@@ -310,12 +310,11 @@ describe('Ledgity', () => {
     });
 
     it('should distribute 4% of transferred tokens among holders when selling', async () => {
-      // Alice - 10/20, Bob - 7/20, Charlie - 3/20
-      const available = await token.balanceOf(alice);
-      await token.transfer(bob, available.mul(7).div(20));
-      await token.transfer(charlie, available.mul(3).div(20));
-      expect(await token.balanceOf(alice)).to.eq(available.mul(10).div(20), 'sanity check');
-      const aliceBalanceBefore = await token.balanceOf(alice);
+      await token.excludeAccount(alice);  // to make an accurate expectation
+
+      // Bob - 7/10, Charlie - 3/10
+      await token.transfer(bob, toTokens(7));
+      await token.transfer(charlie, toTokens(3));
       const bobBalanceBefore = await token.balanceOf(bob);
       const charlieBalanceBefore = await token.balanceOf(charlie);
 
@@ -323,26 +322,8 @@ describe('Ledgity', () => {
       await sell(amount, aliceAccount);
 
       const tokensDistributed = amount.mul(4).div(100);
-      const balancesSum = aliceBalanceBefore.add(bobBalanceBefore).add(charlieBalanceBefore);
-      expect(await token.balanceOf(alice)).to.not.eq(aliceBalanceBefore, 'Alice before');
-      expect(await token.balanceOf(alice)).to.closeTo(
-        aliceBalanceBefore.sub(amount).add(tokensDistributed.mul(aliceBalanceBefore).div(balancesSum)),
-        1,
-        'Alice',
-      );
-      expect(await token.balanceOf(bob)).to.not.eq(bobBalanceBefore, 'Bob before');
-      expect(await token.balanceOf(bob)).to.closeTo(
-        bobBalanceBefore.add(tokensDistributed.mul(bobBalanceBefore).div(balancesSum)),
-        1,
-        'Bob',
-      );
-      expect(await token.balanceOf(charlie)).to.not.eq(charlieBalanceBefore, 'Charlie before');
-      expect(await token.balanceOf(charlie)).to.closeTo(
-        charlieBalanceBefore.add(tokensDistributed.mul(charlieBalanceBefore).div(balancesSum)),
-        1,
-        'Charlie',
-      );
-      expect(await token.balanceOf(token.address)).to.eq(amount.mul(4 + 6).div(100), 'token balance');
+      expect(await token.balanceOf(bob)).to.closeTo(bobBalanceBefore.add(tokensDistributed.mul(7).div(10)), 1);
+      expect(await token.balanceOf(charlie)).to.closeTo(charlieBalanceBefore.add(tokensDistributed.mul(3).div(10)), 1);
     });
 
     async function testBuyFee(numerator: BigNumberish, denominator: BigNumberish) {
