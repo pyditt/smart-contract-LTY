@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, LedgityPriceOracle, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -30,11 +30,12 @@ describe('Ledgity', () => {
   });
 
   beforeEach(async () => {
-    token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
+    token = await (await ethers.getContractFactory('Ledgity')).deploy();
+    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
+    await token.initializeReserve(tokenReserve.address);
     await addLiquidityUtil('1000', '100', token, usdcToken, router, alice);
     priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await token.uniswapV2Pair());
-    tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, ZERO_ADDRESS);
-    await token.initialize(tokenReserve.address, priceOracle.address, ZERO_ADDRESS);
+    await token.initializePriceOracle(priceOracle.address);
   });
 
   async function getPair() {
@@ -83,7 +84,7 @@ describe('Ledgity', () => {
     });
 
     it('should send all supply to the owner', async () => {
-      token = await (await ethers.getContractFactory('Ledgity')).deploy(router.address, usdcToken.address);
+      token = await (await ethers.getContractFactory('Ledgity')).deploy();
       const balance = await token.balanceOf(alice);
       expect(balance).to.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
     });
@@ -91,7 +92,9 @@ describe('Ledgity', () => {
 
   describe('initialize', () => {
     it('should not allow not the owner to call it', async () => {
-      await expect(token.connect(bobAccount).initialize(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS))
+      await expect(token.connect(bobAccount).initializeReserve(ZERO_ADDRESS))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(token.connect(bobAccount).initializePriceOracle(ZERO_ADDRESS))
         .to.be.revertedWith('Ownable: caller is not the owner');
     });
 
@@ -101,9 +104,9 @@ describe('Ledgity', () => {
 
     it('should NOT update initial price on another initialize', async () => {
       await buy(toTokens('500'), aliceAccount);
-      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await evmIncreaseTime((await priceOracle.period()).toNumber());
       await priceOracle.update();
-      await token.initialize(ZERO_ADDRESS, priceOracle.address, ZERO_ADDRESS);
+      await token.initializePriceOracle(priceOracle.address);
       expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
     });
   });
@@ -219,7 +222,6 @@ describe('Ledgity', () => {
     beforeEach(async () => {
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
-      await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
       await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
       reservesBefore = await pair.getReserves();
     });
@@ -238,7 +240,7 @@ describe('Ledgity', () => {
       await buy(toTokens(10), aliceAccount);
       // Price update is reflected only in the next transfer.
       const priceBefore = await priceOracle.consult(token.address, toTokens(1));
-      await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+      await evmIncreaseTime((await priceOracle.period()).toNumber());
       await buy(toTokens(10), aliceAccount);
       await buy(toTokens(10), aliceAccount);  // transfer tokens twice to test that updating the price oracle does not revert
       expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gt(priceBefore);
@@ -262,7 +264,7 @@ describe('Ledgity', () => {
         // Raise price by x10
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('217'), aliceAccount);
-        await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+        await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gte(priceBefore.mul(10));  // sanity check
       });
@@ -287,7 +289,7 @@ describe('Ledgity', () => {
         // Raise price by x9
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('216'), aliceAccount);
-        await evmIncreaseTime((await priceOracle.PERIOD()).toNumber());
+        await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.lt(priceBefore.mul(10));  // sanity check
       });
@@ -308,12 +310,11 @@ describe('Ledgity', () => {
     });
 
     it('should distribute 4% of transferred tokens among holders when selling', async () => {
-      // Alice - 10/20, Bob - 7/20, Charlie - 3/20
-      const available = await token.balanceOf(alice);
-      await token.transfer(bob, available.mul(7).div(20));
-      await token.transfer(charlie, available.mul(3).div(20));
-      expect(await token.balanceOf(alice)).to.eq(available.mul(10).div(20), 'sanity check');
-      const aliceBalanceBefore = await token.balanceOf(alice);
+      await token.excludeAccount(alice);  // to make an accurate expectation
+
+      // Bob - 7/10, Charlie - 3/10
+      await token.transfer(bob, toTokens(7));
+      await token.transfer(charlie, toTokens(3));
       const bobBalanceBefore = await token.balanceOf(bob);
       const charlieBalanceBefore = await token.balanceOf(charlie);
 
@@ -321,26 +322,8 @@ describe('Ledgity', () => {
       await sell(amount, aliceAccount);
 
       const tokensDistributed = amount.mul(4).div(100);
-      const balancesSum = aliceBalanceBefore.add(bobBalanceBefore).add(charlieBalanceBefore);
-      expect(await token.balanceOf(alice)).to.not.eq(aliceBalanceBefore, 'Alice before');
-      expect(await token.balanceOf(alice)).to.closeTo(
-        aliceBalanceBefore.sub(amount).add(tokensDistributed.mul(aliceBalanceBefore).div(balancesSum)),
-        1,
-        'Alice',
-      );
-      expect(await token.balanceOf(bob)).to.not.eq(bobBalanceBefore, 'Bob before');
-      expect(await token.balanceOf(bob)).to.closeTo(
-        bobBalanceBefore.add(tokensDistributed.mul(bobBalanceBefore).div(balancesSum)),
-        1,
-        'Bob',
-      );
-      expect(await token.balanceOf(charlie)).to.not.eq(charlieBalanceBefore, 'Charlie before');
-      expect(await token.balanceOf(charlie)).to.closeTo(
-        charlieBalanceBefore.add(tokensDistributed.mul(charlieBalanceBefore).div(balancesSum)),
-        1,
-        'Charlie',
-      );
-      expect(await token.balanceOf(token.address)).to.eq(amount.mul(4 + 6).div(100), 'token balance');
+      expect(await token.balanceOf(bob)).to.closeTo(bobBalanceBefore.add(tokensDistributed.mul(7).div(10)), 1);
+      expect(await token.balanceOf(charlie)).to.closeTo(charlieBalanceBefore.add(tokensDistributed.mul(3).div(10)), 1);
     });
 
     async function testBuyFee(numerator: BigNumberish, denominator: BigNumberish) {
@@ -467,6 +450,15 @@ describe('Ledgity', () => {
     });
   });
 
+  describe('totalFees', () => {
+    it('should record fees', async () => {
+      await token.setIsExcludedFromDexFee(alice, false);
+      const amount = toTokens(10);
+      await sell(amount, aliceAccount);
+      expect(await token.totalFees()).to.eq(amount.mul(4).div(100));
+    });
+  });
+
   describe('exclusion from dex fee', () => {
     it('should exclude the owner by default', async () => {
       expect(await token.isExcludedFromDexFee(alice)).to.eq(true);
@@ -553,7 +545,7 @@ describe('Ledgity', () => {
       expect(await token.feeDestination()).to.eq(1);
       await token.setFeeDestination(0);
       expect(await token.feeDestination()).to.eq(0);
-      await expect(token.setFeeDestination(10)).to.be.reverted;
+      await expect(token.setFeeDestination(2)).to.be.reverted;
     });
 
     it('should NOT be changeable by not the owner', async () => {
@@ -582,6 +574,13 @@ describe('Ledgity', () => {
       const reserves = await pair.getReserves();
       expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex]);
       expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex]);
+    });
+
+    it('should swap and liquify/collect exactly numTokensToSwap', async () => {
+      const excess = toTokens('100');
+      await token.transfer(token.address, excess);
+      await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+      expect(await token.balanceOf(token.address)).to.eq(excess);
     });
 
     describe('swapAndLiquify', () => {
@@ -646,9 +645,8 @@ describe('Ledgity', () => {
       await expect(await token.approve(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 10);
       await expect(await token.approve(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 20);
       await expect(await token.connect(bobAccount).transferFrom(alice, charlie, 5)).to.emit(token, 'Approval').withArgs(alice, bob, 15);
-      // TODO: uncomment
-      // await expect(await token.increaseAllowance(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 25);
-      // await expect(await token.decreaseAllowance(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 5);
+      await expect(await token.increaseAllowance(bob, 10)).to.emit(token, 'Approval').withArgs(alice, bob, 25);
+      await expect(await token.decreaseAllowance(bob, 20)).to.emit(token, 'Approval').withArgs(alice, bob, 5);
     });
 
 
@@ -687,26 +685,29 @@ describe('Ledgity', () => {
       expect(await token.allowance(alice, charlie)).to.eq('3');
     });
 
-    // TODO: uncomment
-    // it('should increase allowance', async () => {
-    //   await token.approve(charlie, 10);
-    //   await token.increaseAllowance(charlie, 5);
-    //   expect(await token.allowance(alice, charlie)).to.eq('15');
-    // });
+    it('should increase allowance', async () => {
+      await token.approve(charlie, 10);
+      await token.increaseAllowance(charlie, 5);
+      expect(await token.allowance(alice, charlie)).to.eq('15');
+    });
 
-    // TODO: uncomment
-    // it('should decrease allowance', async () => {
-    //   await token.approve(charlie, 10);
-    //   await token.decreaseAllowance(charlie, 5);
-    //   expect(await token.allowance(alice, charlie)).to.eq('5');
-    // });
+    it('should decrease allowance', async () => {
+      await token.approve(charlie, 10);
+      await token.decreaseAllowance(charlie, 5);
+      expect(await token.allowance(alice, charlie)).to.eq('5');
+    });
   });
 
   describe('account exclusion', () => {
-    it('by default accounts must not be excluded', async () => {
+    it('should exclude token, reserve, and uniswap pair from RFI by default', async () => {
+      expect(await token.isExcluded(token.address)).to.eq(true);
+      expect(await token.isExcluded(tokenReserve.address)).to.eq(true);
+      expect(await token.isExcluded((await getPair()).address)).to.eq(true);
+    });
+
+    it('should not exclude user accounts by default', async () => {
       expect(await token.isExcluded(alice)).to.eq(false);
       expect(await token.isExcluded(bob)).to.eq(false);
-      expect(await token.isExcluded(token.address)).to.eq(false);
     });
 
     it('should exclude an account', async () => {
@@ -727,6 +728,45 @@ describe('Ledgity', () => {
       await token.includeAccount(bob);
       await expect(token.connect(bobAccount).excludeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
       await expect(token.connect(bobAccount).includeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
+
+  describe('setDex', () => {
+    it('should change isDex', async () => {
+      expect(await token.isDex(bob)).to.eq(false);  // sanity check
+      await token.setDex(bob, true);
+      expect(await token.isDex(bob)).to.eq(true);
+    });
+
+    it('should also exclude an account from RFI', async () => {
+      await token.setDex(bob, true);
+      expect(await token.isExcluded(bob)).to.eq(true);
+    });
+
+    it('should re-include an account in RFI', async () => {
+      await token.setDex(bob, true);
+      expect(await token.isExcluded(bob)).to.eq(true);  // sanity check
+      await token.setDex(bob, false);
+      expect(await token.isExcluded(bob)).to.eq(false);
+    });
+
+    it('should NOT revert when called twice', async () => {
+      await token.setDex(bob, true);
+      await token.setDex(bob, true);
+
+      await token.setDex(bob, false);
+      await token.setDex(bob, false);
+    });
+
+    it('should NOT allow not the owner to call it', async () => {
+      await expect(token.connect(bobAccount).setDex(alice, true))
+        .to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('should NOT set any account as a DEX by default', async () => {
+      expect(await token.isDex(token.address)).to.eq(false);
+      expect(await token.isDex(alice)).to.eq(false);
+      expect(await token.isDex(bob)).to.eq(false);
     });
   });
 

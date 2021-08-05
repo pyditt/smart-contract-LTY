@@ -1,6 +1,11 @@
 pragma solidity ^0.6.12;
 
+import "./IUniswapV2Pair.sol";
+
+
 interface IReserve {
+    function uniswapV2Pair() external returns (IUniswapV2Pair);
+
     /**
      * @dev Returns the amount of tokens in existence.
      */
@@ -19,8 +24,6 @@ interface IReserve {
      * This value changes when {approve} or {transferFrom} are called.
      */
     function buyAndBurn(uint256 usdcAmount) external;
-
-    function getBalances() view external returns(uint256 LTYbalance, uint256 USDCbalance);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to

@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
-import { deployUniswap, getBlockTimestamp, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { deployUniswap, getBlockTimestamp, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { IERC20, Ledgity, LedgityRouter, MockUSDC, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 
@@ -30,9 +30,12 @@ describe('LedgityRouter', () => {
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
     await usdcToken.mint(alice, toTokens('100000000000'));
 
-    token = await (await ethers.getContractFactory('Ledgity')).deploy(uniswapRouter.address, usdcToken.address);
+    token = await (await ethers.getContractFactory('Ledgity')).deploy();
+    const tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(uniswapRouter.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
+    token.initializeReserve(tokenReserve.address);
     ledgityRouter = await (await ethers.getContractFactory('LedgityRouter')).deploy(uniswapRouter.address);
-    await token.initialize(ZERO_ADDRESS, ZERO_ADDRESS, ledgityRouter.address);
+    await token.setIsExcludedFromDexFee(ledgityRouter.address, true);
+    await token.setIsExcludedFromLimits(ledgityRouter.address, true);
 
     pair = await ethers.getContractAt(UniswapV2PairArtifact.abi, await factory.getPair(token.address, usdcToken.address)) as UniswapV2Pair;
     [tokenIndex, usdcIndex] = await pair.token0() === token.address ? [0, 1] : [1, 0];
@@ -72,7 +75,6 @@ describe('LedgityRouter', () => {
 
   let reservesBefore: { 0: BigNumber, 1: BigNumber; };
   beforeEach(async () => {
-    await token.excludeAccount(pair.address);  // exclude account to make accurate assertions
     await token.excludeAccount(alice);
     await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
     reservesBefore = await pair.getReserves();

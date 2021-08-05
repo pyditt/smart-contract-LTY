@@ -1,21 +1,21 @@
-pragma solidity =0.6.12;
+pragma solidity ^0.6.12;
 
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Pair.sol';
 import './interfaces/ILedgityPriceOracle.sol';
 import '@uniswap/lib/contracts/libraries/FixedPoint.sol';
 import './libraries/SafeMath.sol';
-import './libraries/UniswapV2Library.sol';
+import './libraries/Ownable.sol';
 import './libraries/UniswapV2OracleLibrary.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period
 // note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
-contract LedgityPriceOracle is ILedgityPriceOracle {
+contract LedgityPriceOracle is ILedgityPriceOracle, Ownable {
     using FixedPoint for *;
 
-    uint public constant PERIOD = 12 hours;
+    uint public period = 12 hours;
 
-    IUniswapV2Pair immutable pair;
+    IUniswapV2Pair pair;
     address public immutable token0;
     address public immutable token1;
 
@@ -30,14 +30,7 @@ contract LedgityPriceOracle is ILedgityPriceOracle {
         pair = _pair;
         token0 = _pair.token0();
         token1 = _pair.token1();
-        price0CumulativeLast = _pair.price0CumulativeLast(); // fetch the current accumulated price value (1 / 0)
-        price1CumulativeLast = _pair.price1CumulativeLast(); // fetch the current accumulated price value (0 / 1)
-        uint112 reserve0;
-        uint112 reserve1;
-        (reserve0, reserve1, blockTimestampLast) = _pair.getReserves();
-        require(reserve0 != 0 && reserve1 != 0, 'LedgityPriceOracle: NO_RESERVES'); // ensure that there's liquidity in the pair
-        price0Average = FixedPoint.encode(reserve1).divuq(FixedPoint.encode(reserve0));
-        price1Average = FixedPoint.encode(reserve0).divuq(FixedPoint.encode(reserve1));
+        changePeriod(12 hours);
     }
 
     function update() external override {
@@ -47,7 +40,7 @@ contract LedgityPriceOracle is ILedgityPriceOracle {
     function tryUpdate() public override returns (bool) {
         uint32 timeElapsed = UniswapV2OracleLibrary.currentBlockTimestamp() - blockTimestampLast; // overflow is desired
         // ensure that at least one full period has passed since the last update
-        if (timeElapsed < PERIOD) {
+        if (timeElapsed < period) {
             return false;
         }
 
@@ -72,5 +65,18 @@ contract LedgityPriceOracle is ILedgityPriceOracle {
             require(token == token1, 'LedgityPriceOracle: INVALID_TOKEN');
             amountOut = price1Average.mul(amountIn).decode144();
         }
+    }
+
+    function changePeriod(uint256 _period) public onlyOwner {
+        require(_period > 0, 'LedgityPriceOracle: INVALID_PERIOD');
+        period = _period;
+        price0CumulativeLast = pair.price0CumulativeLast(); // fetch the current accumulated price value (1 / 0)
+        price1CumulativeLast = pair.price1CumulativeLast(); // fetch the current accumulated price value (0 / 1)
+        uint112 reserve0;
+        uint112 reserve1;
+        (reserve0, reserve1, blockTimestampLast) = pair.getReserves();
+        require(reserve0 != 0 && reserve1 != 0, 'LedgityPriceOracle: NO_RESERVES'); // ensure that there's liquidity in the pair
+        price0Average = FixedPoint.encode(reserve1).divuq(FixedPoint.encode(reserve0));
+        price1Average = FixedPoint.encode(reserve0).divuq(FixedPoint.encode(reserve1));
     }
 }

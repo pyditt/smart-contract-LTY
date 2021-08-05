@@ -2,6 +2,7 @@ pragma solidity ^0.6.12;
 
 import "./libraries/Ownable.sol";
 import "./libraries/SafeMath.sol";
+import "./libraries/SafeERC20.sol";
 import "./interfaces/IERC20.sol";
 
 
@@ -19,11 +20,11 @@ contract Timelock is Ownable {
         unlockAt = block.timestamp.add(delay);
     }
 
-    function withdraw(address token, uint256 amount) public onlyOwner unlocked {
-        require(IERC20(token).transfer(msg.sender, amount), "Timelock: transfer failed");
+    function withdraw(address token, uint256 amount) external onlyOwner unlocked {
+        SafeERC20.safeTransfer(token, msg.sender, amount);
     }
 
-    function setDelay(uint256 delay) public onlyOwner unlocked {
+    function setDelay(uint256 delay) external onlyOwner unlocked {
         unlockAt = block.timestamp.add(delay);
     }
 }

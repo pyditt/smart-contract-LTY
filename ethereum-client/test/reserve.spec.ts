@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, toTokens } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { MockLedgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -31,7 +31,6 @@ describe('Reserve', () => {
 
   beforeEach(async () => {
     token = await (await ethers.getContractFactory('MockLedgity')).deploy();
-    await factory.createPair(token.address, usdcToken.address);
     await token.mint(alice, toTokens('100000000000000'));
     reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, timelock);
     await token.setReserve(reserve.address);
@@ -49,6 +48,15 @@ describe('Reserve', () => {
   async function getPairIndices(pair: UniswapV2Pair) {
     return await pair.token0() === token.address ? [0, 1] as const : [1, 0] as const;
   }
+
+  describe('constructor', () => {
+    it('should not allow zero address timelock', async () => {
+      const tokenA = await (await ethers.getContractFactory('MockUSDC')).deploy();
+      const tokenB = await (await ethers.getContractFactory('MockUSDC')).deploy();
+      await expect((await ethers.getContractFactory('Reserve')).deploy(router.address, tokenA.address, tokenB.address, ZERO_ADDRESS))
+        .to.be.revertedWith('Reserve: invalid timelock address');
+    });
+  });
 
   describe('swapping for USDC', () => {
     beforeEach(async () => {

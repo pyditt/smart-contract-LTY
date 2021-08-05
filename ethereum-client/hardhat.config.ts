@@ -1,10 +1,21 @@
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
-import { HardhatUserConfig, task, types } from 'hardhat/config';
+import 'hardhat-deploy';
+import { HardhatUserConfig, task } from 'hardhat/config';
+import 'solidity-coverage';
+import { PRIVATE_NETWORK_PRIVATE_KEY } from './env';
 
 const config: HardhatUserConfig = {
-  solidity: '0.6.12',
+  solidity: {
+    version: '0.6.12',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   paths: {
     artifacts: './client/src/contracts',
   },
@@ -12,6 +23,18 @@ const config: HardhatUserConfig = {
     private: {
       url: 'http://52.12.224.224:8545',
       chainId: 1337,
+      accounts: [PRIVATE_NETWORK_PRIVATE_KEY],
+    },
+  },
+  namedAccounts: {
+    deployer: {
+      private: 0,
+    },
+    uniswapRouter: {
+      private: '0xA526452c864437eaAB0858459720bE82d357fA80',
+    },
+    usdc: {
+      private: '0xEc6802f549BC3E99FF12aF779A8e0B90453864C1',
     },
   },
   typechain: {
@@ -22,24 +45,6 @@ const config: HardhatUserConfig = {
 };
 
 export default config;
-
-task('deploy-ledgity')
-  .addParam('uniswapRouter', 'Uniswap V2 router address', undefined, types.string)
-  .addParam('usdc', 'USDC token address', undefined, types.string)
-  .addParam('timelockDelay', 'For how long to lock LP tokens? (in seconds)', undefined, types.int)
-  .setAction(async (args, { ethers }) => {
-    const ledgity = await (await ethers.getContractFactory('Ledgity')).deploy(args.uniswapRouter, args.usdc);
-    const timelock = await (await ethers.getContractFactory('Timelock')).deploy(args.timelockDelay);
-    const reserve = await (await ethers.getContractFactory('Reserve')).deploy(args.uniswapRouter, ledgity.address, args.usdc, timelock.address);
-    const priceOracle = await (await ethers.getContractFactory('LedgityPriceOracle')).deploy(await ledgity.uniswapV2Pair());
-    const ledgityRouter = await (await ethers.getContractFactory('LedgityRouter')).deploy(args.uniswapRouter);
-    await ledgity.initialize(reserve.address, priceOracle.address, ledgityRouter.address);
-    console.log('Ledgity:', ledgity.address);
-    console.log('Timelock', timelock.address);
-    console.log('Reserve:', reserve.address);
-    console.log('LedgityRouter:', ledgityRouter.address);
-    console.log('LedgityPriceOracle:', priceOracle.address);
-  });
 
 task('deploy-test-environment', 'Setup test environment for testing purposes', async (args, { ethers }) => {
   const { deployUniswap } = await import('./shared/utils');
