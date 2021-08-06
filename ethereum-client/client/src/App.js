@@ -9,8 +9,10 @@ import { Dashboard, Connect } from "./pages";
 import "./App.scss";
 
 const LedgityContractAbi = LedgityContract.abi;
-const LedgityContractAddress = "0x70c7A1700E3EC966D142C1E4a998965382B55B05";
+// TODO: extract to a config file
+const LedgityContractAddress = "0x0908A3Eb2c3e4CC28634c825AbA88ceC09C79027";
 
+// TODO: extract to a config file
 const ws = new WebSocket("ws://52.12.224.224:9000");
 
 class App extends Component {

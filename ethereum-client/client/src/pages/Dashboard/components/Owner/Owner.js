@@ -39,7 +39,8 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     setErrorPrice(null);
 
     try {
-      await Lib.setPrice(contract, account, price);
+      // TODO: remove everything related to setPrice
+      // await Lib.setPrice(contract, account, price);
       setPrice("");
       updateInfo();
     } catch (error) {

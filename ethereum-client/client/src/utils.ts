@@ -1,4 +1,7 @@
-async function getBalance(web3, account) {
+import Decimal from 'decimal.js';
+import Web3 from 'web3';
+
+async function getBalance(web3: Web3, account: string) {
   const balance = await web3.eth.getBalance(account);
   return web3.utils.fromWei(balance, "ether");
 }
@@ -10,7 +13,7 @@ async function getBalance(web3, account) {
  * @public
  */
 function isMetaMask() {
-  if (window.ethereum) {
+  if ((window as any).ethereum) {
     return true;
   } else {
     return false;
@@ -24,6 +27,10 @@ function delay(_DELAY = 5) {
       resolve(`Time is up`);
     }, _DELAY * 1000);
   });
+}
+
+export function asPercent({ numerator, denominator }: { numerator: string, denominator: string; }): Decimal {
+  return new Decimal(numerator).div(denominator);
 }
 
 export { getBalance, isMetaMask, delay };
