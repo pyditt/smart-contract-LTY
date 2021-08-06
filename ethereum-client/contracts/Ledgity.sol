@@ -14,6 +14,8 @@ contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
     using Percent for Percent.Percent;
 
+    uint256 private constant _INITIAL_TOTAL_SUPPLY = 2760000000 * 10**18;
+
     uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
     enum FeeDestination {
@@ -42,7 +44,7 @@ contract Ledgity is ILedgity, ReflectToken {
     ILedgityPriceOracle public priceOracle;
     uint256 public initialPrice;
 
-    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+    constructor() public ReflectToken("Ledgity", "LTY", _INITIAL_TOTAL_SUPPLY) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         isExcludedFromDexFee[owner()] = true;
         isExcludedFromDexFee[address(this)] = true;
@@ -71,6 +73,10 @@ contract Ledgity is ILedgity, ReflectToken {
         if (initialPrice == 0) {
             initialPrice = _getPrice();
         }
+    }
+
+    function totalBurn() external view returns (uint256) {
+        return _INITIAL_TOTAL_SUPPLY - totalSupply();
     }
 
     function setDex(address target, bool dex) public onlyOwner {

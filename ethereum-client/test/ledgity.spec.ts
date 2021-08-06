@@ -778,6 +778,7 @@ describe('Ledgity', () => {
       await token.burn(amount);
       expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should burn from an excluded account', async () => {
@@ -788,6 +789,7 @@ describe('Ledgity', () => {
       await token.burn(amount);
       expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should allow anyone to burn tokens', async () => {
@@ -798,6 +800,7 @@ describe('Ledgity', () => {
       await token.connect(bobAccount).burn(amount);
       expect(await token.balanceOf(bob)).to.eq(bobBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should NOT burn if the balance is insufficient', async () => {
