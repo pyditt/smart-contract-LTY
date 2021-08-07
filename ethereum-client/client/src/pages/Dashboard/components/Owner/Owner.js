@@ -55,7 +55,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     event.preventDefault();
     setErrorToken(null);
     try {
-      await Lib.burn(contract, account, token);
+      await Lib.burn(contract, token);
       setToken("");
       updateInfo();
     } catch (error) {
@@ -72,7 +72,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     try {
       const allDex = await Lib.getDex(contract);
       if (allDex.indexOf(dex) === -1) {
-        await Lib.setDex(contract, account, dex);
+        await Lib.setDex(contract, dex);
         setDex("");
       } else {
         setErrorDex(<p> Such address already exists. </p>);
@@ -90,7 +90,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     try {
       const allExcluded = await Lib.getExcluded(contract);
       if (allExcluded.indexOf(accountInput) === -1) {
-        await Lib.excludeAccount(contract, account, accountInput);
+        await Lib.excludeAccount(contract, accountInput);
         setAccountInput("");
       } else {
         setErrorAccount(<p> Such account is already excluded. </p>);
@@ -106,7 +106,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
   const includeAccount = async () => {
     setErrorAccount(null);
     try {
-      await Lib.includeAccount(contract, account, accountInput);
+      await Lib.includeAccount(contract, accountInput);
       setAccountInput("");
     } catch (error) {
       if (error.code === 4001) {

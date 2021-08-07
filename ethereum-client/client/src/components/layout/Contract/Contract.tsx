@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { FC } from 'react';
+import { Info } from '../../../ledgityLib';
 
 import './Contract.scss';
 
-const Contract = ({ info }) => {
-    const { owner, symbol, name, totalSupply, decimals, allSupply, maxTokenTx, totalFee, totalBurn, startPrice, price  } = info;
+interface Props {
+  info: Info
+}
 
-    const renderTokenSymbol = (symbol) => {
+const Contract: FC<Props> = ({ info }) => {
+    const { owner, symbol, name, totalSupply, decimals, maxTokenTx, totalFees, startPrice } = info;
+
+    const renderTokenSymbol = (symbol: string) => {
         switch (symbol) {
             case 'LTY': return <img src="/images/lty.svg" alt="lty"/>
             case 'ETH': return <img src="/images/eth.svg" alt="eth" />
@@ -37,10 +42,11 @@ const Contract = ({ info }) => {
                 </div>
             </div>
             <div className="contract__form">
-                <div className="contract__field">
+                {/* TODO: can we bring this back? */}
+                {/* <div className="contract__field">
                     <p className="contract__label bold"> How much has been released token: </p>
                     <div className="contract__input"> {allSupply} </div>
-                </div>
+                </div> */}
                 <div className="contract__field">
                     <p className="contract__label bold"> Total supply: </p>
                     <div className="contract__input"> {totalSupply} </div>
@@ -48,20 +54,21 @@ const Contract = ({ info }) => {
                 <div className="contract__field combine">
                     <p className="contract__label"> Transaction size max: </p>
                     <div className="contract__input half"> {maxTokenTx} </div>
-                    <p className="contract__note"> 0,1 % of total supply </p>
                 </div>
                 <div className="contract__field half">
                     <p className="contract__label green"> Total commission: </p>
-                    <div className="contract__input"> {totalFee} </div>
+                    <div className="contract__input"> {totalFees} </div>
                 </div>
-                <div className="contract__field half">
+                {/* TODO: bring this back */}
+                {/* <div className="contract__field half">
                     <p className="contract__label red"> Tokens burned: </p>
                     <div className="contract__input"> {totalBurn} </div>
-                </div>
-                <div className="contract__field half">
+                </div> */}
+                {/* TODO: can we implement this? Maybe use our oracle? */}
+                {/* <div className="contract__field half">
                     <p className="contract__label"> Current price: </p>
                     <div className="contract__input"> {price} </div>
-                </div>
+                </div> */}
                 <div className="contract__field half">
                     <p className="contract__label"> Starting price: </p>
                     <div className="contract__input"> {startPrice} </div>

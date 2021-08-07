@@ -1,96 +1,81 @@
-import BN from 'bn.js';
-import Decimal from 'decimal.js';
-import Web3 from 'web3';
-import { Ledgity } from '../types/web3-v1-contracts/Ledgity';
+import { BigNumberish, ethers } from 'ethers';
+import { Ledgity } from './types/ethers-contracts';
 import { asPercent } from './utils';
 
 export interface Info {
-  totalSupply: BN
+  totalSupply: string
   name: string
   symbol: string
-  decimals: BN
-  maxTokenTxPercent: Decimal
+  decimals: string
+  maxTokenTx: string
   totalFees: string
   startPrice: string
   owner: string
 }
-async function getInfo(contract: Ledgity): Promise<Info> {
-  const decimals = new BN(await contract.methods.decimals().call());
-  function removeDecimals(value: string) {
-    return new BN(value).div(new BN(10).pow(decimals));
+
+export async function getInfo(contract: Ledgity): Promise<Info> {
+  const decimals = (await contract.decimals()).toString()
+  function removeDecimals(value: BigNumberish) {
+    return ethers.utils.formatUnits(value, decimals)
   }
+  const totalSupplyWoDecimals = removeDecimals(await contract.totalSupply());
   return {
-    totalSupply: removeDecimals(await contract.methods.totalSupply().call()),
-    name: await contract.methods.name().call(),
-    symbol: await contract.methods.symbol().call(),
+    totalSupply: totalSupplyWoDecimals,
+    name: await contract.name(),
+    symbol: await contract.symbol(),
     decimals,
-    maxTokenTxPercent: asPercent(await contract.methods.maxTransactionSizePercent().call()),
-    totalFees: await contract.methods.totalFees().call(),
-    startPrice: await contract.methods.initialPrice().call(),
-    owner: await contract.methods.owner().call(),
+    maxTokenTx: asPercent(await contract.maxTransactionSizePercent()).mul(totalSupplyWoDecimals).toString(),
+    totalFees: removeDecimals(await contract.totalFees()),
+    startPrice: (await contract.initialPrice()).toString(),
+    owner: await contract.owner(),
   };
 }
 
-async function getTokenBalance(contract: Ledgity, address: string) {
-  const balance = new BN(await contract.methods.balanceOf(address).call());
-  const decimals = new BN(await contract.methods.decimals().call());
-  return balance.div(new BN(10).pow(decimals)).toString();
+export async function getTokenBalance(contract: Ledgity, address: string) {
+  return ethers.utils.formatUnits(await contract.balanceOf(address), await contract.decimals())
 }
 
-async function getBalance(web3: Web3, account: string) {
-  const balance = await web3.eth.getBalance(account);
-  return web3.utils.fromWei(balance, "ether");
+export async function getBalance(web3: ethers.providers.Web3Provider, account: string) {
+  return ethers.utils.formatEther(await web3.getBalance(account));
 }
 
-async function getDex(contract: Ledgity) {
+export async function getDex(contract: Ledgity) {
   // TODO
   return [];
   // const dex = await contract.methods.getDex().call();
   // return dex;
 }
 
-async function getExcluded(contract: Ledgity) {
+export async function getExcluded(contract: Ledgity) {
   // TODO
   return [];
   // const excluded = await contract.methods.getExcluded().call();
   // return excluded;
 }
 
-async function transfer(contract: Ledgity, signer: string, address: string, amount: BN) {
-  const decimals = new BN(await contract.methods.decimals().call());
-  amount = amount.mul(new BN(10).pow(decimals));
-  const balance = await contract.methods
-    .transfer(address, amount)
-    .send({ from: signer });
-  return balance;
+export async function transfer(contract: Ledgity, address: string, amount: BigNumberish) {
+  amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
+  await contract.transfer(address, amount)
 }
 
-async function burn(contract: Ledgity, signer: string, amount: BN) {
-  const decimals = new BN(await contract.methods.decimals().call());
-  amount = amount.mul(new BN(10).pow(decimals));
-  const status = await contract.methods
-    .burn(amount)
-    .send({ from: signer });
-  return status;
+export async function burn(contract: Ledgity, amount: BigNumberish) {
+  amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
+  await contract.burn(amount)
 }
 
-async function setDex(contract: Ledgity, signer: string, dexAddress: string) {
-  await contract.methods.setDex(dexAddress, true).send({ from: signer });
+export async function setDex(contract: Ledgity, dexAddress: string) {
+  await contract.setDex(dexAddress, true)
 }
 
-async function includeAccount(contract: Ledgity, signer: string, address: string) {
-  await contract.methods
-    .includeAccount(address)
-    .send({ from: signer });
+export async function includeAccount(contract: Ledgity, address: string) {
+  await contract.includeAccount(address)
 }
 
-async function excludeAccount(contract: Ledgity, signer: string, address: string) {
-  await contract.methods
-    .excludeAccount(address)
-    .send({ from: signer });
+export async function excludeAccount(contract: Ledgity, address: string) {
+  await contract.excludeAccount(address)
 }
 
-async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: string) {
+export async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: string) {
   try {
     const info = await getInfo(contract);
 
@@ -110,17 +95,3 @@ async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: 
     console.error(error);
   }
 }
-
-export {
-  getInfo,
-  getTokenBalance,
-  getBalance,
-  addTokenToWallet,
-  transfer,
-  getDex,
-  getExcluded,
-  burn,
-  setDex,
-  excludeAccount,
-  includeAccount,
-};

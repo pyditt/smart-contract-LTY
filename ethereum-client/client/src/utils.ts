@@ -1,10 +1,6 @@
 import Decimal from 'decimal.js';
-import Web3 from 'web3';
+import { BigNumber } from 'ethers';
 
-async function getBalance(web3: Web3, account: string) {
-  const balance = await web3.eth.getBalance(account);
-  return web3.utils.fromWei(balance, "ether");
-}
 
 /**
  * Check MetaMask status
@@ -12,15 +8,11 @@ async function getBalance(web3: Web3, account: string) {
  * @return {Boolean} Return true, if MetaMask installed and connected
  * @public
  */
-function isMetaMask() {
-  if ((window as any).ethereum) {
-    return true;
-  } else {
-    return false;
-  }
+export function isMetaMask() {
+  return window.ethereum != null;
 }
 
-function delay(_DELAY = 5) {
+export function delay(_DELAY: number) {
   return new Promise((resolve, reject) => {
     // console.log(`Delay ${_DELAY}`)
     setTimeout(() => {
@@ -29,8 +21,6 @@ function delay(_DELAY = 5) {
   });
 }
 
-export function asPercent({ numerator, denominator }: { numerator: string, denominator: string; }): Decimal {
-  return new Decimal(numerator).div(denominator);
+export function asPercent({ numerator, denominator }: { numerator: BigNumber, denominator: BigNumber; }): Decimal {
+  return new Decimal(numerator.toString()).div(denominator.toString());
 }
-
-export { getBalance, isMetaMask, delay };
