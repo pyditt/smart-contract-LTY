@@ -1,6 +1,7 @@
 # Hardhat files
+artifacts
 cache
-client/src/contracts
+client/src/abi
 typechain
 
 # Environment

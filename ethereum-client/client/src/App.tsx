@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { ethers } from "ethers";
-import LedgityContract from "./contracts/contracts/Ledgity.sol/Ledgity.json";
+import LedgityContractAbi from "./abi/Ledgity.json";
 import * as Lib from "./ledgityLib";
 import { Ledgity } from "./types/ethers-contracts"
 
@@ -9,7 +9,6 @@ import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
 
-const LedgityContractAbi = LedgityContract.abi;
 // TODO: extract to a config file
 const LedgityContractAddress = "0x0908A3Eb2c3e4CC28634c825AbA88ceC09C79027";
 
