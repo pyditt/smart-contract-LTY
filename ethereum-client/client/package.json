@@ -21,7 +21,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "generate-types": "typechain --target=ethers-v5 --out-dir src/types/ethers-contracts 'src/contracts/contracts/Ledgity.sol/Ledgity.json'"
+    "generate-types": "typechain --target=ethers-v5 --out-dir src/types/ethers-contracts 'src/abi/**/*.json'"
   },
   "eslintConfig": {
     "extends": "react-app"
