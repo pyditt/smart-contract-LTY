@@ -13,7 +13,7 @@ export async function evmIncreaseTime(offset: number) {
   await ethers.provider.send('evm_mine', [await getBlockTimestamp() + offset]);
 }
 
-let snapshots: string[] = [];
+const snapshots: string[] = [];
 /**
  * Runs `fn` once, saves EVM state and restores it before each tests.
  * USE ONLY ONCE PER `describe` BLOCK.
