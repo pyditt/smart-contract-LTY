@@ -768,6 +768,29 @@ describe('Ledgity', () => {
       expect(await token.isDex(alice)).to.eq(false);
       expect(await token.isDex(bob)).to.eq(false);
     });
+
+    // This tests catches a bug where isDex is not updated when setDex is called.
+    it('should set isDex to true/false for an excluded/included account', async () => {
+      await token.excludeAccount(alice);
+      await token.setDex(alice, true);
+      expect(await token.isDex(alice)).to.eq(true);
+
+      await token.includeAccount(alice);
+      await token.setDex(alice, false);
+      expect(await token.isDex(alice)).to.eq(false);
+    });
+  });
+
+  describe('getDexes', () => {
+    it('should return a list of dexes', async () => {
+      const pair = await getPair();
+      expect(await token.getDexes()).to.deep.eq([pair.address]);
+      await token.setDex(alice, true);
+      await token.setDex(bob, true);
+      expect(await token.getDexes()).to.deep.eq([pair.address, alice, bob]);
+      await token.setDex(alice, false);
+      expect(await token.getDexes()).to.deep.eq([pair.address, bob]);
+    });
   });
 
   describe('burn', () => {
