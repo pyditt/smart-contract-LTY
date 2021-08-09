@@ -729,6 +729,19 @@ describe('Ledgity', () => {
       await expect(token.connect(bobAccount).excludeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
       await expect(token.connect(bobAccount).includeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    describe('getExcluded', () => {
+      it('should return a list of excluded accounts', async () => {
+        const pair = await getPair();
+        const defaultExcluded = [token.address, tokenReserve.address, pair.address];
+        expect(await token.getExcluded()).to.deep.eq(defaultExcluded);
+        await token.excludeAccount(alice);
+        await token.excludeAccount(bob);
+        expect(await token.getExcluded()).to.deep.eq([...defaultExcluded, alice, bob]);
+        await token.includeAccount(alice);
+        expect(await token.getExcluded()).to.deep.eq([...defaultExcluded, bob]);
+      });
+    });
   });
 
   describe('setDex', () => {
