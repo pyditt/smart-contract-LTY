@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import ExcludeAndInclude from "./components/excludeAndInclude";
+import FieldSet from "./components/FieldSet";
 
 import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
@@ -7,18 +9,26 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [price, setPrice] = useState("");
   const [token, setToken] = useState("");
   const [dex, setDex] = useState("");
-  const [accountInput, setAccountInput] = useState("");
+  const [excludeInclude] = useState([
+    { title: 'Exclude/Include in RFI:' },
+    { title: 'Exclude/Include in Fee' },
+    { title: 'Exclude/Include in limits' }]);
+  const [fieldSet] = useState([
+    { title: 'Set number of tokens to swap:', flag: 'LTY', func: contract.setNumTokensToSwap },
+    { title: 'Set max transaction size:', flag: '%', func: contract.setMaxTransactionSizePercent, },
+    { title: 'Set sell fee if price is < x10 IDO price', flag: '%', func: contract.setSellAtSmallPriceAccumulationFee },
+    { title: 'Set sell fee if price is > x10 IDO price', flag: '%', func: contract.setSellAccumulationFee },
+    { title: 'Set RFI fee', flag: '%', func: contract.setSellReflectionFee },
+    { title: 'Set buy fee', flag: '%', func: contract.setBuyAccumulationFee }])
 
   const [errorPrice, setErrorPrice] = useState(null);
   const [errorDex, setErrorDex] = useState(null);
   const [errorToken, setErrorToken] = useState(null);
-  const [errorAccount, setErrorAccount] = useState(null);
 
   const onChange = (event) => {
     setErrorPrice(null);
     setErrorDex(null);
     setErrorToken(null);
-    setErrorAccount(null);
 
     switch (event.target.name) {
       case "price":
@@ -27,8 +37,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         return setToken(event.target.value);
       case "dex":
         return setDex(event.target.value);
-      case "account":
-        return setAccountInput(event.target.value);
+
       default:
         break;
     }
@@ -82,37 +91,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         return setErrorToken(<p>Transaction signature was denied.</p>);
       }
       setErrorDex(<p> Incorrect address. Please, check it.. </p>);
-    }
-  };
-
-  const excludeAccount = async () => {
-    setErrorAccount(null);
-    try {
-      const allExcluded = await Lib.getExcluded(contract);
-      if (allExcluded.indexOf(accountInput) === -1) {
-        await Lib.excludeAccount(contract, accountInput);
-        setAccountInput("");
-      } else {
-        setErrorAccount(<p> Such account is already excluded. </p>);
-      }
-    } catch (error) {
-      if (error.code === 4001) {
-        return setErrorAccount(<p>Transaction signature was denied.</p>);
-      }
-      setErrorAccount(<p> Incorrect account. Please, check it.. </p>);
-    }
-  };
-
-  const includeAccount = async () => {
-    setErrorAccount(null);
-    try {
-      await Lib.includeAccount(contract, accountInput);
-      setAccountInput("");
-    } catch (error) {
-      if (error.code === 4001) {
-        return setErrorAccount(<p>Transaction signature was denied.</p>);
-      }
-      setErrorAccount(<p> Incorrect account. Please, check it.. </p>);
     }
   };
 
@@ -197,36 +175,27 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
           </div>
         </div>
         <div className="owner__item">
-          <h2> Account: </h2>
-          <div className="owner__fields">
-            <div className="owner__field field full">
-              <input
-                type="text"
-                name="account"
-                className={ownership ? "field__input" : "field__input disabled"}
-                disabled={!ownership}
-                value={accountInput}
-                onChange={onChange}
-              />
-              <button
-                type="button"
-                className={ownership ? "btn-primary" : "btn-primary disabled"}
-                disabled={!ownership}
-                onClick={excludeAccount}
-              >
-                Exclude account
-              </button>
-              <button
-                type="button"
-                className={ownership ? "btn-primary" : "btn-primary disabled"}
-                disabled={!ownership}
-                onClick={includeAccount}
-              >
-                Include account
-              </button>
-              <div className="error-field"> {errorAccount} </div>
-            </div>
-          </div>
+          {
+            excludeInclude.map((el, index) =>
+              <ExcludeAndInclude
+                key={index}
+                ownership={ownership}
+                contract={contract}
+                title={el.title} />)
+          }
+        </div>
+        <div className="owner_set">
+          {
+            fieldSet.map((el, index) =>
+              <FieldSet
+                key={index}
+                title={el.title}
+                flag={el.flag}
+                ownership={ownership}
+                contract={contract}
+                func={el.func} />)
+          }
+
         </div>
       </div>
     </div>

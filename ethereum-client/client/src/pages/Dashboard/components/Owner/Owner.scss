@@ -1,9 +1,11 @@
-@import '../../../../styles/variables';
-@import '../../../../styles/mixins';
+@import "../../../../styles/variables";
+@import "../../../../styles/mixins";
 
 .owner {
   color: inherit;
   width: 31.5%;
+  max-height: 760px;
+  overflow-y: scroll;
 
   &__block {
     @include block;
@@ -87,7 +89,51 @@
   }
 }
 
-@media(max-width: 1470px) {
+.owner_wrapper {
+  position: relative;
+
+  & .owner__field {
+    margin-top: 40px;
+  }
+
+  & .field__input {
+    width: 100%;
+    min-width: 313px;
+  }
+
+  & .flag {
+    color: #fff;
+    font-family: Montserrat;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 22px;
+    text-align: center;
+    width: 50px;
+  }
+
+  & .btn-primary {
+    padding: 10px 35px;
+    background-color: #384ac2;
+    color: #fff;
+
+    &:hover {
+      background-color: #fff;
+      color: #384ac2;
+    }
+  }
+
+  & label {
+    display: flex;
+    align-items: center;
+  }
+
+  & .error-field {
+    color: #c73232;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1470px) {
   .owner {
     &__block {
       padding: 20px;
