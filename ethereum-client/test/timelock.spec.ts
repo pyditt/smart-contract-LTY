@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { ethers } from 'hardhat';
-import { evmIncreaseTime, getBlockTimestamp } from '../shared/utils';
+import { evmIncreaseTime, getBlockTimestamp, snapshottedBeforeEach } from '../shared/utils';
 import { MockUSDC, Timelock } from '../typechain';
 const { expect } = chai;
 
@@ -18,7 +18,7 @@ describe('Timelock', () => {
   let deployedAt: number;
   let token: MockUSDC;
 
-  beforeEach(async () => {
+  snapshottedBeforeEach(async () => {
     token = await (await ethers.getContractFactory('MockUSDC')).deploy();
     timelock = (await (await ethers.getContractFactory('Timelock')).deploy(DELAY));
     deployedAt = await getBlockTimestamp();
