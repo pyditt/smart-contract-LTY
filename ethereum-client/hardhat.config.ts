@@ -4,6 +4,7 @@ import '@typechain/hardhat';
 import 'hardhat-deploy';
 import { HardhatUserConfig, task } from 'hardhat/config';
 import 'solidity-coverage';
+import "@nomiclabs/hardhat-etherscan";
 import { PRIVATE_NETWORK_PRIVATE_KEY, ROPSTEN_PRIVATE_KEY, ROPSTEN_PROVIDER_URL } from './env';
 
 function typedNamedAccounts<T>(namedAccounts: { [key in string]: T }) {
@@ -34,6 +35,11 @@ const config: HardhatUserConfig = {
       chainId: 3,
       accounts: [ROPSTEN_PRIVATE_KEY],
     },
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: "TVHC8TX5TTYPBQFQ5E9GWT8QN74CSK5T3H",
   },
   namedAccounts: typedNamedAccounts({
     deployer: {
