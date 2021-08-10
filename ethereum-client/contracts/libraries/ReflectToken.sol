@@ -94,6 +94,10 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         return true;
     }
 
+    function getExcluded() external view returns (address[] memory) {
+        return _excluded;
+    }
+
     function isExcluded(address account) public view returns (bool) {
         return _isExcluded[account];
     }

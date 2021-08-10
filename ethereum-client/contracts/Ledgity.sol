@@ -2,6 +2,7 @@ pragma solidity ^0.6.12;
 
 import "./libraries/ReflectToken.sol";
 import "./libraries/Percent.sol";
+import "./libraries/Set.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV2Router02.sol";
@@ -13,6 +14,9 @@ import "./interfaces/ILedgityPriceOracle.sol";
 contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
     using Percent for Percent.Percent;
+    using Set for Set.AddressSet;
+
+    uint256 public constant initialTotalSupply = 2760000000 * 10**18;
 
     uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
@@ -29,11 +33,10 @@ contract Ledgity is ILedgity, ReflectToken {
     Percent.Percent public initialSellReflectionFee = sellReflectionFee;
     Percent.Percent public buyAccumulationFee = Percent.encode(4, 100);
     Percent.Percent public initialBuyAccumulationFee = buyAccumulationFee;
+    Set.AddressSet private _dexes;
+    Set.AddressSet private _excludedFromDexFee;
 
-
-    mapping(address => bool) public isDex;
-    mapping(address => bool) public isExcludedFromDexFee;
-    mapping(address => bool) public isExcludedFromLimits;
+    Set.AddressSet private _excludedFromLimits;
     mapping(address => uint256) public lastTransactionAt;
     Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
@@ -42,12 +45,12 @@ contract Ledgity is ILedgity, ReflectToken {
     ILedgityPriceOracle public priceOracle;
     uint256 public initialPrice;
 
-    constructor() public ReflectToken("Ledgity", "LTY", 2760000000 * 10**18) {
+    constructor() public ReflectToken("Ledgity", "LTY", initialTotalSupply) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
-        isExcludedFromDexFee[owner()] = true;
-        isExcludedFromDexFee[address(this)] = true;
-        isExcludedFromLimits[owner()] = true;
-        isExcludedFromLimits[address(this)] = true;
+        setIsExcludedFromDexFee(owner(), true);
+        setIsExcludedFromDexFee(address(this), true);
+        setIsExcludedFromLimits(owner(), true);
+        setIsExcludedFromLimits(address(this), true);
         excludeAccount(address(this));
     }
 
@@ -59,8 +62,8 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function initializeReserve(address reserveAddress) external onlyOwner {
         reserve = IReserve(reserveAddress);
-        isExcludedFromDexFee[address(reserve)] = true;
-        isExcludedFromLimits[address(reserve)] = true;
+        setIsExcludedFromDexFee(address(reserve), true);
+        setIsExcludedFromLimits(address(reserve), true);
         excludeAccount(address(reserve));
         uniswapV2Pair = reserve.uniswapV2Pair();
         setDex(address(uniswapV2Pair), true);
@@ -73,13 +76,21 @@ contract Ledgity is ILedgity, ReflectToken {
         }
     }
 
+    function totalBurn() external view returns (uint256) {
+        return initialTotalSupply - totalSupply();
+    }
+
     function setDex(address target, bool dex) public onlyOwner {
-        isDex[target] = dex;
-        if (dex && !isExcluded(target)) {
-            excludeAccount(target);
-        }
-        if (!dex && isExcluded(target)) {
-            includeAccount(target);
+        if (dex) {
+            _dexes.add(target);
+            if (!isExcluded(target)) {
+                excludeAccount(target);
+            }
+        } else {
+            _dexes.remove(target);
+            if (isExcluded(target)) {
+                includeAccount(target);
+            }
         }
     }
 
@@ -87,12 +98,20 @@ contract Ledgity is ILedgity, ReflectToken {
         feeDestination = fd;
     }
 
-    function setIsExcludedFromDexFee(address account, bool isExcluded) external onlyOwner {
-        isExcludedFromDexFee[account] = isExcluded;
+    function setIsExcludedFromDexFee(address account, bool isExcluded) public onlyOwner {
+        if (isExcluded) {
+            _excludedFromDexFee.add(account);
+        } else {
+            _excludedFromDexFee.remove(account);
+        }
     }
 
-    function setIsExcludedFromLimits(address account, bool isExcluded) external onlyOwner {
-        isExcludedFromLimits[account] = isExcluded;
+    function setIsExcludedFromLimits(address account, bool isExcluded) public onlyOwner {
+        if (isExcluded) {
+            _excludedFromLimits.add(account);
+        } else {
+            _excludedFromLimits.remove(account);
+        }
     }
 
     function setNumTokensToSwap(uint256 _numTokensToSwap) external onlyOwner {
@@ -128,18 +147,42 @@ contract Ledgity is ILedgity, ReflectToken {
         return true;
     }
 
+    function getDexes() external view returns (address[] memory) {
+        return _dexes.values;
+    }
+
+    function getExcludedFromDexFee() external view returns (address[] memory) {
+        return _excludedFromDexFee.values;
+    }
+
+    function getExcludedFromLimits() external view returns (address[] memory) {
+        return _excludedFromLimits.values;
+    }
+
+    function isDex(address account) public view returns (bool) {
+        return _dexes.has(account);
+    }
+
+    function isExcludedFromDexFee(address account) public view returns (bool) {
+        return _excludedFromDexFee.has(account);
+    }
+
+    function isExcludedFromLimits(address account) public view returns (bool) {
+        return _excludedFromLimits.has(account);
+    }
+
     function _calculateReflectionFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex(recipient) && !isExcludedFromDexFee(sender)) {
             return sellReflectionFee.mul(amount);
         }
         return 0;
     }
 
     function _calculateAccumulationFee(address sender, address recipient, uint256 amount) internal override view returns (uint256) {
-        if (isDex[sender] && !isExcludedFromDexFee[recipient]) {
+        if (isDex(sender) && !isExcludedFromDexFee(recipient)) {
             return buyAccumulationFee.mul(amount);
         }
-        if (isDex[recipient] && !isExcludedFromDexFee[sender]) {
+        if (isDex(recipient) && !isExcludedFromDexFee(sender)) {
             if (_getPrice() >= initialPrice.mul(10)) {
                 return sellAccumulationFee.mul(amount);
             } else {
@@ -161,7 +204,7 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        if (!isExcludedFromLimits[sender] && !isDex[sender]) {
+        if (!isExcludedFromLimits(sender) && !isDex(sender)) {
             require(lastTransactionAt[sender] < block.timestamp.sub(15 minutes), "Ledgity: only one transaction per 15 minutes");
             require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
         }
