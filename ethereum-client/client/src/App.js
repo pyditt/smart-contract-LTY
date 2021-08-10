@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import LedgityContract from "./contracts/Ledgity.json";
+import LedgityContract from "./contracts/contracts/Ledgity.sol/Ledgity.json";
 import getWeb3 from "./getWeb3";
 import * as Lib from "./ledgityLib";
 

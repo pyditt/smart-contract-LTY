@@ -1,4 +1,11 @@
-# Artifacts
-build
-migrations
-types/truffle-contracts
+# Hardhat files
+cache
+client/src/contracts
+typechain
+
+# Environment
+env.ts
+
+# Tests
+coverage
+coverage.json

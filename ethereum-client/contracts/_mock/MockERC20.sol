@@ -6,7 +6,7 @@ contract MockERC20 {
     string  public name;
     string  public symbol;
     uint256 public totalSupply;
-    uint8   public decimals = 18;
+    uint8   public constant decimals = 18;
 
     event Transfer(
         address indexed _from,
@@ -28,7 +28,7 @@ contract MockERC20 {
         symbol = symbol_;
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool success) {
+    function transfer(address _to, uint256 _value) external returns (bool success) {
         require(balanceOf[msg.sender] >= _value);
         balanceOf[msg.sender] -= _value;
         balanceOf[_to] += _value;
@@ -36,13 +36,13 @@ contract MockERC20 {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool success) {
+    function approve(address _spender, uint256 _value) external returns (bool success) {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {
         require(_value <= balanceOf[_from]);
         require(_value <= allowance[_from][msg.sender]);
         balanceOf[_from] -= _value;
@@ -52,7 +52,7 @@ contract MockERC20 {
         return true;
     }
 
-    function mint(address account, uint256 amount) public {
+    function mint(address account, uint256 amount) external {
         require(account != address(0), "ERC20: mint to the zero address");
         totalSupply += amount;
         balanceOf[account] += amount;
