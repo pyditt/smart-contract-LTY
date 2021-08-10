@@ -16,7 +16,7 @@ contract Ledgity is ILedgity, ReflectToken {
     using Percent for Percent.Percent;
     using Set for Set.AddressSet;
 
-    uint256 private constant _INITIAL_TOTAL_SUPPLY = 2760000000 * 10**18;
+    uint256 public constant initialTotalSupply = 2760000000 * 10**18;
 
     uint256 public numTokensToSwap;
     bool public inSwapAndLiquify;
@@ -45,7 +45,7 @@ contract Ledgity is ILedgity, ReflectToken {
     ILedgityPriceOracle public priceOracle;
     uint256 public initialPrice;
 
-    constructor() public ReflectToken("Ledgity", "LTY", _INITIAL_TOTAL_SUPPLY) {
+    constructor() public ReflectToken("Ledgity", "LTY", initialTotalSupply) {
         numTokensToSwap = totalSupply().mul(15).div(10000);
         setIsExcludedFromDexFee(owner(), true);
         setIsExcludedFromDexFee(address(this), true);
@@ -77,7 +77,7 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function totalBurn() external view returns (uint256) {
-        return _INITIAL_TOTAL_SUPPLY - totalSupply();
+        return initialTotalSupply - totalSupply();
     }
 
     function setDex(address target, bool dex) public onlyOwner {

@@ -80,6 +80,7 @@ describe('Ledgity', () => {
       expect(await token.name()).to.eq('Ledgity', 'name');
       expect(await token.symbol()).to.eq('LTY', 'symbol');
       expect(await token.totalSupply()).to.eq(INITIAL_TOTAL_SUPPLY, 'initial total supply');
+      expect(await token.initialTotalSupply()).to.eq(INITIAL_TOTAL_SUPPLY);
       expect(await token.decimals()).to.eq(LEDGITY_DECIMALS, 'decimals');
     });
 
