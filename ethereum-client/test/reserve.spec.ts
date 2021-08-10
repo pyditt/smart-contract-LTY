@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, snapshottedBeforeEach, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { MockLedgity, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -24,12 +24,9 @@ describe('Reserve', () => {
   let usdcToken: MockUSDC;
   let router: UniswapV2Router02;
 
-  before(async () => {
+  snapshottedBeforeEach(async () => {
     ({ factory, router } = await deployUniswap(aliceAccount));
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
-  });
-
-  beforeEach(async () => {
     token = await (await ethers.getContractFactory('MockLedgity')).deploy();
     await token.mint(alice, toTokens('100000000000000'));
     reserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, timelock);
@@ -59,7 +56,7 @@ describe('Reserve', () => {
   });
 
   describe('swapping for USDC', () => {
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       await addLiquidity('10', '1');
     });
 
@@ -86,7 +83,7 @@ describe('Reserve', () => {
   });
 
   describe('swap and liquify', () => {
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       await addLiquidity('10000', '1000');
     });
 
@@ -142,7 +139,7 @@ describe('Reserve', () => {
   });
 
   describe('buy and burn', () => {
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       await addLiquidity('10000', '1000');
     });
 

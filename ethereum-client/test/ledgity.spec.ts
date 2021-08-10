@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, snapshottedBeforeEach, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, LedgityPriceOracle, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -24,12 +24,9 @@ describe('Ledgity', () => {
   let factory: UniswapV2Factory;
   let usdcToken: MockUSDC;
   let router: UniswapV2Router02;
-  before(async () => {
+  snapshottedBeforeEach(async () => {
     ({ factory, router } = await deployUniswap(aliceAccount));
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
-  });
-
-  beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy();
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
     await token.initializeReserve(tokenReserve.address);
@@ -84,9 +81,8 @@ describe('Ledgity', () => {
     });
 
     it('should send all supply to the owner', async () => {
-      token = await (await ethers.getContractFactory('Ledgity')).deploy();
-      const balance = await token.balanceOf(alice);
-      expect(balance).to.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
+      const token = await (await ethers.getContractFactory('Ledgity')).deploy();
+      expect(await token.balanceOf(alice)).to.eq(INITIAL_TOTAL_SUPPLY);
     });
   });
 
@@ -219,7 +215,7 @@ describe('Ledgity', () => {
     let pair: UniswapV2Pair;
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
       await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
@@ -260,7 +256,7 @@ describe('Ledgity', () => {
     }
 
     describe('IDO price > x10', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         // Raise price by x10
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('217'), aliceAccount);
@@ -285,7 +281,7 @@ describe('Ledgity', () => {
     });
 
     describe('IDO price < x10', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         // Raise price by x9
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('216'), aliceAccount);
@@ -529,7 +525,7 @@ describe('Ledgity', () => {
     let pair: UniswapV2Pair;
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       await token.transfer(bob, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
@@ -610,7 +606,7 @@ describe('Ledgity', () => {
     });
 
     describe('swapAndCollect', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         await token.setFeeDestination(1);  // collect
       });
 

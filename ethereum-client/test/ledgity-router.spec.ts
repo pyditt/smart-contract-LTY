@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
-import { deployUniswap, getBlockTimestamp, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { deployUniswap, getBlockTimestamp, NON_ZERO_ADDRESS, snapshottedBeforeEach, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { IERC20, Ledgity, LedgityRouter, MockUSDC, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 
@@ -19,14 +19,13 @@ describe('LedgityRouter', () => {
   let usdcToken: MockUSDC;
   let pair: UniswapV2Pair;
   let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
+  let reservesBefore: { 0: BigNumber, 1: BigNumber; };
   let factory: UniswapV2Factory;
   let uniswapRouter: UniswapV2Router02;
   let ledgityRouter: LedgityRouter;
-  before(async () => {
+  snapshottedBeforeEach(async () => {
     ({ factory, router: uniswapRouter } = await deployUniswap(aliceAccount));
-  });
 
-  beforeEach(async () => {
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
     await usdcToken.mint(alice, toTokens('100000000000'));
 
@@ -39,6 +38,10 @@ describe('LedgityRouter', () => {
 
     pair = await ethers.getContractAt(UniswapV2PairArtifact.abi, await factory.getPair(token.address, usdcToken.address)) as UniswapV2Pair;
     [tokenIndex, usdcIndex] = await pair.token0() === token.address ? [0, 1] : [1, 0];
+
+    await token.excludeAccount(alice);
+    await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
+    reservesBefore = await pair.getReserves();
   });
 
   async function addInitialLiquidity(tokenAmount: BigNumberish, usdcAmount: BigNumberish) {
@@ -72,13 +75,6 @@ describe('LedgityRouter', () => {
       to, await getBlockTimestamp() + 3600,
     );
   }
-
-  let reservesBefore: { 0: BigNumber, 1: BigNumber; };
-  beforeEach(async () => {
-    await token.excludeAccount(alice);
-    await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
-    reservesBefore = await pair.getReserves();
-  });
 
   describe('addLiquidityBypassingFee', () => {
     it('should NOT charge sell fee when adding liquidity', async () => {
