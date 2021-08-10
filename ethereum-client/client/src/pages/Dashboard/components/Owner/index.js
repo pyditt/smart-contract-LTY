@@ -1,3 +1,3 @@
-import Owner from './Owner.jsx';
+import Owner from './Owner';
 
 export default Owner;
