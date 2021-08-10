@@ -5,6 +5,19 @@ import FieldSettingPrice from "./components/FieldSettingPrice";
 import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
 
+class Field {
+  #title
+  #flag
+  #func
+  #id
+  constructor(title, flag, func, id) {
+    this.#title = title;
+    this.#flag = flag;
+    this.#func = func
+    this.#id = id
+  }
+}
+
 const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [price, setPrice] = useState("");
   const [token, setToken] = useState("");
@@ -14,12 +27,12 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     { title: 'Exclude/Include in Fee' },
     { title: 'Exclude/Include in limits' }]);
   const [fieldSet] = useState([
-    { title: 'Set number of tokens to swap:', flag: 'LTY', func: contract.setNumTokensToSwap.bind(contract) },
-    { title: 'Set max transaction size:', flag: '%', func: contract.setMaxTransactionSizePercent.bind(contract) },
-    { title: 'Set sell fee if price is < x10 IDO price', flag: '%', func: contract.setSellAtSmallPriceAccumulationFee.bind(contract) },
-    { title: 'Set sell fee if price is > x10 IDO price', flag: '%', func: contract.setSellAccumulationFee.bind(contract) },
-    { title: 'Set RFI fee', flag: '%', func: contract.setSellReflectionFee.bind(contract) },
-    { title: 'Set buy fee', flag: '%', func: contract.setBuyAccumulationFee.bind(contract) }])
+    new Field('Set number of tokens to swap:', 'LTY', contract.setNumTokensToSwap.bind(contract), 'tokenSwap'),
+    new Field('Set max transaction size:', '%', contract.setMaxTransactionSizePercent.bind(contract), 'transactionSize'),
+    new Field('Set sell fee if price is < x10 IDO price', '%', contract.setSellAtSmallPriceAccumulationFee.bind(contract), 'smallPrise'),
+    new Field('Set sell fee if price is > x10 IDO price', '%', contract.setSellAccumulationFee.bind(contract), 'morePrice'),
+    new Field('Set RFI fee', '%', contract.setSellReflectionFee.bind(contract), 'RFI'),
+    new Field('Set buy fee', '%', contract.setBuyAccumulationFee.bind(contract), 'buy')])
 
   const [errorPrice, setErrorPrice] = useState(null);
   const [errorDex, setErrorDex] = useState(null);
@@ -37,6 +50,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         return setToken(event.target.value);
       case "dex":
         return setDex(event.target.value);
+
       default:
         break;
     }
@@ -92,7 +106,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
       setErrorDex(<p> Incorrect address. Please, check it.. </p>);
     }
   };
-
   return (
     <div className="owner">
       {ownership ? (
@@ -188,12 +201,14 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
             fieldSet.map((el, index) =>
               <FieldSettingPrice
                 key={index}
-                title={el.title}
-                flag={el.flag}
+                title={el.__private_0_title}
+                flag={el.__private_1_flag}
                 ownership={ownership}
                 contract={contract}
-                func={el.func} />)
+                func={el.__private_2_func}
+                id={el.__private_3_id} />)
           }
+
         </div>
       </div>
     </div>

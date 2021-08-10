@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Decimal from 'decimal.js';
 import { asPercent } from "../../../../../utils";
+import * as Lib from "../../../../../ledgityLib";
 
-const FieldSettingPrice = ({ title, flag, ownership, contract, func }) => {
+const FieldSettingPrice = ({ title, flag, ownership, contract, func, id }) => {
     const [field, setField] = useState('');
     const [limit, setLimit] = useState(null);
     const [error, setError] = useState('');
@@ -11,7 +12,7 @@ const FieldSettingPrice = ({ title, flag, ownership, contract, func }) => {
 
     const checkRuls = () => {
         const [numerator, denominator] = new Decimal(field).toFraction();
-        if (flag === 'LTY') contract.setNumTokensToSwap(field);
+        if (id === 'tokenSwap') contract.setNumTokensToSwap(field);
         else {
             if (new Decimal(field).lte(limit)) {
                 func(numerator.toString(), denominator.toString())
@@ -27,9 +28,9 @@ const FieldSettingPrice = ({ title, flag, ownership, contract, func }) => {
     }
 
     useEffect(() => {
-        if (title === 'Set sell fee if price is < x10 IDO price') contract.initialSellAtSmallPriceAccumulationFee().then(res => setLimit(asPercent(res)));
-        if (title === 'Set sell fee if price is > x10 IDO price') contract.initialSellReflectionFee().then(res => setLimit(asPercent(res)));
-        if (title === 'Set buy fee') contract.initialBuyAccumulationFee().then(res => setLimit(asPercent(res)));
+        if (id === 'smallPrise') contract.initialSellAtSmallPriceAccumulationFee().then(res => setLimit(asPercent(res)));
+        if (id === 'morePrice') contract.initialSellReflectionFee().then(res => setLimit(asPercent(res)));
+        if (id === 'buy') contract.initialBuyAccumulationFee().then(res => setLimit(asPercent(res)));
         else contract.initialSellAccumulationFee().then(res => setLimit(asPercent(res)));
     }, []);
 
