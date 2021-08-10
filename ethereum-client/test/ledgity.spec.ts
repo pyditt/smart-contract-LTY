@@ -172,6 +172,14 @@ describe('Ledgity', () => {
       await doSwap();
       await doSwap();
     });
+
+    it('should exclude an account from time limit', async () => {
+      await token.transfer(bob, toTokens(10));
+
+      await token.setIsExcludedFromLimits(bob, true);
+      await token.connect(bobAccount).transfer(charlie, 1);
+      await token.connect(bobAccount).transfer(charlie, 1);  // OK
+    });
   });
 
   describe('transfer: max size', () => {
@@ -190,6 +198,14 @@ describe('Ledgity', () => {
       const totalSupply = await token.totalSupply();
       await token.transfer(bob, await token.balanceOf(alice));
       await token.connect(bobAccount).transfer(alice, totalSupply.mul(5).div(10000));
+    });
+
+    it('should exclude an account from transfer size limit', async () => {
+      const amount = await token.balanceOf(alice);
+      await token.transfer(bob, amount);
+
+      await token.setIsExcludedFromLimits(bob, true);
+      await token.connect(bobAccount).transfer(charlie, amount);  // OK
     });
 
     it('should allow the owner to change max transaction size', async () => {
@@ -490,6 +506,18 @@ describe('Ledgity', () => {
     it('should not allow not the owner to exclude or include an account from dex fee', async () => {
       await expect(token.connect(bobAccount).setIsExcludedFromDexFee(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    describe('getExcludedFromDexFee', () => {
+      it('should return a list of accounts excluded from dex fees', async () => {
+        const defaultExcluded = [alice, token.address, tokenReserve.address];
+        expect(await token.getExcludedFromDexFee()).to.deep.eq(defaultExcluded);
+        await token.setIsExcludedFromDexFee(bob, true);
+        await token.setIsExcludedFromDexFee(charlie, true);
+        expect(await token.getExcludedFromDexFee()).to.deep.eq([...defaultExcluded, bob, charlie]);
+        await token.setIsExcludedFromDexFee(bob, false);
+        expect(await token.getExcludedFromDexFee()).to.deep.eq([...defaultExcluded, charlie]);
+      });
+    });
   });
 
   describe('exclusion from limits', () => {
@@ -522,6 +550,18 @@ describe('Ledgity', () => {
 
     it('should not allow not the owner to exclude or include an account from limits', async () => {
       await expect(token.connect(bobAccount).setIsExcludedFromLimits(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    describe('getExcludedFromLimits', () => {
+      it('should return a list of accounts excluded from limits', async () => {
+        const defaultExcluded = [alice, token.address, tokenReserve.address];
+        expect(await token.getExcludedFromLimits()).to.deep.eq(defaultExcluded);
+        await token.setIsExcludedFromLimits(bob, true);
+        await token.setIsExcludedFromLimits(charlie, true);
+        expect(await token.getExcludedFromLimits()).to.deep.eq([...defaultExcluded, bob, charlie]);
+        await token.setIsExcludedFromLimits(bob, false);
+        expect(await token.getExcludedFromLimits()).to.deep.eq([...defaultExcluded, charlie]);
+      });
     });
   });
 
