@@ -4,12 +4,12 @@
 .owner {
   color: inherit;
   width: 31.5%;
-  max-height: 760px;
-  overflow-y: scroll;
 
   &__block {
     @include block;
     min-height: 710px;
+    max-height: 760px;
+    overflow-y: scroll;
   }
 
   &__head {
