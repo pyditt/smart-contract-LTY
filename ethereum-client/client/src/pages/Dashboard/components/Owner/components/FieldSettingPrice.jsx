@@ -2,25 +2,28 @@ import React, { useState, useEffect } from "react";
 import Decimal from 'decimal.js';
 import { asPercent } from "../../../../../utils";
 
-const FieldSet = ({ title, flag, ownership, contract, func }) => {
+const FieldSettingPrice = ({ title, flag, ownership, contract, func }) => {
     const [field, setField] = useState('');
     const [limit, setLimit] = useState(null);
     const [error, setError] = useState('');
 
     const onChange = (event) => setField(event.target.value);
 
-    const save = () => {
-        if (field !== '') {
-            const [numerator, denominator] = new Decimal(field).toFraction();
-            if (flag === 'LTY') contract.setNumTokensToSwap(field);
-            else {
-                if (new Decimal(field).lte(limit)) {
-                    func(numerator.toString(), denominator.toString())
-                    setError('');
-                }
-                else setError('your number more than limit transaction');
+    const checkRuls = () => {
+        const [numerator, denominator] = new Decimal(field).toFraction();
+        if (flag === 'LTY') contract.setNumTokensToSwap(field);
+        else {
+            if (new Decimal(field).lte(limit)) {
+                func(numerator.toString(), denominator.toString())
+                setError('');
             }
+            else setError('your number more than limit transaction');
         }
+    }
+
+    const save = () => {
+        field === '' && setError('empty field');
+        field !== '' && checkRuls();
     }
 
     useEffect(() => {
@@ -55,4 +58,4 @@ const FieldSet = ({ title, flag, ownership, contract, func }) => {
     )
 }
 
-export default FieldSet;
+export default FieldSettingPrice;

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ExcludeAndInclude from "./components/excludeAndInclude";
-import FieldSet from "./components/FieldSet";
+import FieldSettingPrice from "./components/FieldSettingPrice";
 
 import "./Owner.scss";
 import * as Lib from "../../../../ledgityLib";
@@ -14,12 +14,12 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
     { title: 'Exclude/Include in Fee' },
     { title: 'Exclude/Include in limits' }]);
   const [fieldSet] = useState([
-    { title: 'Set number of tokens to swap:', flag: 'LTY', func: contract.setNumTokensToSwap },
-    { title: 'Set max transaction size:', flag: '%', func: contract.setMaxTransactionSizePercent, },
-    { title: 'Set sell fee if price is < x10 IDO price', flag: '%', func: contract.setSellAtSmallPriceAccumulationFee },
-    { title: 'Set sell fee if price is > x10 IDO price', flag: '%', func: contract.setSellAccumulationFee },
-    { title: 'Set RFI fee', flag: '%', func: contract.setSellReflectionFee },
-    { title: 'Set buy fee', flag: '%', func: contract.setBuyAccumulationFee }])
+    { title: 'Set number of tokens to swap:', flag: 'LTY', func: contract.setNumTokensToSwap.bind(contract) },
+    { title: 'Set max transaction size:', flag: '%', func: contract.setMaxTransactionSizePercent.bind(contract) },
+    { title: 'Set sell fee if price is < x10 IDO price', flag: '%', func: contract.setSellAtSmallPriceAccumulationFee.bind(contract) },
+    { title: 'Set sell fee if price is > x10 IDO price', flag: '%', func: contract.setSellAccumulationFee.bind(contract) },
+    { title: 'Set RFI fee', flag: '%', func: contract.setSellReflectionFee.bind(contract) },
+    { title: 'Set buy fee', flag: '%', func: contract.setBuyAccumulationFee.bind(contract) }])
 
   const [errorPrice, setErrorPrice] = useState(null);
   const [errorDex, setErrorDex] = useState(null);
@@ -37,7 +37,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         return setToken(event.target.value);
       case "dex":
         return setDex(event.target.value);
-
       default:
         break;
     }
@@ -187,7 +186,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         <div className="owner_set">
           {
             fieldSet.map((el, index) =>
-              <FieldSet
+              <FieldSettingPrice
                 key={index}
                 title={el.title}
                 flag={el.flag}
@@ -195,7 +194,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
                 contract={contract}
                 func={el.func} />)
           }
-
         </div>
       </div>
     </div>
