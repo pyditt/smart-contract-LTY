@@ -1,7 +1,7 @@
 import React, { Fragment, useState } from "react";
 import * as Lib from "../../../../../ledgityLib";
 
-const ExcludeAndInclude = ({ ownership, title, contract }) => {
+const ExcludeAndInclude = ({ ownership, title, contract, func, flag }) => {
   const [accountInput, setAccountInput] = useState("");
   const [errorAccount, setErrorAccount] = useState(null);
 
@@ -20,7 +20,8 @@ const ExcludeAndInclude = ({ ownership, title, contract }) => {
     try {
       const allExcluded = await Lib.getExcluded(contract);
       if (allExcluded.includes(accountInput)) {
-        await Lib.excludeAccount(contract, accountInput);
+        if (flag) await func(contract, accountInput);
+        else await func(accountInput, true);
         setAccountInput("");
       } else setErrorAccount(<p> Such account is already excluded. </p>);
     } catch (error) {
@@ -33,7 +34,8 @@ const ExcludeAndInclude = ({ ownership, title, contract }) => {
     try {
       const allExcluded = await Lib.getExcluded(contract);
       if (allExcluded.includes(accountInput)) {
-        await Lib.includeAccount(contract, accountInput);
+        if (flag) await func(contract, accountInput);
+        else await func(accountInput, false);
         setAccountInput("");
       }
     } catch (error) {

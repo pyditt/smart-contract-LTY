@@ -1,111 +1,56 @@
 import React, { useState } from "react";
-import ExcludeAndInclude from "./components/excludeAndInclude";
+import ExcludeAndInclude from "./components/ExcludeAndInclude";
 import FieldSettingPrice from "./components/FieldSettingPrice";
-
-import "./Owner.scss";
+/* import ApplyPrice from "./components/commision/ApplyPrice"; */
+import BurnToken from "./components/commision/BurnToken";
 import * as Lib from "../../../../ledgityLib";
 
-class Field {
-  #title
-  #flag
-  #func
-  #id
-  constructor(title, flag, func, id) {
-    this.#title = title;
-    this.#flag = flag;
-    this.#func = func
-    this.#id = id
-  }
-}
+import "./Owner.scss";
+import AddDex from "./components/commision/AddDex";
 
 const Owner = ({ contract, account, updateInfo, ownership }) => {
-  const [price, setPrice] = useState("");
-  const [token, setToken] = useState("");
-  const [dex, setDex] = useState("");
   const [excludeInclude] = useState([
-    { title: 'Exclude/Include in RFI:' },
-    { title: 'Exclude/Include in Fee' },
-    { title: 'Exclude/Include in limits' }]);
+    { title: 'Exclude/Include in RFI:', func: Lib.excludeAccount, flag: 'RFI' },
+    { title: 'Exclude/Include in Fee', func: contract.setIsExcludedFromDexFee.bind(contract), flag: null },
+    { title: 'Exclude/Include in limits', func: contract.setIsExcludedFromLimits.bind(contract), flag: null }]);
   const [fieldSet] = useState([
-    new Field('Set number of tokens to swap:', 'LTY', contract.setNumTokensToSwap.bind(contract), 'tokenSwap'),
-    new Field('Set max transaction size:', '%', contract.setMaxTransactionSizePercent.bind(contract), 'transactionSize'),
-    new Field('Set sell fee if price is < x10 IDO price', '%', contract.setSellAtSmallPriceAccumulationFee.bind(contract), 'smallPrise'),
-    new Field('Set sell fee if price is > x10 IDO price', '%', contract.setSellAccumulationFee.bind(contract), 'morePrice'),
-    new Field('Set RFI fee', '%', contract.setSellReflectionFee.bind(contract), 'RFI'),
-    new Field('Set buy fee', '%', contract.setBuyAccumulationFee.bind(contract), 'buy')])
+    {
+      title: 'Set number of tokens to swap:',
+      flag: 'LTY',
+      func: contract.setNumTokensToSwap.bind(contract),
+      getLimit: null
+    },
+    {
+      title: 'Set max transaction size:',
+      flag: '%',
+      func: contract.setMaxTransactionSizePercent.bind(contract),
+      getLimit: contract.initialSellAccumulationFee.bind(contract)
+    },
+    {
+      title: 'Set sell fee if price is < x10 IDO price',
+      flag: '%',
+      func: contract.setSellAtSmallPriceAccumulationFee.bind(contract),
+      getLimit: contract.initialSellAtSmallPriceAccumulationFee.bind(contract)
+    },
+    {
+      title: 'Set sell fee if price is > x10 IDO price',
+      flag: '%',
+      func: contract.setSellAccumulationFee.bind(contract),
+      getLimit: contract.initialSellReflectionFee.bind(contract)
+    },
+    {
+      title: 'Set RFI fee',
+      flag: '%',
+      func: contract.setSellReflectionFee.bind(contract),
+      getLimit: contract.initialSellAccumulationFee.bind(contract)
+    },
+    {
+      title: 'Set buy fee',
+      flag: '%',
+      func: contract.setBuyAccumulationFee.bind(contract),
+      getLimit: contract.initialBuyAccumulationFee.bind(contract)
+    }])
 
-  const [errorPrice, setErrorPrice] = useState(null);
-  const [errorDex, setErrorDex] = useState(null);
-  const [errorToken, setErrorToken] = useState(null);
-
-  const onChange = (event) => {
-    setErrorPrice(null);
-    setErrorDex(null);
-    setErrorToken(null);
-
-    switch (event.target.name) {
-      case "price":
-        return setPrice(event.target.value);
-      case "token":
-        return setToken(event.target.value);
-      case "dex":
-        return setDex(event.target.value);
-
-      default:
-        break;
-    }
-  };
-
-  const applyPrice = async (event) => {
-    event.preventDefault();
-    setErrorPrice(null);
-
-    try {
-      // TODO: remove everything related to setPrice
-      // await Lib.setPrice(contract, account, price);
-      setPrice("");
-      updateInfo();
-    } catch (error) {
-      if (error.code === 4001) {
-        return setErrorPrice(<p>Transaction signature was denied.</p>);
-      }
-      setErrorPrice(<p>Something went wrong..</p>);
-    }
-  };
-
-  const burnToken = async (event) => {
-    event.preventDefault();
-    setErrorToken(null);
-    try {
-      await Lib.burn(contract, token);
-      setToken("");
-      updateInfo();
-    } catch (error) {
-      if (error.code === 4001) {
-        return setErrorToken(<p>Transaction signature was denied.</p>);
-      }
-      setErrorToken(<p> Incorrect token. </p>);
-    }
-  };
-
-  const addDex = async (event) => {
-    event.preventDefault();
-    setErrorDex(null);
-    try {
-      const allDex = await Lib.getDex(contract);
-      if (allDex.indexOf(dex) === -1) {
-        await Lib.setDex(contract, dex);
-        setDex("");
-      } else {
-        setErrorDex(<p> Such address already exists. </p>);
-      }
-    } catch (error) {
-      if (error.code === 4001) {
-        return setErrorToken(<p>Transaction signature was denied.</p>);
-      }
-      setErrorDex(<p> Incorrect address. Please, check it.. </p>);
-    }
-  };
   return (
     <div className="owner">
       {ownership ? (
@@ -116,74 +61,13 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
           <p>(Only for contract Owner)</p>
         </div>
       )}
-
       <div className="owner__block">
         <div className="owner__item commission">
           <h2> Get the balance of the Address: </h2>
           <div className="owner__fields">
-            <form className="owner__field field" onSubmit={applyPrice}>
-              <label className="field__label" htmlFor="price">
-                Set a price:
-              </label>
-              <input
-                type="number"
-                name="price"
-                className={ownership ? "field__input" : "field__input disabled"}
-                disabled={!ownership}
-                placeholder="Enter price"
-                value={price}
-                onChange={onChange}
-              />
-              <button
-                type="submit"
-                className={ownership ? "btn-primary" : "btn-primary disabled"}
-                disabled={!ownership}
-              >
-                Set
-              </button>
-              <div className="error-field"> {errorPrice} </div>
-            </form>
-            <form className="owner__field field" onSubmit={burnToken}>
-              <label className="field__label" htmlFor="token">
-                Burn token:
-              </label>
-              <input
-                type="number"
-                name="token"
-                className={ownership ? "field__input" : "field__input disabled"}
-                disabled={!ownership}
-                value={token}
-                onChange={onChange}
-              />
-              <button
-                type="submit"
-                className={ownership ? "btn-primary" : "btn-primary disabled"}
-                disabled={!ownership}
-              >
-                Burn
-              </button>
-              <div className="error-field"> {errorToken} </div>
-            </form>
-            <form className="owner__field field" onSubmit={addDex}>
-              <input
-                type="text"
-                placeholder="Enter address"
-                name="dex"
-                className={ownership ? "field__input" : "field__input disabled"}
-                disabled={!ownership}
-                value={dex}
-                onChange={onChange}
-              />
-              <button
-                type="submit"
-                className={ownership ? "btn-primary" : "btn-primary disabled"}
-                disabled={!ownership}
-              >
-                {" "}
-                Add DEX{" "}
-              </button>
-              <div className="error-field">{errorDex}</div>
-            </form>
+            {/* <ApplyPrice ownership={ownership} updateInfo={updateInfo} /> */}
+            <BurnToken ownership={ownership} updateInfo={updateInfo} contract={contract} />
+            <AddDex ownership={ownership} contract={contract} />
           </div>
         </div>
         <div className="owner__item">
@@ -201,12 +85,12 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
             fieldSet.map((el, index) =>
               <FieldSettingPrice
                 key={index}
-                title={el.__private_0_title}
-                flag={el.__private_1_flag}
+                title={el.title}
+                flag={el.flag}
                 ownership={ownership}
                 contract={contract}
-                func={el.__private_2_func}
-                id={el.__private_3_id} />)
+                func={el.func}
+                getLimit={el.getLimit} />)
           }
 
         </div>
