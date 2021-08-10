@@ -1,4 +1,28 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Setup Project
+
+### Generate ABI
+
+Follow `Setup Project` chapter in the root `README.md`. You need smart contract ABI to work on the frontend part.
+
+To generate ABI, run this command in the `ethereum-client` folder:
+
+```sh
+yarn hardhat compile
+```
+
+It will generate `abi` folder inside `src`.
+
+### Generate types
+
+```sh
+yarn generate-types
+```
+
+### Start development
+
+```sh
+yarn start
+```
 
 ## Available Scripts
 
