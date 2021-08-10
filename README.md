@@ -44,3 +44,30 @@ hh coverage
 ```
 
 Open `coverage/index.html` in the browser.
+
+## Deploy
+
+You should specify the network you want to deploy to. Replace `<network>` in any of the commands below with
+the network of your choice(e.g., `ropsten`).
+
+### Deploy Ledgity
+
+```sh
+hh --network <network> deploy --tags ledgity
+```
+
+### Price Oracle
+
+Before deploying price oracle, you MUST add liquidity to the uniswap pair. After you added liquidity:
+
+```sh
+hh --network <network> deploy --tags price-oracle
+```
+
+### Ledgity Router
+
+Ledgity Router allows users to add liquidity bypassing fees.
+
+```sh
+hh --network <network> deploy --tags ledgity-router
+```
