@@ -63,6 +63,7 @@ class App extends Component {
 
   connect = async () => {
     console.log(this.state.users);
+    await window.ethereum.enable();
     const web3 = new ethers.providers.Web3Provider(window.ethereum);
     this.setState({
       web3: web3,
