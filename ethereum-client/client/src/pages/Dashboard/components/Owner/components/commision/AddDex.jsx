@@ -1,33 +1,52 @@
 import React, { useState } from "react";
-import Form from "../../ui/Form";
-import * as Lib from "../../../../../../ledgityLib";
 
 const AddDex = ({ ownership, contract }) => {
-    const [errorDex, setErrorDex] = useState(null);
+    const [value, setValue] = useState('')
+    const [error, setError] = useState(null);
 
     const checkError = (error) => {
-        error === 4001 && setErrorDex(<p>Transaction signature was denied.</p>);
-        error !== 4001 && setErrorDex(<p> Incorrect address. Please, check it.. </p>);
+        error === 4001 && setError(<p>Transaction signature was denied.</p>);
+        error !== 4001 && setError(<p> Incorrect address. Please, check it.. </p>);
     }
 
 
-    const addDex = async (event, func, value) => {
-        event.preventDefault();
-        setErrorDex(null);
+    const addDex = async (value) => {
+        setError(null);
         try {
-            const allDex = await Lib.getDex(contract);
+            const allDex = await contract.getDexes()
             if (allDex.includes(value)) {
-                await Lib.setDex(contract, value);
-                func("");
-            } else {
-                setErrorDex(<p> Such address already exists. </p>);
+                setError(<p> Such address is already a DEX. </p>);
+                return;
             }
-        } catch (error) { checkError(error.code); }
+            await contract.setDex(value, true);
+        } catch (error) {
+          console.error(error)
+          checkError(error.code);
+        }
     };
 
 
     return (
-        <Form erro={errorDex} func={addDex} ownership={ownership} active={'Add DEX'} />
+        <form className="owner__field field" onSubmit={async (e) => {
+            e.preventDefault()
+            await addDex(value)
+        }}>
+            <input
+                className={ownership ? "field__input" : "field__input disabled"}
+                disabled={!ownership}
+                placeholder="Enter address"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+            />
+            <button
+                type="submit"
+                className={ownership ? "btn-primary" : "btn-primary disabled"}
+                disabled={!ownership}
+            >
+                Add Dex
+            </button>
+            <div className="error-field">{error}</div>
+        </form>
     )
 }
 
