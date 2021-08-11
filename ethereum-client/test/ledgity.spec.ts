@@ -132,7 +132,8 @@ describe('Ledgity', () => {
     });
   });
 
-  describe('transfer: time limit', () => {
+  // TODO: remove this test suite.
+  describe.skip('transfer: time limit', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
       await token.transfer(bob, 10);  // to allow transfers from Bob's account
       await token.connect(bobAccount).transfer(alice, 1);
@@ -179,7 +180,8 @@ describe('Ledgity', () => {
     });
   });
 
-  describe('transfer: max size', () => {
+  // TODO: remove this test suite.
+  describe.skip('transfer: max size', () => {
     it('should allow owner to transfer any amount of tokens', async () => {
       await token.transfer(bob, await token.balanceOf(alice));
     });
@@ -225,6 +227,71 @@ describe('Ledgity', () => {
     it('should NOT allow invalid percentages', async () => {
       await expect(token.setMaxTransactionSizePercent(101, 100))
         .to.be.revertedWith('Percent: invalid percentage');
+    });
+  });
+
+  describe('sell limitations', () => {
+    snapshottedBeforeEach(async () => {
+      await token.transfer(bob, await token.balanceOf(alice));
+      await token.setIsExcludedFromLimits(bob, false);
+    });
+
+    it('should NOT allow to sell more than once per 10 minutes', async () => {
+      await sell(toTokens(1), bobAccount);
+      await evmIncreaseTime(10 * 60 - 10);
+      await expect(sell(toTokens(1), bobAccount))
+        .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+    });
+
+    it('should allow to sell less than once per 10 minutes', async () => {
+      await sell(toTokens(1), bobAccount);
+      await evmIncreaseTime(10 * 60 + 10);
+      await sell(toTokens(1), bobAccount);  // OK
+    });
+
+    it('should NOT allow to sell more than 0.25% of total supply', async () => {
+      const totalSupply = await token.totalSupply();
+      await expect(sell(totalSupply.mul(25).div(10000).add(1), bobAccount))
+        .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+    });
+
+    it('should allow to sell less than 0.25% of total supply', async () => {
+      const totalSupply = await token.totalSupply();
+      await sell(totalSupply.mul(25).div(10000), bobAccount);  // OK
+    });
+
+    it('should exclude an account from limits', async () => {
+      await token.setIsExcludedFromLimits(bob, true);
+      await sell(toTokens(1), bobAccount);
+      await sell(toTokens(1), bobAccount);  // OK
+    });
+
+    it('should allow anyone to buy any amount of tokens', async () => {
+      const totalSupply = await token.totalSupply();
+      await buy(totalSupply.div(10), bobAccount);  // OK
+    });
+
+    describe('maxTransactionSizePercent', () => {
+      it('should allow the owner to change max transaction size', async () => {
+        await token.setMaxTransactionSizePercent(7, 10000);
+        expect((await token.maxTransactionSizePercent()).numerator).to.eq(7);
+        expect((await token.maxTransactionSizePercent()).denominator).to.eq(10000);
+        const totalSupply = await token.totalSupply();
+        await expect(sell(totalSupply.mul(7).div(10000).add(1), bobAccount))
+          .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+
+        await sell(totalSupply.mul(7).div(10000), bobAccount); // OK
+      });
+
+      it('should NOT allow not the owner to change max transaction size', async () => {
+        await expect(token.connect(bobAccount).setMaxTransactionSizePercent(20, 100))
+          .to.be.revertedWith('Ownable: caller is not the owner');
+      });
+
+      it('should NOT allow invalid percentages', async () => {
+        await expect(token.setMaxTransactionSizePercent(101, 100))
+          .to.be.revertedWith('Percent: invalid percentage');
+      });
     });
   });
 
