@@ -3,12 +3,14 @@ import { Ledgity } from './types/ethers-contracts';
 import { asPercent } from './utils';
 
 export interface Info {
+  initialTotalSupply: string
   totalSupply: string
   name: string
   symbol: string
   decimals: string
   maxTokenTx: string
   totalFees: string
+  totalBurn: string
   startPrice: string
   owner: string
 }
@@ -20,12 +22,14 @@ export async function getInfo(contract: Ledgity): Promise<Info> {
   }
   const totalSupplyWoDecimals = removeDecimals(await contract.totalSupply());
   return {
+    initialTotalSupply: removeDecimals(await contract.initialTotalSupply()),
     totalSupply: totalSupplyWoDecimals,
     name: await contract.name(),
     symbol: await contract.symbol(),
     decimals,
     maxTokenTx: asPercent(await contract.maxTransactionSizePercent()).mul(totalSupplyWoDecimals).toString(),
     totalFees: removeDecimals(await contract.totalFees()),
+    totalBurn: removeDecimals(await contract.totalBurn()),
     startPrice: (await contract.initialPrice()).toString(),
     owner: await contract.owner(),
   };
@@ -39,20 +43,6 @@ export async function getBalance(web3: ethers.providers.Web3Provider, account: s
   return ethers.utils.formatEther(await web3.getBalance(account));
 }
 
-export async function getDex(contract: Ledgity) {
-  // TODO
-  return [];
-  // const dex = await contract.methods.getDex().call();
-  // return dex;
-}
-
-export async function getExcluded(contract: Ledgity) {
-  // TODO
-  return [];
-  // const excluded = await contract.methods.getExcluded().call();
-  // return excluded;
-}
-
 export async function transfer(contract: Ledgity, address: string, amount: BigNumberish) {
   amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
   await contract.transfer(address, amount)
@@ -61,10 +51,6 @@ export async function transfer(contract: Ledgity, address: string, amount: BigNu
 export async function burn(contract: Ledgity, amount: BigNumberish) {
   amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
   await contract.burn(amount)
-}
-
-export async function setDex(contract: Ledgity, dexAddress: string) {
-  await contract.setDex(dexAddress, true)
 }
 
 export async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: string) {

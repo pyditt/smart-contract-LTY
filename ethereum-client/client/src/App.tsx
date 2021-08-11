@@ -140,8 +140,7 @@ class App extends Component {
       symbol: info.symbol,
       tokenBalance,
       balance,
-      // TODO: bring this back
-      // totalBurn: info.totalBurn,
+      totalBurn: info.totalBurn,
       totalFees: info.totalFees,
       startPrice: info.startPrice,
       // TODO: bring this back. Use price oracle
@@ -226,8 +225,8 @@ class App extends Component {
                 ownership={ownership}
                 contract={contract}
                 tokenBalance={tokenBalance}
-                getAddress={() => Lib.getExcluded(contract)}
-                getDex={() => Lib.getDex(contract)}
+                getAddress={() => contract.getExcluded()}
+                getDex={() => contract.getDexes()}
                 updateInfo={() => this.updateInfo()}
                 updateBalances={() => this.updateBalances()}
               />
