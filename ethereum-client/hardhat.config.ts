@@ -1,10 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
+import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'hardhat-deploy';
 import { HardhatUserConfig, task } from 'hardhat/config';
 import 'solidity-coverage';
-import "@nomiclabs/hardhat-etherscan";
 import { PRIVATE_NETWORK_PRIVATE_KEY, ROPSTEN_PRIVATE_KEY, ROPSTEN_PROVIDER_URL } from './env';
 
 function typedNamedAccounts<T>(namedAccounts: { [key in string]: T }) {
@@ -34,6 +34,7 @@ const config: HardhatUserConfig = {
       url: ROPSTEN_PROVIDER_URL,
       chainId: 3,
       accounts: [ROPSTEN_PRIVATE_KEY],
+      gasPrice: 3000000000,
     },
   },
   etherscan: {
