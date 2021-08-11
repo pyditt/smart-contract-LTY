@@ -9,33 +9,32 @@ const FieldSettingPrice = ({ title, flag, ownership, func, getLimit }) => {
 
     const onChange = (event) => setField(event.target.value);
 
-    const noLimit = (numerator, denominator) => {
-        if (flag !== 'LTY') {
-            if (Number(field) <= 100 && Number(field) >= 0) {
-                func(numerator.toString(), denominator.toString());
-            }
-            else setError('percentage from 0 to 100');
+    const save = async () => {
+        setError('');
+
+        if (field === '') {
+            setError('empty field');
+            return
         }
-        else func(field);
-    }
 
-    const isLimit = (numerator, denominator) => {
-        if (new Decimal(field).lte(limit)) {
-            func(numerator.toString(), denominator.toString());
-            setError('');
+        if (flag === 'LTY') {
+            // Just a number, do not do anything else
+            await func(field);
+            return
         }
-        else setError('your number more than limit transaction');
-    }
 
-    const checkRuls = () => {
-        const [numerator, denominator] = new Decimal(field).div(100).toFraction();
-        !limit && noLimit(numerator, denominator);
-        limit && isLimit(numerator, denominator);
-    }
+        const percent = new Decimal(field).div(100)
+        if (limit != null && percent.gt(limit)) {
+            setError(`your number more than limit: ${limit.mul(100)}%`);
+            return
+        }
+        if (percent.lt(0) || percent.gt(1)) {
+            setError('percentage from 0 to 100');
+            return
+        }
 
-    const save = () => {
-        field === '' && setError('empty field');
-        field !== '' && checkRuls();
+        const [numerator, denominator] = percent.toFraction()
+        await func(numerator.toString(), denominator.toString());
     }
 
     useEffect(() => {
@@ -55,7 +54,6 @@ const FieldSettingPrice = ({ title, flag, ownership, func, getLimit }) => {
                         onFocus={() => {
                             if (error !== '') {
                                 setError('');
-                                setField('');
                             }
                         }} />
                     <span className="flag">{flag}</span>

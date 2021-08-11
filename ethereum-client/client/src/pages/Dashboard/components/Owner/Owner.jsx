@@ -11,19 +11,21 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [excludeInclude] = useState([
     {
       title: 'Exclude/Include in RFI:',
-      getExcluded: contract.exclude,
-      exclude: contract.excludeAccount,
-      include: contract.includeAccount
+      getExcluded: () => contract.getExcluded(),
+      exclude: address => contract.excludeAccount(address),
+      include: address => contract.includeAccount(address),
     },
     {
       title: 'Exclude/Include in Fee',
-      getExcluded: contract.exclude,
-      exclude: contract.setIsExcludedFromDexFee.bind(contract)
+      getExcluded: () => contract.getExcludedFromDexFee(),
+      exclude: address => contract.setIsExcludedFromDexFee(address, true),
+      include: address => contract.setIsExcludedFromDexFee(address, false),
     },
     {
       title: 'Exclude/Include in limits',
-      getExcluded: contract.exclude,
-      exclude: contract.setIsExcludedFromLimits.bind(contract)
+      getExcluded: () => contract.getExcludedFromLimits(),
+      exclude: address => contract.setIsExcludedFromLimits(address, true),
+      include: address => contract.setIsExcludedFromLimits(address, false),
     }]);
   const [fieldSet] = useState([
     {
@@ -89,7 +91,11 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
                 key={index}
                 ownership={ownership}
                 contract={contract}
-                title={el.title} />)
+                title={el.title}
+                getExcluded={el.getExcluded}
+                exclude={el.exclude}
+                include={el.include}
+              />)
           }
         </div>
         <div className="owner_set">

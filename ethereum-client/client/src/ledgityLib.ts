@@ -67,14 +67,6 @@ export async function setDex(contract: Ledgity, dexAddress: string) {
   await contract.setDex(dexAddress, true)
 }
 
-export async function includeAccount(contract: Ledgity, address: string) {
-  await contract.includeAccount(address)
-}
-
-export async function excludeAccount(contract: Ledgity, address: string) {
-  await contract.excludeAccount(address)
-}
-
 export async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: string) {
   try {
     const info = await getInfo(contract);
