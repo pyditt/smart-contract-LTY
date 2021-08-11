@@ -225,8 +225,8 @@ class App extends Component {
                 ownership={ownership}
                 contract={contract}
                 tokenBalance={tokenBalance}
-                getAddress={() => Lib.getExcluded(contract)}
-                getDex={() => Lib.getDex(contract)}
+                getAddress={() => contract.getExcluded()}
+                getDex={() => contract.getDexes()}
                 updateInfo={() => this.updateInfo()}
                 updateBalances={() => this.updateBalances()}
               />

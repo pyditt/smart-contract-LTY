@@ -41,20 +41,6 @@ export async function getBalance(web3: ethers.providers.Web3Provider, account: s
   return ethers.utils.formatEther(await web3.getBalance(account));
 }
 
-export async function getDex(contract: Ledgity) {
-  // TODO
-  return [];
-  // const dex = await contract.methods.getDex().call();
-  // return dex;
-}
-
-export async function getExcluded(contract: Ledgity) {
-  // TODO
-  return [];
-  // const excluded = await contract.methods.getExcluded().call();
-  // return excluded;
-}
-
 export async function transfer(contract: Ledgity, address: string, amount: BigNumberish) {
   amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
   await contract.transfer(address, amount)
@@ -63,10 +49,6 @@ export async function transfer(contract: Ledgity, address: string, amount: BigNu
 export async function burn(contract: Ledgity, amount: BigNumberish) {
   amount = ethers.utils.parseUnits(amount.toString(), await contract.decimals())
   await contract.burn(amount)
-}
-
-export async function setDex(contract: Ledgity, dexAddress: string) {
-  await contract.setDex(dexAddress, true)
 }
 
 export async function addTokenToWallet(contract: Ledgity, ethereum: any, tokenAddress: string) {
