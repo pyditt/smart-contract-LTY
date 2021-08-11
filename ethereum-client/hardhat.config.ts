@@ -2,6 +2,7 @@ import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
+import 'hardhat-abi-exporter';
 import 'hardhat-deploy';
 import { HardhatUserConfig, task } from 'hardhat/config';
 import 'solidity-coverage';
@@ -20,9 +21,6 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
-  },
-  paths: {
-    artifacts: './client/src/contracts',
   },
   networks: {
     private: {
@@ -60,6 +58,11 @@ const config: HardhatUserConfig = {
     externalArtifacts: [
       './uniswap_build/**/*.json',
     ],
+  },
+  abiExporter: {
+    path: './client/src/abi',
+    flat: true,
+    clear: true,
   },
 };
 

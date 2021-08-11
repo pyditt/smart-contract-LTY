@@ -1,5 +1,5 @@
-@import '../../../../styles/variables';
-@import '../../../../styles/mixins';
+@import "../../../../styles/variables";
+@import "../../../../styles/mixins";
 
 .owner {
   color: inherit;
@@ -7,7 +7,26 @@
 
   &__block {
     @include block;
-    min-height: 710px;
+    height: 710px;
+    overflow-y: scroll;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    @media screen and(max-width: 1700px) {
+      border-bottom-left-radius: 0;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #fff;
+    }
+    &::-webkit-scrollbar {
+      width: 7px;
+      height: 8px;
+    }
+    &::-webkit-scrollbar-thumb {
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+      background-color: #384ac2;
+    }
   }
 
   &__head {
@@ -87,7 +106,51 @@
   }
 }
 
-@media(max-width: 1470px) {
+.owner_wrapper {
+  position: relative;
+
+  & .owner__field {
+    margin-top: 40px;
+  }
+
+  & .field__input {
+    width: 100%;
+    min-width: 313px;
+  }
+
+  & .flag {
+    color: #fff;
+    font-family: Montserrat;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 22px;
+    text-align: center;
+    width: 50px;
+  }
+
+  & .btn-primary {
+    padding: 10px 35px;
+    background-color: #384ac2;
+    color: #fff;
+
+    &:hover {
+      background-color: #fff;
+      color: #384ac2;
+    }
+  }
+
+  & label {
+    display: flex;
+    align-items: center;
+  }
+
+  & .error-field {
+    color: #c73232;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1470px) {
   .owner {
     &__block {
       padding: 20px;

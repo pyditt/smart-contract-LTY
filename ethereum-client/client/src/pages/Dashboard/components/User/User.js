@@ -51,7 +51,7 @@ const User = (props) => {
     }
 
     try {
-      await Lib.transfer(props.contract, props.account, address, token);
+      await Lib.transfer(props.contract, address, token);
       props.updateInfo();
       props.updateBalances();
 

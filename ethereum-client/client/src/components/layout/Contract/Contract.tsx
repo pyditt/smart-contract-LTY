@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { FC } from 'react';
+import { Info } from '../../../ledgityLib';
 
 import './Contract.scss';
 
-const Contract = ({ info }) => {
-    const { owner, symbol, name, totalSupply, decimals, allSupply, maxTokenTx, totalFee, totalBurn, startPrice, price  } = info;
+interface Props {
+  info: Info
+}
 
-    const renderTokenSymbol = (symbol) => {
+const Contract: FC<Props> = ({ info }) => {
+    const { owner, symbol, name, totalSupply, initialTotalSupply, decimals, maxTokenTx, totalFees, startPrice, price, totalBurn } = info;
+
+    const renderTokenSymbol = (symbol: string) => {
         switch (symbol) {
             case 'LTY': return <img src="/images/lty.svg" alt="lty"/>
             case 'ETH': return <img src="/images/eth.svg" alt="eth" />
@@ -39,7 +44,7 @@ const Contract = ({ info }) => {
             <div className="contract__form">
                 <div className="contract__field">
                     <p className="contract__label bold"> How much has been released token: </p>
-                    <div className="contract__input"> {allSupply} </div>
+                    <div className="contract__input"> {initialTotalSupply} </div>
                 </div>
                 <div className="contract__field">
                     <p className="contract__label bold"> Total supply: </p>
@@ -48,11 +53,10 @@ const Contract = ({ info }) => {
                 <div className="contract__field combine">
                     <p className="contract__label"> Transaction size max: </p>
                     <div className="contract__input half"> {maxTokenTx} </div>
-                    <p className="contract__note"> 0,1 % of total supply </p>
                 </div>
                 <div className="contract__field half">
                     <p className="contract__label green"> Total commission: </p>
-                    <div className="contract__input"> {totalFee} </div>
+                    <div className="contract__input"> {totalFees} </div>
                 </div>
                 <div className="contract__field half">
                     <p className="contract__label red"> Tokens burned: </p>

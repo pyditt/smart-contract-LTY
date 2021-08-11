@@ -1,8 +1,15 @@
-import React from "react";
+import React, { FC } from "react";
+import { Info } from '../../../../ledgityLib';
 
 import "./Information.scss";
 
-const Information = ({ info = {}, loading, updateInfo }) => {
+interface Props {
+  info: Info
+  loading: boolean
+  updateInfo: () => void
+}
+
+const Information: FC<Props> = ({ info, loading, updateInfo }) => {
   const loadingElement = (
     <div style={{ color: "#fff", marginLeft: "15px" }}> Loading ... </div>
   );
@@ -30,7 +37,7 @@ const Information = ({ info = {}, loading, updateInfo }) => {
             </div>
             <div className="information__field field">
               <div className="field__label"> Total commission: </div>
-              <div className="field__input"> {info.totalFee} </div>
+              <div className="field__input"> {info.totalFees} </div>
               <div className="field__note" />
             </div>
           </div>
@@ -54,7 +61,7 @@ const Information = ({ info = {}, loading, updateInfo }) => {
           <h2> How much has been released token </h2>
           <div className="information__fields">
             <div className="information__field field">
-              <div className="field__input single"> {info.allSupply} </div>
+              <div className="field__input single"> {info.initialTotalSupply} </div>
             </div>
           </div>
         </div>
