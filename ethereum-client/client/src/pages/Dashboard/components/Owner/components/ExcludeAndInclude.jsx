@@ -15,6 +15,10 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
   };
 
   const excludeAccount = async () => {
+    if (!accountInput) {
+      setErrorAccount(<p>Please enter account address</p>)
+      return
+    }
     setErrorAccount(null);
     try {
       const allExcluded = await getExcluded()
@@ -32,6 +36,10 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
 
   const includeAccount = async () => {
     setErrorAccount(null);
+    if (!accountInput) {
+      setErrorAccount(<p>Please enter account address</p>)
+      return
+    }
     try {
       const allExcluded = await getExcluded()
       if (!allExcluded.includes(accountInput)) {
