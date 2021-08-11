@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
-import { deployUniswap, evmIncreaseTime, getBlockTimestamp, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { deployUniswap, evmIncreaseTime, getBlockTimestamp, snapshottedBeforeEach, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { LedgityPriceOracle, MockERC20, MockUSDC, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 
@@ -24,10 +24,8 @@ describe('LedgityPriceOracle', () => {
   let factory: UniswapV2Factory;
   let router: UniswapV2Router02;
   let pair: UniswapV2Pair;
-  before(async () => {
+  snapshottedBeforeEach(async () => {
     ({ factory, router } = await deployUniswap(aliceAccount));
-  });
-  beforeEach(async () => {
     const tokenA = await (await ethers.getContractFactory('MockUSDC')).deploy();
     const tokenB = await (await ethers.getContractFactory('MockUSDC')).deploy();
     [token0, token1] = tokenA.address < tokenB.address ? [tokenA, tokenB] : [tokenB, tokenA];

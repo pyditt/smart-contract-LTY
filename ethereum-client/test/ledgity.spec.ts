@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import chai from 'chai';
 import { BigNumber, BigNumberish } from "ethers";
 import { ethers } from 'hardhat';
-import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, toTokens, ZERO_ADDRESS } from '../shared/utils';
+import { addLiquidityUtil, deployUniswap, evmIncreaseTime, getBlockTimestamp, LEDGITY_DECIMALS, NON_ZERO_ADDRESS, snapshottedBeforeEach, toTokens, ZERO_ADDRESS } from '../shared/utils';
 import { Ledgity, LedgityPriceOracle, MockUSDC, Reserve, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from '../typechain';
 import UniswapV2PairArtifact from '../uniswap_build/contracts/UniswapV2Pair.json';
 const { expect } = chai;
@@ -24,12 +24,9 @@ describe('Ledgity', () => {
   let factory: UniswapV2Factory;
   let usdcToken: MockUSDC;
   let router: UniswapV2Router02;
-  before(async () => {
+  snapshottedBeforeEach(async () => {
     ({ factory, router } = await deployUniswap(aliceAccount));
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
-  });
-
-  beforeEach(async () => {
     token = await (await ethers.getContractFactory('Ledgity')).deploy();
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
     await token.initializeReserve(tokenReserve.address);
@@ -80,13 +77,13 @@ describe('Ledgity', () => {
       expect(await token.name()).to.eq('Ledgity', 'name');
       expect(await token.symbol()).to.eq('LTY', 'symbol');
       expect(await token.totalSupply()).to.eq(INITIAL_TOTAL_SUPPLY, 'initial total supply');
+      expect(await token.initialTotalSupply()).to.eq(INITIAL_TOTAL_SUPPLY);
       expect(await token.decimals()).to.eq(LEDGITY_DECIMALS, 'decimals');
     });
 
     it('should send all supply to the owner', async () => {
-      token = await (await ethers.getContractFactory('Ledgity')).deploy();
-      const balance = await token.balanceOf(alice);
-      expect(balance).to.eq(INITIAL_TOTAL_SUPPLY, 'Initial supply not sent to the owner');
+      const token = await (await ethers.getContractFactory('Ledgity')).deploy();
+      expect(await token.balanceOf(alice)).to.eq(INITIAL_TOTAL_SUPPLY);
     });
   });
 
@@ -135,7 +132,8 @@ describe('Ledgity', () => {
     });
   });
 
-  describe('transfer: time limit', () => {
+  // TODO: remove this test suite.
+  describe.skip('transfer: time limit', () => {
     it('should NOT allow two transfers from one account within 15 minutes', async () => {
       await token.transfer(bob, 10);  // to allow transfers from Bob's account
       await token.connect(bobAccount).transfer(alice, 1);
@@ -172,9 +170,18 @@ describe('Ledgity', () => {
       await doSwap();
       await doSwap();
     });
+
+    it('should exclude an account from time limit', async () => {
+      await token.transfer(bob, toTokens(10));
+
+      await token.setIsExcludedFromLimits(bob, true);
+      await token.connect(bobAccount).transfer(charlie, 1);
+      await token.connect(bobAccount).transfer(charlie, 1);  // OK
+    });
   });
 
-  describe('transfer: max size', () => {
+  // TODO: remove this test suite.
+  describe.skip('transfer: max size', () => {
     it('should allow owner to transfer any amount of tokens', async () => {
       await token.transfer(bob, await token.balanceOf(alice));
     });
@@ -190,6 +197,14 @@ describe('Ledgity', () => {
       const totalSupply = await token.totalSupply();
       await token.transfer(bob, await token.balanceOf(alice));
       await token.connect(bobAccount).transfer(alice, totalSupply.mul(5).div(10000));
+    });
+
+    it('should exclude an account from transfer size limit', async () => {
+      const amount = await token.balanceOf(alice);
+      await token.transfer(bob, amount);
+
+      await token.setIsExcludedFromLimits(bob, true);
+      await token.connect(bobAccount).transfer(charlie, amount);  // OK
     });
 
     it('should allow the owner to change max transaction size', async () => {
@@ -215,11 +230,76 @@ describe('Ledgity', () => {
     });
   });
 
+  describe('sell limitations', () => {
+    snapshottedBeforeEach(async () => {
+      await token.transfer(bob, await token.balanceOf(alice));
+      await token.setIsExcludedFromLimits(bob, false);
+    });
+
+    it('should NOT allow to sell more than once per 10 minutes', async () => {
+      await sell(toTokens(1), bobAccount);
+      await evmIncreaseTime(10 * 60 - 10);
+      await expect(sell(toTokens(1), bobAccount))
+        .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+    });
+
+    it('should allow to sell less than once per 10 minutes', async () => {
+      await sell(toTokens(1), bobAccount);
+      await evmIncreaseTime(10 * 60 + 10);
+      await sell(toTokens(1), bobAccount);  // OK
+    });
+
+    it('should NOT allow to sell more than 0.25% of total supply', async () => {
+      const totalSupply = await token.totalSupply();
+      await expect(sell(totalSupply.mul(25).div(10000).add(1), bobAccount))
+        .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+    });
+
+    it('should allow to sell less than 0.25% of total supply', async () => {
+      const totalSupply = await token.totalSupply();
+      await sell(totalSupply.mul(25).div(10000), bobAccount);  // OK
+    });
+
+    it('should exclude an account from limits', async () => {
+      await token.setIsExcludedFromLimits(bob, true);
+      await sell(toTokens(1), bobAccount);
+      await sell(toTokens(1), bobAccount);  // OK
+    });
+
+    it('should allow anyone to buy any amount of tokens', async () => {
+      const totalSupply = await token.totalSupply();
+      await buy(totalSupply.div(10), bobAccount);  // OK
+    });
+
+    describe('maxTransactionSizePercent', () => {
+      it('should allow the owner to change max transaction size', async () => {
+        await token.setMaxTransactionSizePercent(7, 10000);
+        expect((await token.maxTransactionSizePercent()).numerator).to.eq(7);
+        expect((await token.maxTransactionSizePercent()).denominator).to.eq(10000);
+        const totalSupply = await token.totalSupply();
+        await expect(sell(totalSupply.mul(7).div(10000).add(1), bobAccount))
+          .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+
+        await sell(totalSupply.mul(7).div(10000), bobAccount); // OK
+      });
+
+      it('should NOT allow not the owner to change max transaction size', async () => {
+        await expect(token.connect(bobAccount).setMaxTransactionSizePercent(20, 100))
+          .to.be.revertedWith('Ownable: caller is not the owner');
+      });
+
+      it('should NOT allow invalid percentages', async () => {
+        await expect(token.setMaxTransactionSizePercent(101, 100))
+          .to.be.revertedWith('Percent: invalid percentage');
+      });
+    });
+  });
+
   describe('transfer: fees', () => {
     let pair: UniswapV2Pair;
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
       await token.setIsExcludedFromDexFee(alice, false);  // exclude from dex fee to charge fees
@@ -260,7 +340,7 @@ describe('Ledgity', () => {
     }
 
     describe('IDO price > x10', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         // Raise price by x10
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('217'), aliceAccount);
@@ -285,7 +365,7 @@ describe('Ledgity', () => {
     });
 
     describe('IDO price < x10', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         // Raise price by x9
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
         await buy(toTokens('216'), aliceAccount);
@@ -490,6 +570,18 @@ describe('Ledgity', () => {
     it('should not allow not the owner to exclude or include an account from dex fee', async () => {
       await expect(token.connect(bobAccount).setIsExcludedFromDexFee(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    describe('getExcludedFromDexFee', () => {
+      it('should return a list of accounts excluded from dex fees', async () => {
+        const defaultExcluded = [alice, token.address, tokenReserve.address];
+        expect(await token.getExcludedFromDexFee()).to.deep.eq(defaultExcluded);
+        await token.setIsExcludedFromDexFee(bob, true);
+        await token.setIsExcludedFromDexFee(charlie, true);
+        expect(await token.getExcludedFromDexFee()).to.deep.eq([...defaultExcluded, bob, charlie]);
+        await token.setIsExcludedFromDexFee(bob, false);
+        expect(await token.getExcludedFromDexFee()).to.deep.eq([...defaultExcluded, charlie]);
+      });
+    });
   });
 
   describe('exclusion from limits', () => {
@@ -523,13 +615,25 @@ describe('Ledgity', () => {
     it('should not allow not the owner to exclude or include an account from limits', async () => {
       await expect(token.connect(bobAccount).setIsExcludedFromLimits(alice, true)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    describe('getExcludedFromLimits', () => {
+      it('should return a list of accounts excluded from limits', async () => {
+        const defaultExcluded = [alice, token.address, tokenReserve.address];
+        expect(await token.getExcludedFromLimits()).to.deep.eq(defaultExcluded);
+        await token.setIsExcludedFromLimits(bob, true);
+        await token.setIsExcludedFromLimits(charlie, true);
+        expect(await token.getExcludedFromLimits()).to.deep.eq([...defaultExcluded, bob, charlie]);
+        await token.setIsExcludedFromLimits(bob, false);
+        expect(await token.getExcludedFromLimits()).to.deep.eq([...defaultExcluded, charlie]);
+      });
+    });
   });
 
   describe('fee destination', () => {
     let pair: UniswapV2Pair;
     let tokenIndex: 0 | 1, usdcIndex: 0 | 1;
     let reservesBefore: { 0: BigNumber, 1: BigNumber; };
-    beforeEach(async () => {
+    snapshottedBeforeEach(async () => {
       await token.transfer(bob, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
       pair = await getPair();
       [tokenIndex, usdcIndex] = await getPairIndices(pair);
@@ -610,7 +714,7 @@ describe('Ledgity', () => {
     });
 
     describe('swapAndCollect', () => {
-      beforeEach(async () => {
+      snapshottedBeforeEach(async () => {
         await token.setFeeDestination(1);  // collect
       });
 
@@ -729,6 +833,19 @@ describe('Ledgity', () => {
       await expect(token.connect(bobAccount).excludeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
       await expect(token.connect(bobAccount).includeAccount(charlie)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    describe('getExcluded', () => {
+      it('should return a list of excluded accounts', async () => {
+        const pair = await getPair();
+        const defaultExcluded = [token.address, tokenReserve.address, pair.address];
+        expect(await token.getExcluded()).to.deep.eq(defaultExcluded);
+        await token.excludeAccount(alice);
+        await token.excludeAccount(bob);
+        expect(await token.getExcluded()).to.deep.eq([...defaultExcluded, alice, bob]);
+        await token.includeAccount(alice);
+        expect(await token.getExcluded()).to.deep.eq([...defaultExcluded, bob]);
+      });
+    });
   });
 
   describe('setDex', () => {
@@ -768,6 +885,29 @@ describe('Ledgity', () => {
       expect(await token.isDex(alice)).to.eq(false);
       expect(await token.isDex(bob)).to.eq(false);
     });
+
+    // This tests catches a bug where isDex is not updated when setDex is called.
+    it('should set isDex to true/false for an excluded/included account', async () => {
+      await token.excludeAccount(alice);
+      await token.setDex(alice, true);
+      expect(await token.isDex(alice)).to.eq(true);
+
+      await token.includeAccount(alice);
+      await token.setDex(alice, false);
+      expect(await token.isDex(alice)).to.eq(false);
+    });
+  });
+
+  describe('getDexes', () => {
+    it('should return a list of dexes', async () => {
+      const pair = await getPair();
+      expect(await token.getDexes()).to.deep.eq([pair.address]);
+      await token.setDex(alice, true);
+      await token.setDex(bob, true);
+      expect(await token.getDexes()).to.deep.eq([pair.address, alice, bob]);
+      await token.setDex(alice, false);
+      expect(await token.getDexes()).to.deep.eq([pair.address, bob]);
+    });
   });
 
   describe('burn', () => {
@@ -778,6 +918,7 @@ describe('Ledgity', () => {
       await token.burn(amount);
       expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should burn from an excluded account', async () => {
@@ -788,6 +929,7 @@ describe('Ledgity', () => {
       await token.burn(amount);
       expect(await token.balanceOf(alice)).to.eq(aliceBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should allow anyone to burn tokens', async () => {
@@ -798,6 +940,7 @@ describe('Ledgity', () => {
       await token.connect(bobAccount).burn(amount);
       expect(await token.balanceOf(bob)).to.eq(bobBalanceBefore.sub(amount));
       expect(await token.totalSupply()).to.eq(totalSupplyBefore.sub(amount));
+      expect(await token.totalBurn()).to.eq(amount);
     });
 
     it('should NOT burn if the balance is insufficient', async () => {

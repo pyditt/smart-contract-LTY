@@ -1,0 +1,197 @@
+{
+  "address": "0xFDE4DF20b284Ce392A7F965daDE728450f2635B1",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_router",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenA",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenB",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountADesired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountBDesired",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountAMin",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountBMin",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "addLiquidityBypassingFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountA",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountB",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "factory",
+      "outputs": [
+        {
+          "internalType": "contract IUniswapV2Factory",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenA",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenB",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "liquidity",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountAMin",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountBMin",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "removeLiquidityBypassingFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountA",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountB",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "uniswapRouter",
+      "outputs": [
+        {
+          "internalType": "contract IUniswapV2Router02",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x7e56f77bae858153dec66f9bed8bbe795af222abe3fa0487eaeedec7ee04314f",
+  "receipt": {
+    "to": null,
+    "from": "0x8adA0901ad5f4A9312bF372f20fde6A0e298Dd65",
+    "contractAddress": "0xFDE4DF20b284Ce392A7F965daDE728450f2635B1",
+    "transactionIndex": 14,
+    "gasUsed": "619579",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x17f31244a12e8d9703588cc00b8956f11146e2ee259b816746f10aa8336945b2",
+    "transactionHash": "0x7e56f77bae858153dec66f9bed8bbe795af222abe3fa0487eaeedec7ee04314f",
+    "logs": [],
+    "blockNumber": 10814407,
+    "cumulativeGasUsed": "1411318",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+  ],
+  "solcInputHash": "56b313b1f533185b94c24c745cec7b90",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_router\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenA\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenB\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amountADesired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountBDesired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountAMin\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountBMin\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"}],\"name\":\"addLiquidityBypassingFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amountA\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountB\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"liquidity\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"factory\",\"outputs\":[{\"internalType\":\"contract IUniswapV2Factory\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenA\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenB\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"liquidity\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountAMin\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountBMin\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"}],\"name\":\"removeLiquidityBypassingFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amountA\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountB\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"uniswapRouter\",\"outputs\":[{\"internalType\":\"contract IUniswapV2Router02\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/LedgityRouter.sol\":\"LedgityRouter\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/LedgityRouter.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\nimport \\\"./libraries/SafeERC20.sol\\\";\\nimport \\\"./interfaces/IUniswapV2Factory.sol\\\";\\nimport \\\"./interfaces/IUniswapV2Router02.sol\\\";\\nimport \\\"./interfaces/ILedgity.sol\\\";\\nimport \\\"./interfaces/ILedgityRouter.sol\\\";\\n\\n\\ncontract LedgityRouter is ILedgityRouter {\\n    IUniswapV2Factory public immutable factory;\\n    IUniswapV2Router02 public immutable uniswapRouter;\\n\\n    constructor(address _router) public {\\n        IUniswapV2Router02 _uniswapRouter = IUniswapV2Router02(_router);\\n        factory = IUniswapV2Factory(_uniswapRouter.factory());\\n        uniswapRouter = _uniswapRouter;\\n    }\\n\\n    function addLiquidityBypassingFee(\\n        address tokenA,\\n        address tokenB,\\n        uint256 amountADesired,\\n        uint256 amountBDesired,\\n        uint256 amountAMin,\\n        uint256 amountBMin,\\n        address to,\\n        uint256 deadline\\n    ) external override returns (uint256 amountA, uint256 amountB, uint256 liquidity) {\\n        SafeERC20.safeTransferFrom(tokenA, msg.sender, address(this), amountADesired);\\n        SafeERC20.safeTransferFrom(tokenB, msg.sender, address(this), amountBDesired);\\n        SafeERC20.safeApprove(tokenA, address(uniswapRouter), amountADesired);\\n        SafeERC20.safeApprove(tokenB, address(uniswapRouter), amountBDesired);\\n        (amountA, amountB, liquidity) = uniswapRouter.addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline);\\n        _refund(tokenA, msg.sender);\\n        _refund(tokenB, msg.sender);\\n    }\\n\\n    function removeLiquidityBypassingFee(\\n        address tokenA,\\n        address tokenB,\\n        uint256 liquidity,\\n        uint256 amountAMin,\\n        uint256 amountBMin,\\n        address to,\\n        uint256 deadline\\n    ) external override returns (uint256 amountA, uint256 amountB) {\\n        address pair = factory.getPair(tokenA, tokenB);\\n        SafeERC20.safeTransferFrom(pair, msg.sender, address(this), liquidity);\\n        SafeERC20.safeApprove(pair, address(uniswapRouter), liquidity);\\n        (amountA, amountB) = uniswapRouter.removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, address(this), deadline);\\n        _refund(tokenA, to);\\n        _refund(tokenB, to);\\n    }\\n\\n    function _refund(address token, address to) private {\\n        uint256 balance = IERC20(token).balanceOf(address(this));\\n        if (balance != 0) {\\n            SafeERC20.safeTransfer(token, to, balance);\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x66f6e997ab34be252ba01202a310e6cb7c9ec520ac505d03898b06e5e773f846\"},\"contracts/interfaces/IERC20.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\ninterface IERC20 {\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `sender` to `recipient` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0x98cb90765f215549fa80f4ecab5207457dc75ef2e17957954cc1ff02a6ace246\"},\"contracts/interfaces/ILedgity.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\nimport \\\"./IERC20.sol\\\";\\n\\n\\ninterface ILedgity is IERC20 {\\n    function burn(uint256 amount) external returns (bool);\\n}\\n\",\"keccak256\":\"0xd455fa7d57ffe53f62d78cb3d93e82eee2a3fbab373b4ebe81a1567d23452ae7\"},\"contracts/interfaces/ILedgityRouter.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\ninterface ILedgityRouter {\\n    function addLiquidityBypassingFee(\\n        address tokenA,\\n        address tokenB,\\n        uint amountADesired,\\n        uint amountBDesired,\\n        uint amountAMin,\\n        uint amountBMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountA, uint amountB, uint liquidity);\\n\\n    function removeLiquidityBypassingFee(\\n        address tokenA,\\n        address tokenB,\\n        uint liquidity,\\n        uint amountAMin,\\n        uint amountBMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountA, uint amountB);\\n}\\n\",\"keccak256\":\"0x65fcaed888399583d6070fcb0f1e903b9f660d5495f46b95292e26d847e06d18\"},\"contracts/interfaces/IUniswapV2Factory.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\ninterface IUniswapV2Factory {\\n    event PairCreated(address indexed token0, address indexed token1, address pair, uint);\\n\\n    function feeTo() external view returns (address);\\n    function feeToSetter() external view returns (address);\\n\\n    function getPair(address tokenA, address tokenB) external view returns (address pair);\\n    function allPairs(uint) external view returns (address pair);\\n    function allPairsLength() external view returns (uint);\\n\\n    function createPair(address tokenA, address tokenB) external returns (address pair);\\n\\n    function setFeeTo(address) external;\\n    function setFeeToSetter(address) external;\\n}\\n\",\"keccak256\":\"0xc869b21c0a9bc523f2ddd09beb3fdae79b37eac49ed5a6fe1d4a55d919f613bf\"},\"contracts/interfaces/IUniswapV2Router01.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\ninterface IUniswapV2Router01 {\\n    function factory() external pure returns (address);\\n    function WETH() external pure returns (address);\\n\\n    function addLiquidity(\\n        address tokenA,\\n        address tokenB,\\n        uint amountADesired,\\n        uint amountBDesired,\\n        uint amountAMin,\\n        uint amountBMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountA, uint amountB, uint liquidity);\\n    function addLiquidityETH(\\n        address token,\\n        uint amountTokenDesired,\\n        uint amountTokenMin,\\n        uint amountETHMin,\\n        address to,\\n        uint deadline\\n    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);\\n    function removeLiquidity(\\n        address tokenA,\\n        address tokenB,\\n        uint liquidity,\\n        uint amountAMin,\\n        uint amountBMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountA, uint amountB);\\n    function removeLiquidityETH(\\n        address token,\\n        uint liquidity,\\n        uint amountTokenMin,\\n        uint amountETHMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountToken, uint amountETH);\\n    function removeLiquidityWithPermit(\\n        address tokenA,\\n        address tokenB,\\n        uint liquidity,\\n        uint amountAMin,\\n        uint amountBMin,\\n        address to,\\n        uint deadline,\\n        bool approveMax, uint8 v, bytes32 r, bytes32 s\\n    ) external returns (uint amountA, uint amountB);\\n    function removeLiquidityETHWithPermit(\\n        address token,\\n        uint liquidity,\\n        uint amountTokenMin,\\n        uint amountETHMin,\\n        address to,\\n        uint deadline,\\n        bool approveMax, uint8 v, bytes32 r, bytes32 s\\n    ) external returns (uint amountToken, uint amountETH);\\n    function swapExactTokensForTokens(\\n        uint amountIn,\\n        uint amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint deadline\\n    ) external returns (uint[] memory amounts);\\n    function swapTokensForExactTokens(\\n        uint amountOut,\\n        uint amountInMax,\\n        address[] calldata path,\\n        address to,\\n        uint deadline\\n    ) external returns (uint[] memory amounts);\\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)\\n        external\\n        payable\\n        returns (uint[] memory amounts);\\n    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)\\n        external\\n        returns (uint[] memory amounts);\\n    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)\\n        external\\n        returns (uint[] memory amounts);\\n    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)\\n        external\\n        payable\\n        returns (uint[] memory amounts);\\n\\n    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);\\n    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) external pure returns (uint amountOut);\\n    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) external pure returns (uint amountIn);\\n    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);\\n    function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);\\n}\\n\",\"keccak256\":\"0xc754e33b863705e24f8dce40cd705bdf5e1b81095952829773eca06ef4b66138\"},\"contracts/interfaces/IUniswapV2Router02.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\nimport \\\"./IUniswapV2Router01.sol\\\";\\n\\n\\ninterface IUniswapV2Router02 is IUniswapV2Router01 {\\n    function removeLiquidityETHSupportingFeeOnTransferTokens(\\n        address token,\\n        uint liquidity,\\n        uint amountTokenMin,\\n        uint amountETHMin,\\n        address to,\\n        uint deadline\\n    ) external returns (uint amountETH);\\n    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(\\n        address token,\\n        uint liquidity,\\n        uint amountTokenMin,\\n        uint amountETHMin,\\n        address to,\\n        uint deadline,\\n        bool approveMax, uint8 v, bytes32 r, bytes32 s\\n    ) external returns (uint amountETH);\\n\\n    function swapExactTokensForTokensSupportingFeeOnTransferTokens(\\n        uint amountIn,\\n        uint amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint deadline\\n    ) external;\\n    function swapExactETHForTokensSupportingFeeOnTransferTokens(\\n        uint amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint deadline\\n    ) external payable;\\n    function swapExactTokensForETHSupportingFeeOnTransferTokens(\\n        uint amountIn,\\n        uint amountOutMin,\\n        address[] calldata path,\\n        address to,\\n        uint deadline\\n    ) external;\\n}\\n\",\"keccak256\":\"0x2b5582e3f17b222653009f6910f65a4c55b7e3a08e5f5cbc94ea301a6efed8ed\"},\"contracts/libraries/SafeERC20.sol\":{\"content\":\"pragma solidity ^0.6.12;\\n\\nimport \\\"../interfaces/IERC20.sol\\\";\\n\\n\\nlibrary SafeERC20 {\\n    function safeTransfer(address token, address to, uint256 value) internal {\\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\\n        require(\\n            success && (data.length == 0 || abi.decode(data, (bool))),\\n            'SafeERC20::safeTransfer: transfer failed'\\n        );\\n    }\\n\\n    function safeTransferFrom(\\n        address token,\\n        address from,\\n        address to,\\n        uint256 value\\n    ) internal {\\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\\n        require(\\n            success && (data.length == 0 || abi.decode(data, (bool))),\\n            'SafeERC20::transferFrom: transferFrom failed'\\n        );\\n    }\\n\\n    function safeApprove(address token, address to, uint256 value) internal {\\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\\n        require(\\n            success && (data.length == 0 || abi.decode(data, (bool))),\\n            'SafeERC20::safeApprove: approve failed'\\n        );\\n    }\\n}\\n\",\"keccak256\":\"0x58fad012a28db16c8b3b1e60a5da6023d126ff1dbb079892e189a72090fe4890\"}},\"version\":1}",
+  "bytecode": "0x60c060405234801561001057600080fd5b50604051610b30380380610b308339818101604052602081101561003357600080fd5b50516040805163c45a015560e01b8152905182916001600160a01b0383169163c45a015591600480820192602092909190829003018186803b15801561007857600080fd5b505afa15801561008c573d6000803e3d6000fd5b505050506040513d60208110156100a257600080fd5b50516001600160601b0319606091821b811660805291901b1660a0525060805160601c60a05160601c610a2a6101066000398061021c528061028d528061034f528061037a52806103f352806104a352508061016052806104c75250610a2a6000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80633ff73c79146100515780635b335bd2146100ba578063735de9f71461012d578063c45a015514610151575b600080fd5b6100a1600480360360e081101561006757600080fd5b506001600160a01b038135811691602081013582169160408201359160608101359160808201359160a08101359091169060c00135610159565b6040805192835260208301919091528051918290030190f35b61010f60048036036101008110156100d157600080fd5b506001600160a01b038135811691602081013582169160408201359160608101359160808201359160a08101359160c0820135169060e0013561032c565b60408051938452602084019290925282820152519081900360600190f35b6101356104a1565b604080516001600160a01b039092168252519081900360200190f35b6101356104c5565b60008060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663e6a439058b8b6040518363ffffffff1660e01b815260040180836001600160a01b03168152602001826001600160a01b031681526020019250505060206040518083038186803b1580156101dc57600080fd5b505afa1580156101f0573d6000803e3d6000fd5b505050506040513d602081101561020657600080fd5b505190506102168133308b6104e9565b610241817f00000000000000000000000000000000000000000000000000000000000000008a610646565b60408051635d5155ef60e11b81526001600160a01b038c811660048301528b81166024830152604482018b9052606482018a9052608482018990523060a483015260c4820187905282517f00000000000000000000000000000000000000000000000000000000000000009091169263baa2abde9260e480820193918290030181600087803b1580156102d357600080fd5b505af11580156102e7573d6000803e3d6000fd5b505050506040513d60408110156102fd57600080fd5b50805160209091015190935091506103158a8661079a565b61031f898661079a565b5097509795505050505050565b600080600061033d8b33308c6104e9565b6103498a33308b6104e9565b6103748b7f00000000000000000000000000000000000000000000000000000000000000008b610646565b61039f8a7f00000000000000000000000000000000000000000000000000000000000000008a610646565b6040805162e8e33760e81b81526001600160a01b038d811660048301528c81166024830152604482018c9052606482018b9052608482018a905260a4820189905287811660c483015260e4820187905291517f00000000000000000000000000000000000000000000000000000000000000009092169163e8e3370091610104808201926060929091908290030181600087803b15801561043f57600080fd5b505af1158015610453573d6000803e3d6000fd5b505050506040513d606081101561046957600080fd5b508051602082015160409092015190945090925090506104898b3361079a565b6104938a3361079a565b985098509895505050505050565b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b604080516001600160a01b0385811660248301528481166044830152606480830185905283518084039091018152608490920183526020820180516001600160e01b03166323b872dd60e01b17815292518251600094606094938a169392918291908083835b6020831061056e5780518252601f19909201916020918201910161054f565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d80600081146105d0576040519150601f19603f3d011682016040523d82523d6000602084013e6105d5565b606091505b5091509150818015610603575080511580610603575080806020019051602081101561060057600080fd5b50515b61063e5760405162461bcd60e51b815260040180806020018281038252602c8152602001806109a1602c913960400191505060405180910390fd5b505050505050565b604080516001600160a01b038481166024830152604480830185905283518084039091018152606490920183526020820180516001600160e01b031663095ea7b360e01b178152925182516000946060949389169392918291908083835b602083106106c35780518252601f1990920191602091820191016106a4565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d8060008114610725576040519150601f19603f3d011682016040523d82523d6000602084013e61072a565b606091505b5091509150818015610758575080511580610758575080806020019051602081101561075557600080fd5b50515b6107935760405162461bcd60e51b815260040180806020018281038252602681526020018061097b6026913960400191505060405180910390fd5b5050505050565b6000826001600160a01b03166370a08231306040518263ffffffff1660e01b815260040180826001600160a01b0316815260200191505060206040518083038186803b1580156107e957600080fd5b505afa1580156107fd573d6000803e3d6000fd5b505050506040513d602081101561081357600080fd5b5051905080156108285761082883838361082d565b505050565b604080516001600160a01b038481166024830152604480830185905283518084039091018152606490920183526020820180516001600160e01b031663a9059cbb60e01b178152925182516000946060949389169392918291908083835b602083106108aa5780518252601f19909201916020918201910161088b565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d806000811461090c576040519150601f19603f3d011682016040523d82523d6000602084013e610911565b606091505b509150915081801561093f57508051158061093f575080806020019051602081101561093c57600080fd5b50515b6107935760405162461bcd60e51b81526004018080602001828103825260288152602001806109cd6028913960400191505060405180910390fdfe5361666545524332303a3a73616665417070726f76653a20617070726f7665206661696c65645361666545524332303a3a7472616e7366657246726f6d3a207472616e7366657246726f6d206661696c65645361666545524332303a3a736166655472616e736665723a207472616e73666572206661696c6564a26469706673582212208850aa2644608ac11158a9a1719100342854254daff4d429fac71ddb01b70c6664736f6c634300060c0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c80633ff73c79146100515780635b335bd2146100ba578063735de9f71461012d578063c45a015514610151575b600080fd5b6100a1600480360360e081101561006757600080fd5b506001600160a01b038135811691602081013582169160408201359160608101359160808201359160a08101359091169060c00135610159565b6040805192835260208301919091528051918290030190f35b61010f60048036036101008110156100d157600080fd5b506001600160a01b038135811691602081013582169160408201359160608101359160808201359160a08101359160c0820135169060e0013561032c565b60408051938452602084019290925282820152519081900360600190f35b6101356104a1565b604080516001600160a01b039092168252519081900360200190f35b6101356104c5565b60008060007f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031663e6a439058b8b6040518363ffffffff1660e01b815260040180836001600160a01b03168152602001826001600160a01b031681526020019250505060206040518083038186803b1580156101dc57600080fd5b505afa1580156101f0573d6000803e3d6000fd5b505050506040513d602081101561020657600080fd5b505190506102168133308b6104e9565b610241817f00000000000000000000000000000000000000000000000000000000000000008a610646565b60408051635d5155ef60e11b81526001600160a01b038c811660048301528b81166024830152604482018b9052606482018a9052608482018990523060a483015260c4820187905282517f00000000000000000000000000000000000000000000000000000000000000009091169263baa2abde9260e480820193918290030181600087803b1580156102d357600080fd5b505af11580156102e7573d6000803e3d6000fd5b505050506040513d60408110156102fd57600080fd5b50805160209091015190935091506103158a8661079a565b61031f898661079a565b5097509795505050505050565b600080600061033d8b33308c6104e9565b6103498a33308b6104e9565b6103748b7f00000000000000000000000000000000000000000000000000000000000000008b610646565b61039f8a7f00000000000000000000000000000000000000000000000000000000000000008a610646565b6040805162e8e33760e81b81526001600160a01b038d811660048301528c81166024830152604482018c9052606482018b9052608482018a905260a4820189905287811660c483015260e4820187905291517f00000000000000000000000000000000000000000000000000000000000000009092169163e8e3370091610104808201926060929091908290030181600087803b15801561043f57600080fd5b505af1158015610453573d6000803e3d6000fd5b505050506040513d606081101561046957600080fd5b508051602082015160409092015190945090925090506104898b3361079a565b6104938a3361079a565b985098509895505050505050565b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b604080516001600160a01b0385811660248301528481166044830152606480830185905283518084039091018152608490920183526020820180516001600160e01b03166323b872dd60e01b17815292518251600094606094938a169392918291908083835b6020831061056e5780518252601f19909201916020918201910161054f565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d80600081146105d0576040519150601f19603f3d011682016040523d82523d6000602084013e6105d5565b606091505b5091509150818015610603575080511580610603575080806020019051602081101561060057600080fd5b50515b61063e5760405162461bcd60e51b815260040180806020018281038252602c8152602001806109a1602c913960400191505060405180910390fd5b505050505050565b604080516001600160a01b038481166024830152604480830185905283518084039091018152606490920183526020820180516001600160e01b031663095ea7b360e01b178152925182516000946060949389169392918291908083835b602083106106c35780518252601f1990920191602091820191016106a4565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d8060008114610725576040519150601f19603f3d011682016040523d82523d6000602084013e61072a565b606091505b5091509150818015610758575080511580610758575080806020019051602081101561075557600080fd5b50515b6107935760405162461bcd60e51b815260040180806020018281038252602681526020018061097b6026913960400191505060405180910390fd5b5050505050565b6000826001600160a01b03166370a08231306040518263ffffffff1660e01b815260040180826001600160a01b0316815260200191505060206040518083038186803b1580156107e957600080fd5b505afa1580156107fd573d6000803e3d6000fd5b505050506040513d602081101561081357600080fd5b5051905080156108285761082883838361082d565b505050565b604080516001600160a01b038481166024830152604480830185905283518084039091018152606490920183526020820180516001600160e01b031663a9059cbb60e01b178152925182516000946060949389169392918291908083835b602083106108aa5780518252601f19909201916020918201910161088b565b6001836020036101000a0380198251168184511680821785525050505050509050019150506000604051808303816000865af19150503d806000811461090c576040519150601f19603f3d011682016040523d82523d6000602084013e610911565b606091505b509150915081801561093f57508051158061093f575080806020019051602081101561093c57600080fd5b50515b6107935760405162461bcd60e51b81526004018080602001828103825260288152602001806109cd6028913960400191505060405180910390fdfe5361666545524332303a3a73616665417070726f76653a20617070726f7665206661696c65645361666545524332303a3a7472616e7366657246726f6d3a207472616e7366657246726f6d206661696c65645361666545524332303a3a736166655472616e736665723a207472616e73666572206661696c6564a26469706673582212208850aa2644608ac11158a9a1719100342854254daff4d429fac71ddb01b70c6664736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
