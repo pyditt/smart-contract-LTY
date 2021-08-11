@@ -10,19 +10,19 @@ contract SetWrapper {
 
     bool public lastAction;
 
-    function values() public view returns (address[] memory) {
+    function values() external view returns (address[] memory) {
         return set.values;
     }
 
-    function add(address value) public {
+    function add(address value) external {
         lastAction = set.add(value);
     }
 
-    function remove(address value) public {
+    function remove(address value) external {
         lastAction = set.remove(value);
     }
 
-    function has(address value) public view returns (bool) {
+    function has(address value) external view returns (bool) {
         return set.has(value);
     }
 }
