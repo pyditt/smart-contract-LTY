@@ -8,7 +8,7 @@ interface Props {
 }
 
 const Contract: FC<Props> = ({ info }) => {
-    const { owner, symbol, name, totalSupply, decimals, maxTokenTx, totalFees, startPrice } = info;
+    const { owner, symbol, name, totalSupply, decimals, maxTokenTx, totalFees, startPrice, totalBurn } = info;
 
     const renderTokenSymbol = (symbol: string) => {
         switch (symbol) {
@@ -59,11 +59,10 @@ const Contract: FC<Props> = ({ info }) => {
                     <p className="contract__label green"> Total commission: </p>
                     <div className="contract__input"> {totalFees} </div>
                 </div>
-                {/* TODO: bring this back */}
-                {/* <div className="contract__field half">
+                <div className="contract__field half">
                     <p className="contract__label red"> Tokens burned: </p>
                     <div className="contract__input"> {totalBurn} </div>
-                </div> */}
+                </div>
                 {/* TODO: can we implement this? Maybe use our oracle? */}
                 {/* <div className="contract__field half">
                     <p className="contract__label"> Current price: </p>

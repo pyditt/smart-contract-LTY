@@ -140,8 +140,7 @@ class App extends Component {
       symbol: info.symbol,
       tokenBalance,
       balance,
-      // TODO: bring this back
-      // totalBurn: info.totalBurn,
+      totalBurn: info.totalBurn,
       totalFees: info.totalFees,
       startPrice: info.startPrice,
       // TODO: bring this back. Use price oracle

@@ -9,6 +9,7 @@ export interface Info {
   decimals: string
   maxTokenTx: string
   totalFees: string
+  totalBurn: string
   startPrice: string
   owner: string
 }
@@ -26,6 +27,7 @@ export async function getInfo(contract: Ledgity): Promise<Info> {
     decimals,
     maxTokenTx: asPercent(await contract.maxTransactionSizePercent()).mul(totalSupplyWoDecimals).toString(),
     totalFees: removeDecimals(await contract.totalFees()),
+    totalBurn: removeDecimals(await contract.totalBurn()),
     startPrice: (await contract.initialPrice()).toString(),
     owner: await contract.owner(),
   };
