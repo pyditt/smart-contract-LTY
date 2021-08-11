@@ -1,7 +1,7 @@
 import React, { Fragment, useState } from "react";
 import * as Lib from "../../../../../ledgityLib";
 
-const ExcludeAndInclude = ({ ownership, title, contract, func, flag }) => {
+const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) => {
   const [accountInput, setAccountInput] = useState("");
   const [errorAccount, setErrorAccount] = useState(null);
 
@@ -18,12 +18,13 @@ const ExcludeAndInclude = ({ ownership, title, contract, func, flag }) => {
   const excludeAccount = async () => {
     setErrorAccount(null);
     try {
-      const allExcluded = await Lib.getExcluded(contract);
+      const allExcluded = await getExcluded()
       if (allExcluded.includes(accountInput)) {
-        if (flag) await func(contract, accountInput);
-        else await func(accountInput, true);
-        setAccountInput("");
-      } else setErrorAccount(<p> Such account is already excluded. </p>);
+        setErrorAccount(<p> Such account is already excluded. </p>);
+        return
+      }
+      await exclude(accountInput)
+      setAccountInput("");
     } catch (error) {
       errorDefinition(error.code);
     }
@@ -32,12 +33,13 @@ const ExcludeAndInclude = ({ ownership, title, contract, func, flag }) => {
   const includeAccount = async () => {
     setErrorAccount(null);
     try {
-      const allExcluded = await Lib.getExcluded(contract);
-      if (allExcluded.includes(accountInput)) {
-        if (flag) await func(contract, accountInput);
-        else await func(accountInput, false);
-        setAccountInput("");
+      const allExcluded = await getExcluded()
+      if (!allExcluded.includes(accountInput)) {
+        setErrorAccount(<p> Such account is already included. </p>);
+        return
       }
+      await include(accountInput)
+      setAccountInput("");
     } catch (error) {
       errorDefinition(error.code);
     }

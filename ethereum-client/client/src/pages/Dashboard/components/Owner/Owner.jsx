@@ -24,7 +24,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
       title: 'Set max transaction size:',
       flag: '%',
       func: contract.setMaxTransactionSizePercent.bind(contract),
-      getLimit: contract.initialSellAccumulationFee.bind(contract)
+      getLimit: null,
     },
     {
       title: 'Set sell fee if price is < x10 IDO price',
@@ -36,13 +36,13 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
       title: 'Set sell fee if price is > x10 IDO price',
       flag: '%',
       func: contract.setSellAccumulationFee.bind(contract),
-      getLimit: contract.initialSellReflectionFee.bind(contract)
+      getLimit: contract.initialSellAccumulationFee.bind(contract)
     },
     {
       title: 'Set RFI fee',
       flag: '%',
       func: contract.setSellReflectionFee.bind(contract),
-      getLimit: contract.initialSellAccumulationFee.bind(contract)
+      getLimit: contract.initialSellReflectionFee.bind(contract)
     },
     {
       title: 'Set buy fee',
