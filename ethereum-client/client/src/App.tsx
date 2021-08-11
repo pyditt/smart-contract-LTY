@@ -1,16 +1,17 @@
 import React, { Component } from "react";
-import { ethers } from "ethers";
-import LedgityContractAbi from "./abi/Ledgity.json";
+import { Contract, ethers } from "ethers";
 import * as Lib from "./ledgityLib";
-import { Ledgity } from "./types/ethers-contracts"
+import { Ledgity, LedgityPriceOracle, LedgityPriceOracle__factory, Ledgity__factory } from "./types/ethers-contracts"
 
 import { Header } from "./components/layout";
 import { Dashboard, Connect } from "./pages";
 
 import "./App.scss";
+import { ZERO_ADDRESS } from './utils';
 
 // TODO: extract to a config file
-const LedgityContractAddress = "0x6A998929c28588276Fee112bb2d07E2afc9Fa663";
+const LedgityContractAddress = "0xBee1dF5B64a84E47De64A803145262E898c68f1a";
+const USDCContractAddress = "0xEc6802f549BC3E99FF12aF779A8e0B90453864C1";
 
 // TODO: extract to a config file
 const ws = new WebSocket("ws://52.12.224.224:9000");
@@ -22,6 +23,8 @@ interface State {
     account: ethers.Signer | null,
     accountAddress: string | null,
     contract: Ledgity | null,
+    usdcContract: Contract | null,
+    priceOracleContract: LedgityPriceOracle | null,
     info: Lib.Info | null,
     ethereum: any | null,
     loading: boolean,
@@ -37,6 +40,8 @@ class App extends Component {
     account: null,
     accountAddress: null,
     contract: null,
+    usdcContract: null,
+    priceOracleContract: null,
     info: null,
     ethereum: null,
     loading: true,
@@ -75,15 +80,22 @@ class App extends Component {
       const accountAddress = await account.getAddress()
 
       // Get the contract instance.
-      const contract = new ethers.Contract(
-        LedgityContractAddress,
-        LedgityContractAbi,
+      const contract = Ledgity__factory.connect(LedgityContractAddress, account);
+      const oracleAddress = await contract.priceOracle();
+      const priceOracleContract = oracleAddress !== ZERO_ADDRESS
+        ? LedgityPriceOracle__factory.connect(oracleAddress, account)
+        : null
+      const usdcContract = new ethers.Contract(
+        USDCContractAddress,
+        [
+          "function decimals() view returns (uint8)",
+        ],
         account,
       );
 
       // Set web3, account, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, account, accountAddress, contract }, this.runExample);
+      this.setState({ web3, account, accountAddress, contract, usdcContract, priceOracleContract }, this.runExample);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(`Failed to load. First, connect the MetaMask.`);
@@ -96,22 +108,22 @@ class App extends Component {
   };
 
   runExample = async () => {
-    const { account, contract, ethereum, web3 } = this.state;
-    if (!account || !contract || !ethereum || !web3) {
+    const { account, contract, usdcContract, priceOracleContract, ethereum, web3 } = this.state;
+    if (!account || !contract || !usdcContract || !ethereum || !web3) {
       window.location.reload();
       return;
     }
 
     ethereum.on("accountsChanged", async () => {
-      const { contract, ethereum, web3 } = this.state;
-      if (!contract || !ethereum || !web3) {
+      const { contract, usdcContract, priceOracleContract, ethereum, web3 } = this.state;
+      if (!contract || !usdcContract || !ethereum || !web3) {
         return;
       }
       const account = web3.getSigner();
       const accountAddress = await account.getAddress();
       const tokenBalance = await Lib.getTokenBalance(contract, accountAddress);
       const balance = await Lib.getBalance(web3, accountAddress);
-      const info = await Lib.getInfo(contract);
+      const info = await Lib.getInfo(contract, usdcContract, priceOracleContract);
       const ownership = this.isOwner(info, accountAddress);
       this.setState({
         account,
@@ -127,7 +139,7 @@ class App extends Component {
     ethereum.on("disconnect", () => window.location.reload());
 
     const accountAddress = await account.getAddress()
-    const info = await Lib.getInfo(contract);
+    const info = await Lib.getInfo(contract, usdcContract, priceOracleContract);
     const tokenBalance = await Lib.getTokenBalance(contract, accountAddress);
     const balance = await Lib.getBalance(web3, accountAddress);
     const ownership = this.isOwner(info, accountAddress);
@@ -143,8 +155,7 @@ class App extends Component {
       totalBurn: info.totalBurn,
       totalFees: info.totalFees,
       startPrice: info.startPrice,
-      // TODO: bring this back. Use price oracle
-      // price: info.price,
+      price: info.price,
       info: info,
       loading: false,
       ownership,
@@ -153,12 +164,12 @@ class App extends Component {
 
   updateInfo = async () => {
     // console.log('update info');
-    const { contract } = this.state;
-    if (!contract) {
+    const { contract, usdcContract, priceOracleContract } = this.state;
+    if (!contract || !usdcContract) {
       return;
     }
     this.setState({ loading: true });
-    const info = await Lib.getInfo(contract);
+    const info = await Lib.getInfo(contract, usdcContract, priceOracleContract);
     this.setState({ info: info, loading: false });
   };
 

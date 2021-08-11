@@ -52,8 +52,7 @@ const Information: FC<Props> = ({ info, loading, updateInfo }) => {
             </div>
             <div className="information__field field">
               <div className="field__label"> Current price: </div>
-              {/* TODO: bring price back */}
-              {/* <div className="field__input"> {info.price} </div> */}
+              <div className="field__input"> {info.price} </div>
               <div className="field__note"> </div>
             </div>
           </div>
