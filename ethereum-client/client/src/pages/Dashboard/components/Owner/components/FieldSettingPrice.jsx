@@ -2,23 +2,35 @@ import React, { useState, useEffect } from "react";
 import Decimal from 'decimal.js';
 import { asPercent } from "../../../../../utils";
 
-const FieldSettingPrice = ({ title, flag, ownership, contract, func, id, getLimit }) => {
+const FieldSettingPrice = ({ title, flag, ownership, func, getLimit }) => {
     const [field, setField] = useState('');
     const [limit, setLimit] = useState(null);
     const [error, setError] = useState('');
 
     const onChange = (event) => setField(event.target.value);
 
-    const checkRuls = () => {
-        if (flag === 'LTY') contract.setNumTokensToSwap(field);
-        else {
-            const [numerator, denominator] = new Decimal(field).toFraction();
-            if (new Decimal(field).lte(limit)) {
-                func(numerator.toString(), denominator.toString())
-                setError('');
+    const noLimit = (numerator, denominator) => {
+        if (flag !== 'LTY') {
+            if (Number(field) <= 100 && Number(field) >= 0) {
+                func(numerator.toString(), denominator.toString());
             }
-            else setError('your number more than limit transaction');
+            else setError('percentage from 0 to 100');
         }
+        else func(field);
+    }
+
+    const isLimit = (numerator, denominator) => {
+        if (new Decimal(field).lte(limit)) {
+            func(numerator.toString(), denominator.toString());
+            setError('');
+        }
+        else setError('your number more than limit transaction');
+    }
+
+    const checkRuls = () => {
+        const [numerator, denominator] = new Decimal(field).div(100).toFraction();
+        !limit && noLimit(numerator, denominator);
+        limit && isLimit(numerator, denominator);
     }
 
     const save = () => {
@@ -27,7 +39,7 @@ const FieldSettingPrice = ({ title, flag, ownership, contract, func, id, getLimi
     }
 
     useEffect(() => {
-        getLimit && getLimit().then(res => setLimit(asPercent(res)))
+        getLimit && getLimit().then(res => setLimit(asPercent(res)));
     }, []);
 
     return (

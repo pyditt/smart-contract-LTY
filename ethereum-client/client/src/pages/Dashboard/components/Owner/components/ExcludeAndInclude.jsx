@@ -1,7 +1,7 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import * as Lib from "../../../../../ledgityLib";
 
-const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) => {
+const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded, contract }) => {
   const [accountInput, setAccountInput] = useState("");
   const [errorAccount, setErrorAccount] = useState(null);
 
@@ -18,7 +18,7 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
   const excludeAccount = async () => {
     setErrorAccount(null);
     try {
-      const allExcluded = await getExcluded()
+      const allExcluded = await getExcluded(contract)
       if (allExcluded.includes(accountInput)) {
         setErrorAccount(<p> Such account is already excluded. </p>);
         return
@@ -33,7 +33,7 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
   const includeAccount = async () => {
     setErrorAccount(null);
     try {
-      const allExcluded = await getExcluded()
+      const allExcluded = await getExcluded(contract)
       if (!allExcluded.includes(accountInput)) {
         setErrorAccount(<p> Such account is already included. </p>);
         return
@@ -44,6 +44,8 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
       errorDefinition(error.code);
     }
   };
+
+  useEffect(() => { if (!include) include = exclude });
 
   return (
     <Fragment>

@@ -3,16 +3,28 @@ import ExcludeAndInclude from "./components/ExcludeAndInclude";
 import FieldSettingPrice from "./components/FieldSettingPrice";
 /* import ApplyPrice from "./components/commision/ApplyPrice"; */
 import BurnToken from "./components/commision/BurnToken";
-import * as Lib from "../../../../ledgityLib";
 
 import "./Owner.scss";
 import AddDex from "./components/commision/AddDex";
 
 const Owner = ({ contract, account, updateInfo, ownership }) => {
   const [excludeInclude] = useState([
-    { title: 'Exclude/Include in RFI:', func: Lib.excludeAccount, flag: 'RFI' },
-    { title: 'Exclude/Include in Fee', func: contract.setIsExcludedFromDexFee.bind(contract), flag: null },
-    { title: 'Exclude/Include in limits', func: contract.setIsExcludedFromLimits.bind(contract), flag: null }]);
+    {
+      title: 'Exclude/Include in RFI:',
+      getExcluded: contract.exclude,
+      exclude: contract.excludeAccount,
+      include: contract.includeAccount
+    },
+    {
+      title: 'Exclude/Include in Fee',
+      getExcluded: contract.exclude,
+      exclude: contract.setIsExcludedFromDexFee.bind(contract)
+    },
+    {
+      title: 'Exclude/Include in limits',
+      getExcluded: contract.exclude,
+      exclude: contract.setIsExcludedFromLimits.bind(contract)
+    }]);
   const [fieldSet] = useState([
     {
       title: 'Set number of tokens to swap:',
@@ -49,7 +61,7 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
       flag: '%',
       func: contract.setBuyAccumulationFee.bind(contract),
       getLimit: contract.initialBuyAccumulationFee.bind(contract)
-    }])
+    }]);
 
   return (
     <div className="owner">
