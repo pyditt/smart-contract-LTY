@@ -38,7 +38,7 @@ contract Ledgity is ILedgity, ReflectToken {
 
     Set.AddressSet private _excludedFromLimits;
     mapping(address => uint256) public lastTransactionAt;
-    Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
+    Percent.Percent public maxTransactionSizePercent = Percent.encode(25, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -204,9 +204,10 @@ contract Ledgity is ILedgity, ReflectToken {
     }
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        if (!isExcludedFromLimits(sender) && !isDex(sender)) {
-            require(lastTransactionAt[sender] < block.timestamp.sub(15 minutes), "Ledgity: only one transaction per 15 minutes");
-            require(amount <= _maxTransactionSize(), "Ledgity: max transaction size exceeded");
+        if (!isExcludedFromLimits(sender) && isDex(recipient)) {
+            // No need for revert strings because they will be ignored by uniswap's `TransferHelper`
+            require(lastTransactionAt[sender] < block.timestamp.sub(10 minutes));
+            require(amount <= _maxTransactionSize());
         }
         lastTransactionAt[sender] = block.timestamp;
 
