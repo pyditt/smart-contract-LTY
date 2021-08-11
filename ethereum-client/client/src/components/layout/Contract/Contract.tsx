@@ -8,7 +8,7 @@ interface Props {
 }
 
 const Contract: FC<Props> = ({ info }) => {
-    const { owner, symbol, name, totalSupply, decimals, maxTokenTx, totalFees, startPrice, totalBurn } = info;
+    const { owner, symbol, name, totalSupply, initialTotalSupply, decimals, maxTokenTx, totalFees, startPrice, totalBurn } = info;
 
     const renderTokenSymbol = (symbol: string) => {
         switch (symbol) {
@@ -42,11 +42,10 @@ const Contract: FC<Props> = ({ info }) => {
                 </div>
             </div>
             <div className="contract__form">
-                {/* TODO: can we bring this back? */}
-                {/* <div className="contract__field">
+                <div className="contract__field">
                     <p className="contract__label bold"> How much has been released token: </p>
-                    <div className="contract__input"> {allSupply} </div>
-                </div> */}
+                    <div className="contract__input"> {initialTotalSupply} </div>
+                </div>
                 <div className="contract__field">
                     <p className="contract__label bold"> Total supply: </p>
                     <div className="contract__input"> {totalSupply} </div>

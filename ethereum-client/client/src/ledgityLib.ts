@@ -3,6 +3,7 @@ import { Ledgity } from './types/ethers-contracts';
 import { asPercent } from './utils';
 
 export interface Info {
+  initialTotalSupply: string
   totalSupply: string
   name: string
   symbol: string
@@ -21,6 +22,7 @@ export async function getInfo(contract: Ledgity): Promise<Info> {
   }
   const totalSupplyWoDecimals = removeDecimals(await contract.totalSupply());
   return {
+    initialTotalSupply: removeDecimals(await contract.initialTotalSupply()),
     totalSupply: totalSupplyWoDecimals,
     name: await contract.name(),
     symbol: await contract.symbol(),
