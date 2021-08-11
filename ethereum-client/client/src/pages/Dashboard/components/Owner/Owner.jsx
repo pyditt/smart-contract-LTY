@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import ExcludeAndInclude from "./components/ExcludeAndInclude";
 import FieldSettingPrice from "./components/FieldSettingPrice";
-/* import ApplyPrice from "./components/commision/ApplyPrice"; */
 import BurnToken from "./components/commision/BurnToken";
 
 import "./Owner.scss";
@@ -79,7 +78,6 @@ const Owner = ({ contract, account, updateInfo, ownership }) => {
         <div className="owner__item commission">
           <h2> Get the balance of the Address: </h2>
           <div className="owner__fields">
-            {/* <ApplyPrice ownership={ownership} updateInfo={updateInfo} /> */}
             <BurnToken ownership={ownership} updateInfo={updateInfo} contract={contract} />
             <AddDex ownership={ownership} contract={contract} />
           </div>
