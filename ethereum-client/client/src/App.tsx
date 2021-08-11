@@ -10,7 +10,7 @@ import { Dashboard, Connect } from "./pages";
 import "./App.scss";
 
 // TODO: extract to a config file
-const LedgityContractAddress = "0x0908A3Eb2c3e4CC28634c825AbA88ceC09C79027";
+const LedgityContractAddress = "0x6A998929c28588276Fee112bb2d07E2afc9Fa663";
 
 // TODO: extract to a config file
 const ws = new WebSocket("ws://52.12.224.224:9000");
