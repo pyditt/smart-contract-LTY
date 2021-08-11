@@ -57,6 +57,7 @@ const ExcludeAndInclude = ({ ownership, title, include, exclude, getExcluded }) 
             className={ownership ? "field__input" : "field__input disabled"}
             disabled={!ownership}
             value={accountInput}
+            placeholder="Enter account address"
             onChange={onChange}
             onFocus={onFocus}
           />

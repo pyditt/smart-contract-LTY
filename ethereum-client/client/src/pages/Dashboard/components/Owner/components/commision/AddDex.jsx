@@ -34,7 +34,7 @@ const AddDex = ({ ownership, contract }) => {
             <input
                 className={ownership ? "field__input" : "field__input disabled"}
                 disabled={!ownership}
-                placeholder="Enter address"
+                placeholder="Enter account address"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
             />

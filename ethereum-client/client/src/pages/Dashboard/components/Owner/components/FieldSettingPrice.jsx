@@ -51,6 +51,7 @@ const FieldSettingPrice = ({ title, flag, ownership, func, getLimit }) => {
                         value={field}
                         onChange={onChange}
                         className={ownership ? "field__input" : "field__input disabled"}
+                        placeholder="Enter account address"
                         onFocus={() => {
                             if (error !== '') {
                                 setError('');
