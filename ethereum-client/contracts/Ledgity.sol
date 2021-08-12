@@ -37,7 +37,8 @@ contract Ledgity is ILedgity, ReflectToken {
     Set.AddressSet private _excludedFromDexFee;
 
     Set.AddressSet private _excludedFromLimits;
-    mapping(address => uint256) public lastTransactionAt;
+    mapping(address => uint256) public soldPerPeriod;
+    mapping(address => uint256) public firstSellAt;
     Percent.Percent public maxTransactionSizePercent = Percent.encode(25, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
@@ -205,11 +206,16 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
         if (!isExcludedFromLimits(sender) && isDex(recipient)) {
+            // Reset every 10 minutes
+            if (block.timestamp.sub(firstSellAt[sender]) > 10 minutes) {
+                soldPerPeriod[sender] = 0;
+                firstSellAt[sender] = block.timestamp;
+            }
+            uint256 _sold = soldPerPeriod[sender].add(amount);
             // No need for revert strings because they will be ignored by uniswap's `TransferHelper`
-            require(lastTransactionAt[sender] < block.timestamp.sub(10 minutes));
-            require(amount <= _maxTransactionSize());
+            require(_sold <= _maxTransactionSize());
+            soldPerPeriod[sender] = _sold;
         }
-        lastTransactionAt[sender] = block.timestamp;
 
         if (address(priceOracle) != address(0)) {
             priceOracle.tryUpdate();
