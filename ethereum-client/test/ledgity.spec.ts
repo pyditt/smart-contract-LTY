@@ -231,39 +231,49 @@ describe('Ledgity', () => {
   });
 
   describe('sell limitations', () => {
+    let maxTxSize: BigNumber;
     snapshottedBeforeEach(async () => {
+      await addLiquidityUtil('100000', '10000', token, usdcToken, router, alice);
       await token.transfer(bob, await token.balanceOf(alice));
       await token.setIsExcludedFromLimits(bob, false);
+      maxTxSize = (await token.totalSupply()).mul(25).div(10000);
     });
 
-    it('should NOT allow to sell more than once per 10 minutes', async () => {
-      await sell(toTokens(1), bobAccount);
+    it('should NOT allow to sell more than 0.25% of total supply per 10 minutes', async () => {
+      await sell(maxTxSize, bobAccount);
       await evmIncreaseTime(10 * 60 - 10);
       await expect(sell(toTokens(1), bobAccount))
         .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
     });
 
-    it('should allow to sell less than once per 10 minutes', async () => {
-      await sell(toTokens(1), bobAccount);
-      await evmIncreaseTime(10 * 60 + 10);
-      await sell(toTokens(1), bobAccount);  // OK
+    it('should allow to sell less than 0.25% of total supply within 10 minutes', async () => {
+      await sell(maxTxSize.div(2), bobAccount);
+      await evmIncreaseTime(10 * 60 - 10);
+      await sell(maxTxSize.div(2), bobAccount);  // OK
     });
 
     it('should NOT allow to sell more than 0.25% of total supply', async () => {
-      const totalSupply = await token.totalSupply();
-      await expect(sell(totalSupply.mul(25).div(10000).add(1), bobAccount))
+      await expect(sell(maxTxSize.add(1), bobAccount))
         .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
     });
 
+    it('should reset limits after 10 minutes', async () => {
+      await sell(maxTxSize.sub(1), bobAccount);
+      await evmIncreaseTime(10 * 60 - 10);
+      await expect(sell(toTokens(1), bobAccount))
+        .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
+      await evmIncreaseTime(10);
+      await sell(toTokens(1), bobAccount);  // OK
+    });
+
     it('should allow to sell less than 0.25% of total supply', async () => {
-      const totalSupply = await token.totalSupply();
-      await sell(totalSupply.mul(25).div(10000), bobAccount);  // OK
+      await sell(maxTxSize, bobAccount);  // OK
     });
 
     it('should exclude an account from limits', async () => {
       await token.setIsExcludedFromLimits(bob, true);
-      await sell(toTokens(1), bobAccount);
-      await sell(toTokens(1), bobAccount);  // OK
+      await sell(maxTxSize.add(toTokens(1)), bobAccount);
+      await sell(maxTxSize.add(toTokens(1)), bobAccount);  // OK
     });
 
     it('should allow anyone to buy any amount of tokens', async () => {
