@@ -221,8 +221,6 @@ contract Ledgity is ILedgity, ReflectToken {
             priceOracle.tryUpdate();
         }
 
-        super._transfer(sender, recipient, amount);
-
         uint256 contractTokenBalance = balanceOf(address(this));
         if (
             contractTokenBalance >= numTokensToSwap &&
@@ -234,6 +232,8 @@ contract Ledgity is ILedgity, ReflectToken {
             }
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
+
+        super._transfer(sender, recipient, amount);
     }
 
     function _getPrice() private view returns (uint256) {
