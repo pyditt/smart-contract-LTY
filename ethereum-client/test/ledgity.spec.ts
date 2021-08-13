@@ -694,7 +694,8 @@ describe('Ledgity', () => {
       const excess = toTokens('100');
       await token.transfer(token.address, excess);
       await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
-      expect(await token.balanceOf(token.address)).to.eq(excess);
+      await token.transfer(token.address, 1)  // trigger liquify
+      expect(await token.balanceOf(token.address)).to.eq(excess.add(1));
     });
 
     describe('swapAndLiquify', () => {
@@ -705,7 +706,8 @@ describe('Ledgity', () => {
         const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
 
         await token.transfer(tokenReserve.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
-        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        const tx = await token.transfer(token.address, 1);  // trigger liquify
         await expect(tx)
           .to.emit(tokenReserve, 'SwapAndLiquify');
         // TODO
@@ -716,7 +718,7 @@ describe('Ledgity', () => {
         // Swap and liquify does not change USDC reserves in the liquidity pool.
         expect(reserves[usdcIndex]).to.eq(reservesBefore[usdcIndex], 'USDC reserve');
         // should not leave any extra USDC or tokens on the balances
-        expect(await token.balanceOf(token.address)).to.eq('0', 'token token');
+        expect(await token.balanceOf(token.address)).to.eq(1);
         expect(await token.balanceOf(tokenReserve.address)).eq(reserveTokenBalanceBefore, 'token The Reserve');
         expect(await usdcToken.balanceOf(token.address)).to.eq('0', 'USDC token');
         expect(await usdcToken.balanceOf(tokenReserve.address)).eq(reserveUsdcBalanceBefore, 'USDC The Reserve');
@@ -732,7 +734,8 @@ describe('Ledgity', () => {
         const reserveTokenBalanceBefore = await token.balanceOf(tokenReserve.address);
         const reserveUsdcBalanceBefore = await usdcToken.balanceOf(tokenReserve.address);
         const tokenTokenBalanceBefore = await token.balanceOf(token.address);
-        const tx = await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        await token.transfer(token.address, NUM_TOKENS_TO_LIQUIFY_OR_COLLECT);
+        const tx = await token.transfer(token.address, 1)  // trigger collect
         await expect(tx)
           .to.emit(tokenReserve, 'SwapAndCollect');
         // TODO
@@ -740,7 +743,7 @@ describe('Ledgity', () => {
         const reserves = await pair.getReserves();
         expect(reserves[tokenIndex]).to.eq(reservesBefore[tokenIndex].add(tokenTokenBalanceBefore).add(NUM_TOKENS_TO_LIQUIFY_OR_COLLECT));
         expect(reserves[usdcIndex]).to.be.lt(reservesBefore[usdcIndex]);
-        expect(await token.balanceOf(token.address)).to.eq(0);
+        expect(await token.balanceOf(token.address)).to.eq(1);
         expect(await token.balanceOf(tokenReserve.address)).to.eq(reserveTokenBalanceBefore);
         expect(await usdcToken.balanceOf(tokenReserve.address)).to.be.gt(reserveUsdcBalanceBefore);
       });
