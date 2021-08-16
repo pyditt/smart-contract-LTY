@@ -39,7 +39,7 @@ contract Ledgity is ILedgity, ReflectToken {
     Set.AddressSet private _excludedFromLimits;
     mapping(address => uint256) public soldPerPeriod;
     mapping(address => uint256) public firstSellAt;
-    Percent.Percent public maxTransactionSizePercent = Percent.encode(25, 10000);
+    Percent.Percent public maxTransactionSizePercent = Percent.encode(5, 10000);
 
     IUniswapV2Pair public uniswapV2Pair;
     IReserve public reserve;
@@ -213,7 +213,7 @@ contract Ledgity is ILedgity, ReflectToken {
             }
             uint256 _sold = soldPerPeriod[sender].add(amount);
             // No need for revert strings because they will be ignored by uniswap's `TransferHelper`
-            require(_sold <= _maxTransactionSize());
+            require(_sold <= maxTransactionSize());
             soldPerPeriod[sender] = _sold;
         }
 
@@ -243,7 +243,7 @@ contract Ledgity is ILedgity, ReflectToken {
         return priceOracle.consult(address(this), 1e18);
     }
 
-    function _maxTransactionSize() private view returns (uint256) {
+    function maxTransactionSize() public view returns (uint256) {
         return maxTransactionSizePercent.mul(totalSupply());
     }
 }
