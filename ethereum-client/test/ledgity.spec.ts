@@ -236,23 +236,23 @@ describe('Ledgity', () => {
       await addLiquidityUtil('100000', '10000', token, usdcToken, router, alice);
       await token.transfer(bob, await token.balanceOf(alice));
       await token.setIsExcludedFromLimits(bob, false);
-      maxTxSize = (await token.totalSupply()).mul(25).div(10000);
+      maxTxSize = await token.maxTransactionSize()
     });
 
-    it('should NOT allow to sell more than 0.25% of total supply per 10 minutes', async () => {
+    it('should NOT allow to sell more than 0.05% of total supply per 10 minutes', async () => {
       await sell(maxTxSize, bobAccount);
       await evmIncreaseTime(10 * 60 - 10);
       await expect(sell(toTokens(1), bobAccount))
         .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
     });
 
-    it('should allow to sell less than 0.25% of total supply within 10 minutes', async () => {
+    it('should allow to sell less than 0.05% of total supply within 10 minutes', async () => {
       await sell(maxTxSize.div(2), bobAccount);
       await evmIncreaseTime(10 * 60 - 10);
       await sell(maxTxSize.div(2), bobAccount);  // OK
     });
 
-    it('should NOT allow to sell more than 0.25% of total supply', async () => {
+    it('should NOT allow to sell more than 0.05% of total supply', async () => {
       await expect(sell(maxTxSize.add(1), bobAccount))
         .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
     });
@@ -266,7 +266,7 @@ describe('Ledgity', () => {
       await sell(toTokens(1), bobAccount);  // OK
     });
 
-    it('should allow to sell less than 0.25% of total supply', async () => {
+    it('should allow to sell less than 0.05% of total supply', async () => {
       await sell(maxTxSize, bobAccount);  // OK
     });
 
