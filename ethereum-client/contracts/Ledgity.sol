@@ -10,7 +10,7 @@ import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
 import "./interfaces/ILedgityPriceOracle.sol";
 
-
+// SPDX-License-Identifier: Unlicensed
 contract Ledgity is ILedgity, ReflectToken {
     using SafeMath for uint256;
     using Percent for Percent.Percent;
@@ -206,13 +206,11 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
         if (!isExcludedFromLimits(sender) && isDex(recipient)) {
-            // Reset every 10 minutes
             if (block.timestamp.sub(firstSellAt[sender]) > 10 minutes) {
                 soldPerPeriod[sender] = 0;
                 firstSellAt[sender] = block.timestamp;
             }
             uint256 _sold = soldPerPeriod[sender].add(amount);
-            // No need for revert strings because they will be ignored by uniswap's `TransferHelper`
             require(_sold <= maxTransactionSize());
             soldPerPeriod[sender] = _sold;
         }

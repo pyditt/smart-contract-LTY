@@ -10,7 +10,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/IReserve.sol";
 
-
+// SPDX-License-Identifier: Unlicensed
 contract Reserve is IReserve, Ownable {
     using SafeMath for uint256;
 
@@ -45,7 +45,7 @@ contract Reserve is IReserve, Ownable {
         SafeERC20.safeApprove(address(usdc) ,address(uniswapV2Router), usdcAmount);
         uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             usdcAmount,
-            0, // accept any amount of token
+            0,
             path,
             address(this),
             block.timestamp
@@ -68,13 +68,7 @@ contract Reserve is IReserve, Ownable {
             half = tokenBalance.div(2);
             otherHalf = tokenBalance.sub(half);
         }
-
         uint256 usdcReceived = _swapTokensForUSDC(otherHalf);
-        // Add liquidity mannualy instead of using the router.
-        // This allows us to add liquidity in proportion we want, regardless of current pool reserves.
-        // Adding liquidity must:
-        //   1. Transfer both tokens to the pair
-        //   2. Mint LP tokens to some address.
         SafeERC20.safeTransfer(address(token), address(uniswapV2Pair), half);
         SafeERC20.safeTransfer(address(usdc), address(uniswapV2Pair), usdcReceived);
         uniswapV2Pair.mint(timelock);
@@ -89,7 +83,7 @@ contract Reserve is IReserve, Ownable {
         SafeERC20.safeApprove(address(token) ,address(uniswapV2Router), tokenAmount);
         uniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             tokenAmount,
-            0, // accept any amount of USDC
+            0,
             path,
             address(this),
             block.timestamp

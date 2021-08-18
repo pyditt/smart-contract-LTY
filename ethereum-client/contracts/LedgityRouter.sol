@@ -6,7 +6,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/ILedgity.sol";
 import "./interfaces/ILedgityRouter.sol";
 
-
+// SPDX-License-Identifier: Unlicensed
 contract LedgityRouter is ILedgityRouter {
     IUniswapV2Factory public immutable factory;
     IUniswapV2Router02 public immutable uniswapRouter;
