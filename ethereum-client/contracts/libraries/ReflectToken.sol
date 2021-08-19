@@ -171,6 +171,7 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         }
 		_rTotal = _rTotal.sub(rAmount);
 		_tTotal = _tTotal.sub(tAmount);
+        emit Transfer(_msgSender(), address(0), tAmount);
     }
 
     function _transfer(address sender, address recipient, uint256 tAmount) internal virtual {
