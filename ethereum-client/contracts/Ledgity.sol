@@ -206,11 +206,14 @@ contract Ledgity is ILedgity, ReflectToken {
 
     function _transfer(address sender, address recipient, uint256 amount) internal override {
         if (!isExcludedFromLimits(sender) && isDex(recipient)) {
+            uint256 _sold;
             if (block.timestamp.sub(firstSellAt[sender]) > 10 minutes) {
-                soldPerPeriod[sender] = 0;
+                // _sold = 0;  // is already 0
                 firstSellAt[sender] = block.timestamp;
+            } else {
+                _sold = soldPerPeriod[sender];
             }
-            uint256 _sold = soldPerPeriod[sender].add(amount);
+            _sold = _sold.add(amount);
             require(_sold <= maxTransactionSize());
             soldPerPeriod[sender] = _sold;
         }
@@ -220,13 +223,14 @@ contract Ledgity is ILedgity, ReflectToken {
         }
 
         uint256 contractTokenBalance = balanceOf(address(this));
+        uint256 _numTokensToSwap = numTokensToSwap;
         if (
-            contractTokenBalance >= numTokensToSwap &&
+            contractTokenBalance >= _numTokensToSwap &&
             !inSwapAndLiquify &&
             sender != address(uniswapV2Pair)
         ) {
-            if (contractTokenBalance > numTokensToSwap) {
-                contractTokenBalance = numTokensToSwap;
+            if (contractTokenBalance > _numTokensToSwap) {
+                contractTokenBalance = _numTokensToSwap;
             }
             _swapAndLiquifyOrCollect(contractTokenBalance);
         }
