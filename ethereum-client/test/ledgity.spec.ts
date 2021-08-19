@@ -966,5 +966,10 @@ describe('Ledgity', () => {
       await token.transfer(bob, 10);
       await expect(token.connect(bobAccount).burn(11)).to.be.revertedWith('ReflectToken: burn amount is more than the balance');
     });
+
+    it('should emit a Transfer event', async () => {
+      const amount = toTokens('10');
+      await expect(token.burn(amount)).to.emit(token, 'Transfer').withArgs(alice, ZERO_ADDRESS, amount);
+    })
   });
 });
