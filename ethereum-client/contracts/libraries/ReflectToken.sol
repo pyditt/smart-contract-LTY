@@ -187,8 +187,12 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
         if (_isExcluded[recipient]) {
             _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         }
-        _reflectFee(rFee, tFee);
-        _accumulateFee(rAccumulation, tAccumulation);
+        if (tFee != 0) {
+            _reflectFee(rFee, tFee);
+        }
+        if (tAccumulation != 0) {
+            _accumulateFee(rAccumulation, tAccumulation);
+        }
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
@@ -234,10 +238,14 @@ abstract contract ReflectToken is Context, IERC20, Ownable {
     function _getCurrentSupply() private view returns(uint256, uint256) {
         uint256 rSupply = _rTotal;
         uint256 tSupply = _tTotal;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
-            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
-            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
+        uint256 len = _excluded.length;
+        for (uint256 i = 0; i < len; i++) {
+            address account = _excluded[i];
+            uint256 rBalance = _rOwned[account];
+            uint256 tBalance = _tOwned[account];
+            if (rBalance > rSupply || tBalance > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(rBalance);
+            tSupply = tSupply.sub(tBalance);
         }
         if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
         return (rSupply, tSupply);
