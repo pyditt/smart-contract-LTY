@@ -38,7 +38,7 @@ const config: HardhatUserConfig = {
       url: MAINNET_PROVIDER_URL,
       chainId: 1,
       accounts: [MAINNET_PRIVATE_KEY],
-      gasPrice: 34000000000,
+      gasPrice: 40000000000,
     },
   },
   etherscan: {
