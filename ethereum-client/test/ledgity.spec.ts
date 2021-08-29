@@ -23,10 +23,12 @@ describe('Ledgity', () => {
   let priceOracle: LedgityPriceOracle;
   let factory: UniswapV2Factory;
   let usdcToken: MockUSDC;
+  let usdcDecimals: number;
   let router: UniswapV2Router02;
   snapshottedBeforeEach(async () => {
     ({ factory, router } = await deployUniswap(aliceAccount));
     usdcToken = await (await ethers.getContractFactory('MockUSDC')).deploy();
+    usdcDecimals = await usdcToken.decimals();
     token = await (await ethers.getContractFactory('Ledgity')).deploy();
     tokenReserve = await (await ethers.getContractFactory('Reserve')).deploy(router.address, token.address, usdcToken.address, NON_ZERO_ADDRESS);
     await token.initializeReserve(tokenReserve.address);
@@ -96,7 +98,7 @@ describe('Ledgity', () => {
     });
 
     it('should set initial price', async () => {
-      expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
+      expect(await token.initialPrice()).to.be.closeTo(toTokens(1, usdcDecimals).div(10), 1);
     });
 
     it('should NOT update initial price on another initialize', async () => {
@@ -104,7 +106,7 @@ describe('Ledgity', () => {
       await evmIncreaseTime((await priceOracle.period()).toNumber());
       await priceOracle.update();
       await token.initializePriceOracle(priceOracle.address);
-      expect(await token.initialPrice()).to.be.closeTo(toTokens(1).div(10), 1);
+      expect(await token.initialPrice()).to.be.closeTo(toTokens(1, usdcDecimals).div(10), 1);
     });
   });
 
@@ -353,7 +355,7 @@ describe('Ledgity', () => {
       snapshottedBeforeEach(async () => {
         // Raise price by x10
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
-        await buy(toTokens('217'), aliceAccount);
+        await buy(toTokens('217', usdcDecimals), aliceAccount);
         await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.gte(priceBefore.mul(10));  // sanity check
@@ -378,7 +380,7 @@ describe('Ledgity', () => {
       snapshottedBeforeEach(async () => {
         // Raise price by x9
         const priceBefore = await priceOracle.consult(token.address, toTokens(1));
-        await buy(toTokens('216'), aliceAccount);
+        await buy(toTokens('216', usdcDecimals), aliceAccount);
         await evmIncreaseTime((await priceOracle.period()).toNumber());
         await priceOracle.update();
         expect(await priceOracle.consult(token.address, toTokens(1))).to.be.lt(priceBefore.mul(10));  // sanity check

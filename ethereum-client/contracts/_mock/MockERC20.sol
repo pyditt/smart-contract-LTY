@@ -6,7 +6,7 @@ contract MockERC20 {
     string  public name;
     string  public symbol;
     uint256 public totalSupply;
-    uint8   public constant decimals = 18;
+    uint8   public decimals;
 
     event Transfer(
         address indexed _from,
@@ -23,9 +23,10 @@ contract MockERC20 {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    constructor(string memory name_, string memory symbol_) public {
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) public {
         name = name_;
         symbol = symbol_;
+        decimals = decimals_;
     }
 
     function transfer(address _to, uint256 _value) external returns (bool success) {

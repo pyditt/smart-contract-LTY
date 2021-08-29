@@ -4,13 +4,13 @@ import {MockERC20} from "./MockERC20.sol";
 import "../interfaces/IReserve.sol";
 
 contract MockUSDC is MockERC20 {
-    constructor() public MockERC20("MockUSDC", "MUSDC") { }
+    constructor() public MockERC20("MockUSDC", "MUSDC", 6) { }
 }
 
 contract MockLedgity is MockERC20 {
     IReserve reserve;
 
-    constructor() public MockERC20("MockLedgity", "MLTY") { }
+    constructor() public MockERC20("MockLedgity", "MLTY", 18) { }
 
     function setReserve(address _reserve) external {
         reserve = IReserve(_reserve);
