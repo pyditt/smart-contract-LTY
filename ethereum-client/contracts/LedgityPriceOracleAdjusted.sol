@@ -59,7 +59,7 @@ contract LedgityPriceOracleAdjusted is ILedgityPriceOracle, Ownable {
         // XXX adjust price.
         // 8425 is the recorded initial price
         // 4000 is the expected initial price
-        amountOut = amountOut.mul(8416).div(4000);
+        amountOut = amountOut.mul(8425).div(4000);
     }
 
     function changePeriod(uint256 _period) public onlyOwner {
