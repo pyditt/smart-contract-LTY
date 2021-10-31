@@ -29,13 +29,13 @@ const Menu = (props) => {
       currentLang={currentLanguage.code}
       langs={languageList}
       setLang={setLanguage}
-      cakePriceUsd={cakePriceUsd.toNumber()}
-      links={config(t)}
+      // cakePriceUsd={cakePriceUsd.toNumber()}
+      links={[]}
       subLinks={activeMenuItem?.hideSubNav ? [] : activeMenuItem?.items}
-      footerLinks={footerLinks(t)}
+      footerLinks={[]}
       activeItem={activeMenuItem?.href}
       activeSubItem={activeSubMenuItem?.href}
-      buyCakeLabel={t('Buy CAKE')}
+      // buyCakeLabel={t('Buy CAKE')}
       {...props}
     />
   )
