@@ -94,3 +94,13 @@ the network of your choice(e.g., `ropsten`).
 ```sh
 hh verify --network <network> DEPLOYED_CONTRACT_ADDRESS "Constructor argument 1" "Argument 2"
 ```
+
+
+## Verify
+
+You can create documentation for the code automatically.
+
+
+```sh
+npx solidity-docgen -t ./docs/templates/ -s single
+```
