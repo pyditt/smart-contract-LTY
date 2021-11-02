@@ -3,9 +3,9 @@ import { getAddress } from '@ethersproject/address'
 import { AddressZero } from '@ethersproject/constants'
 import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 import { BigNumber } from '@ethersproject/bignumber'
-import { abi as IUniswapV2Router02ABI } from '@uniswap/v2-periphery/build/IUniswapV2Router02.json'
 import { ChainId, JSBI, Percent, Token, CurrencyAmount, Currency, ETHER } from '@pancakeswap/sdk'
-import { ROUTER_ADDRESS } from '../config/constants'
+import LedgityRouterABI from '../config/abi/LedgityRouter.json'
+import { LEDGITY_ROUTER_ADDRESS } from '../config/constants'
 import { BASE_BSC_SCAN_URLS } from '../config'
 import { TokenAddressMap } from '../state/lists/hooks'
 
@@ -90,8 +90,13 @@ export function getContract(address: string, ABI: any, library: Web3Provider, ac
 }
 
 // account is optional
-export function getRouterContract(_: number, library: Web3Provider, account?: string): Contract {
-  return getContract(ROUTER_ADDRESS, IUniswapV2Router02ABI, library, account)
+// export function getRouterContract(_: number, library: Web3Provider, account?: string): Contract {
+//   return getContract(ROUTER_ADDRESS, IUniswapV2Router02ABI, library, account)
+// }
+
+// XXX
+export function getLedgityRouterContract(_: number, library: Web3Provider, account?: string): Contract {
+  return getContract(LEDGITY_ROUTER_ADDRESS, LedgityRouterABI, library, account)
 }
 
 export function escapeRegExp(string: string): string {
