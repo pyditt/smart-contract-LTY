@@ -36,7 +36,6 @@ const Page: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, ...pro
       <StyledPage {...props}>
         {children}
         <Flex flexGrow={1} />
-        <Footer />
       </StyledPage>
     </>
   )

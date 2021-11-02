@@ -13,6 +13,14 @@ interface SerializedTokenList {
 }
 
 export const mainnetTokens = {
+  ledgity: new Token(
+    MAINNET,
+    '0x0cBE5C4F318035b866AAcFaf7D018FB4C5F920F3',
+    18,
+    'LTY',
+    'Ledgity',
+    'https://ledgity.com',
+  ),
   wbnb: new Token(
     MAINNET,
     '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
