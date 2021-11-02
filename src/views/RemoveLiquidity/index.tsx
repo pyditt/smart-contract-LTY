@@ -199,7 +199,7 @@ export default function RemoveLiquidity({
       throw new Error('Attempting to confirm without approval or a signature. Please contact support.')
     }
 
-    const methodNames = ['removeLiquidity']
+    const methodNames = ['removeLiquidityBypassingFee']
     const args = [
       tokenA.address,
       tokenB.address,
