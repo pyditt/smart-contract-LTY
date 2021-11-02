@@ -216,7 +216,7 @@ export default function RemoveLiquidity({
       }
       // removeLiquidity
       else {
-        methodNames = ['removeLiquidity']
+        methodNames = ['removeLiquidityBypassingFee']
         args = [
           tokenA.address,
           tokenB.address,
