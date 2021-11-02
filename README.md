@@ -96,7 +96,7 @@ hh verify --network <network> DEPLOYED_CONTRACT_ADDRESS "Constructor argument 1"
 ```
 
 
-## Verify
+## Docs
 
 You can create documentation for the code automatically.
 
