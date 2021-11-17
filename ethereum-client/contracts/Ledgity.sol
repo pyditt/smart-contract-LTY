@@ -80,6 +80,9 @@ contract Ledgity is ILedgity, ReflectToken {
         setDex(address(uniswapV2Pair), true);
     }
 
+    /**
+     * @dev Sets price oracle address. Can be called only by the owner.
+     */
     function initializePriceOracle(address priceOracleAddress) external onlyOwner {
         priceOracle = ILedgityPriceOracle(priceOracleAddress);
         if (initialPrice == 0) {
@@ -136,12 +139,12 @@ contract Ledgity is ILedgity, ReflectToken {
         }
     }
 
-     /**
-     * @dev Includes/Excludes `account` address from limits depending on `isExcluded`.
-     * Can be called only by the owner.
-     * @param account Address of account to be excluded/NOT excluded from limits.
-     * @param isExcluded Include/Exclude `account` from limits.
-     */
+    /**
+    * @dev Includes/Excludes `account` address from limits depending on `isExcluded`.
+    * Can be called only by the owner.
+    * @param account Address of account to be excluded/NOT excluded from limits.
+    * @param isExcluded Include/Exclude `account` from limits.
+    */
     function setIsExcludedFromLimits(address account, bool isExcluded) public onlyOwner {
         if (isExcluded) {
             _excludedFromLimits.add(account);
@@ -179,6 +182,12 @@ contract Ledgity is ILedgity, ReflectToken {
         require(sellAccumulationFee.lte(initialSellAccumulationFee), "Ledgity: fee too high");
     }
 
+    /**
+     * @dev Sets sell accumulation fee which value is represented as a fraction.
+     * Can be called only by the owner.
+     * @param numerator Numerator of a sell accumulation fee fractional value.
+     * @param denominator Denominator of a sell accumulation fee fractional value.
+     */
     function setSellAtSmallPriceAccumulationFee(uint128 numerator, uint128 denominator) external onlyOwner {
         sellAtSmallPriceAccumulationFee = Percent.encode(numerator, denominator);
         require(sellAtSmallPriceAccumulationFee.lte(initialSellAtSmallPriceAccumulationFee), "Ledgity: fee too high");
@@ -352,6 +361,10 @@ contract Ledgity is ILedgity, ReflectToken {
         super._transfer(sender, recipient, amount);
     }
 
+     /**
+     * @dev Returns the price of tokens.
+     * @return 0 if price oracle address is NOT setted up via `initializePriceOracle` function.
+     */
     function _getPrice() private view returns (uint256) {
         if (address(priceOracle) == address(0)) {
             return 0;

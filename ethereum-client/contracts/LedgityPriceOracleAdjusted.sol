@@ -31,10 +31,17 @@ contract LedgityPriceOracleAdjusted is ILedgityPriceOracle, Ownable {
         changePeriod(12 hours);
     }
 
+    /**
+     * @dev Updates average price. Reverts if period has not elapsed yet.
+     */
     function update() external override {
         require(tryUpdate(), 'LedgityPriceOracle: PERIOD_NOT_ELAPSED');
     }
 
+    /**
+     * @dev Updates average price.
+     * @return true if update succeded. `false` if period has not elapsed yet.
+     */
     function tryUpdate() public override returns (bool) {
         uint32 timeElapsed = UniswapV2OracleLibrary.currentBlockTimestamp() - blockTimestampLast;
         if (timeElapsed < period) {
@@ -49,6 +56,11 @@ contract LedgityPriceOracleAdjusted is ILedgityPriceOracle, Ownable {
         return true;
     }
 
+    /**
+     * @dev Returns the price of tokens.
+     * @param token Address of a token.
+     * @param amountIn amount of tokens.
+     */
     function consult(address token, uint amountIn) external view override returns (uint amountOut) {
         if (token == token0) {
             amountOut = price0Average.mul(amountIn).decode144();
@@ -62,6 +74,10 @@ contract LedgityPriceOracleAdjusted is ILedgityPriceOracle, Ownable {
         amountOut = amountOut.mul(8425).div(4000);
     }
 
+    /**
+     * @dev Sets new period. Reverts if `_period` < 0 or reserves are empty.
+     * Can be called only by the owner.
+     */
     function changePeriod(uint256 _period) public onlyOwner {
         require(_period > 0, 'LedgityPriceOracle: INVALID_PERIOD');
         period = _period;
