@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^2.1.4",
-    "@uniswap/lib": "^4.0.1-alpha"
+    "@uniswap/lib": "^4.0.1-alpha",
+    "solidity-docgen": "^0.5.16"
   }
 }

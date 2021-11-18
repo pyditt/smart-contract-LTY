@@ -20,11 +20,17 @@ contract Reserve is IReserve, Ownable {
     IERC20 public usdc;
     address public immutable timelock;
 
+    /**
+     * @dev Reverts if `msg.sender` is NOT the ELEN token.
+     */
     modifier onlyToken {
         require(msg.sender == address(token), "Reserve: caller is not the token");
         _;
     }
 
+    /**
+     * @dev Initializess the contract setting up uniswap router address, ELEN address and USDC address.
+     */
     constructor(address uniswapRouter, address TOKEN, address USDC, address timelock_) public {
         require(timelock_ != address(0), "Reserve: invalid timelock address");
         uniswapV2Router = IUniswapV2Router02(uniswapRouter);
@@ -37,6 +43,11 @@ contract Reserve is IReserve, Ownable {
         );
     }
 
+    /**
+     * @dev Buys tokens in the amount of usdcAmount. Then burns them.
+     *
+     * Emits `BuyAndBurn` event.
+     */
     function buyAndBurn(uint256 usdcAmount) external override onlyOwner {
         address[] memory path = new address[](2);
         path[0] = address(usdc);
@@ -55,11 +66,23 @@ contract Reserve is IReserve, Ownable {
         emit BuyAndBurn(tokensSwapped, usdcAmount);
     }
 
+    /**
+     * @dev Exchanges tokens to usdc. After that, usdc remains on the contract.
+     *
+     * Emits `SwapAndCollect` event.
+     */
     function swapAndCollect(uint256 tokenAmount) external override onlyToken {
         uint256 usdcReceived = _swapTokensForUSDC(tokenAmount);
         emit SwapAndCollect(tokenAmount, usdcReceived);
     }
 
+    /**
+     * @dev Depending on the conditions, either exchanges half
+     * of the token Amount for USD or the same amount from the contract balance.
+     * After that, it adds liquidity to the pool.
+     *
+     * Emits `SwapAndLiquify` event.
+     */
     function swapAndLiquify(uint256 tokenAmount) external override onlyToken {
         uint256 tokenBalance = token.balanceOf(address(this));
         uint256 half = tokenAmount;
@@ -75,6 +98,11 @@ contract Reserve is IReserve, Ownable {
         emit SwapAndLiquify(otherHalf, usdcReceived, half);
     }
 
+    /**
+     * @dev Swaps ELEN tokens for USDC.
+     * @param tokenAmount Amount of ELEN tokens to swap.
+     * @return uint256 Amount of swapped USDC.
+     */
     function _swapTokensForUSDC(uint256 tokenAmount) private returns (uint256) {
         address[] memory path = new address[](2);
         path[0] = address(token);
